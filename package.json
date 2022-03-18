@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 5050",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "lint": "eslint . --ignore-path .gitignore",
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "electron:start": "electron ."

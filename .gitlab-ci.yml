@@ -1,0 +1,24 @@
+stages:
+  - build
+  - test
+
+build:
+  image: node:latest
+  stage: build
+  script:
+    - npm ci
+    - npm run lint -- --no-fix
+    - npm run build
+  only:
+    - main
+    - merge_requests
+
+unit test:
+  image: node:latest
+  stage: test
+  script:
+    - npm ci
+    - npm run test
+  only:
+    - main
+    - merge_requests
