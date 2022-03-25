@@ -1,0 +1,13 @@
+appId: "at.ac.tuwien.polaris-ui"
+mac:
+  category: "development"
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+npmRebuild: false
+files: 
+  - "dist/**/*"
+  - "electron/**/*"
+directories:
+  buildResources: "assets"
+  output: "dist_electron"

@@ -1,12 +1,17 @@
 stages:
   - build
   - test
+  - deploy
+cache:
+  key: $CI_COMMIT_REF_SLUG
+  paths:
+    - .npm/
 
 build:
   image: node:latest
   stage: build
   script:
-    - npm ci
+    - npm ci --cache .npm --prefer-offline
     - npm run lint -- --no-fix
     - npm run build
   only:
@@ -17,8 +22,21 @@ unit test:
   image: node:latest
   stage: test
   script:
-    - npm ci
+    - npm ci --cache .npm --prefer-offline
     - npm run test
   only:
     - main
     - merge_requests
+
+deploy:
+  image: electronuserland/builder:wine
+  stage: deploy
+  script:
+    - yarn
+    - yarn build:electron 
+    - yarn dist -wl
+  artifacts:
+    paths:
+      - dist_electron
+  only:
+    - main

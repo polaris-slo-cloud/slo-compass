@@ -1,5 +1,5 @@
 <template>
-  <q-page padding>
+  <div>
     <h3>Settings</h3>
     <q-list>
       <q-item tag="label">
@@ -11,7 +11,7 @@
         </q-item-section>
       </q-item>
     </q-list>
-  </q-page>
+  </div>
 </template>
 <script setup>
 import { computed } from '@vue/runtime-core';

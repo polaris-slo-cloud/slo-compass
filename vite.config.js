@@ -6,6 +6,7 @@ import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: process.env.ELECTRON=="true" ? './' : '.',
   plugins: [
     vue({
       template: { transformAssetUrls },
@@ -18,5 +19,8 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  test: {
+    environment: 'happy-dom',
   },
 });

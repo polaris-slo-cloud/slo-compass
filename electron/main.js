@@ -8,7 +8,7 @@ const createWindow = () => {
     width: 1000,
     height: 600,
     // taken from "public"
-    icon: path.join(__dirname, 'public', 'favicon.ico'),
+    icon: path.join(__dirname, 'icons', 'favicon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
@@ -21,7 +21,7 @@ const createWindow = () => {
 
   // Production Environment
   if (app.isPackaged) {
-    win.loadFile('dist/index.html');
+    win.loadURL(`file://${path.join(__dirname, '../dist/index.html')}`);
     // we're on production; no access to devtools pls
     win.webContents.on('devtools-opened', () => {
       win.webContents.closeDevTools();

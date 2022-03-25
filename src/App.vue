@@ -2,7 +2,8 @@
 import { RouterView } from "vue-router";
 import { computed, ref } from 'vue';
 import AppIcon from '@/icons/AppIcon.vue';
-import { Platform } from "quasar";
+import { useQuasar } from "quasar";
+const $q = useQuasar();
 
 const isMini = ref(true);
 const menuList = ref([
@@ -18,7 +19,7 @@ const menuList = ref([
   }
 ]);
 const isElectron = computed(() => {
-  return Platform.is.electron;
+  return $q.platform.is.electron;
 });
 
 function minimize() {
@@ -99,7 +100,9 @@ function drawerClick(e) {
         </div>
     </q-drawer>
     <q-page-container>
-      <RouterView />
+      <q-page padding>
+        <RouterView />
+      </q-page>
     </q-page-container>
   </q-layout>
 </template>
