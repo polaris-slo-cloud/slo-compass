@@ -1,10 +1,22 @@
-window.addEventListener("DOMContentLoaded", () => {
-  const replaceText = (selector, text) => {
-    const element = document.getElementById(selector);
-    if (element) element.innerText = text;
-  };
+const { contextBridge } = require('electron');
+const { BrowserWindow } = require('@electron/remote');
 
-  for (const type of ["chrome", "node", "electron"]) {
-    replaceText(`${type}-version`, process.versions[type]);
-  }
+contextBridge.exposeInMainWorld('polarisWindowAPI', {
+  minimize() {
+    BrowserWindow.getFocusedWindow().minimize();
+  },
+
+  toggleMaximize() {
+    const win = BrowserWindow.getFocusedWindow();
+
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+  },
+
+  close() {
+    BrowserWindow.getFocusedWindow().close();
+  },
 });

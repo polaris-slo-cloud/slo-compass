@@ -1,20 +1,31 @@
-const { app, BrowserWindow } = require("electron");
-const path = require("path");
+const { app, BrowserWindow } = require('electron');
+const { initialize, enable } = require('@electron/remote/main');
+const path = require('path');
 
 const createWindow = () => {
+  initialize();
   const win = new BrowserWindow({
-    width: 800,
+    width: 1000,
     height: 600,
+    // taken from "public"
+    icon: path.join(__dirname, 'public', 'favicon.ico'),
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
     },
-    title: "Polaris UI",
+    frame: false,
+    title: 'Polaris UI',
   });
+
+  enable(win.webContents);
 
   // Production Environment
   if (app.isPackaged) {
-    win.loadFile("dist/index.html");
+    win.loadFile('dist/index.html');
+    // we're on production; no access to devtools pls
+    win.webContents.on('devtools-opened', () => {
+      win.webContents.closeDevTools();
+    });
   } else {
     win.loadURL(`http://localhost:3000`);
   }
@@ -22,9 +33,8 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow();
-
   // Open a new window if the app is activated again after closing all windows
-  app.on("activate", () => {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
@@ -32,8 +42,8 @@ app.whenReady().then(() => {
 });
 
 // Quit the application on Windows and Linux if all windows are closed
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
     app.quit();
   }
 });
