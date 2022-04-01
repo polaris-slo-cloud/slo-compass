@@ -1,8 +1,10 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
+import { Platform } from 'quasar';
 import DashboardView from '../views/DashboardView.vue';
 
+console.log(import.meta.env);
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: Platform.is.electron ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',

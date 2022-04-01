@@ -1,18 +1,23 @@
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import Dashboard from "@/views/DashboardView.vue";
+import { Quasar } from "quasar";
+import Settings from "@/views/SettingsView.vue";
 
-describe("DashboardView.vue", () => {
+describe("Settings.vue", () => {
     let wrapper;
     beforeEach(() => {
-        wrapper = mount(Dashboard, {});
+        wrapper = mount(Settings,  {
+            global: {
+                plugins: [Quasar],
+            },
+        });
     });
     afterEach(() => {
         wrapper.unmount();
     });
 
     test("can render", () => {
-        expect(Dashboard).toBeTruthy();
+        expect(Settings).toBeTruthy();
         expect(wrapper.vm).toBeTruthy();
     });
 });
