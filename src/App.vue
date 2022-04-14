@@ -48,7 +48,7 @@ function drawerClick(e) {
 </script>
 
 <template>
-  <q-layout view="hHh LpR fFf">
+  <q-layout view="hHh lpR fFf" id="main-layout">
     <q-header elevated v-if="isElectron">
       <q-bar class="q-electron-drag">
         <AppIcon />
@@ -100,9 +100,7 @@ function drawerClick(e) {
         </div>
     </q-drawer>
     <q-page-container>
-      <q-page padding>
-        <RouterView />
-      </q-page>
+      <RouterView />
     </q-page-container>
   </q-layout>
 </template>

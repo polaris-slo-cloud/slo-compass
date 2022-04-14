@@ -1,14 +1,15 @@
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { Quasar } from "quasar";
-import Settings from "@/views/SettingsView.vue";
+import VNetworkGraph from "v-network-graph";
+import SloDiagramm from "@/components/SloDiagramm.vue";
 
-describe("Settings.vue", () => {
+describe("SloDiagramm.vue", () => {
     let wrapper;
     beforeEach(() => {
-        wrapper = mount(Settings,  {
+        wrapper = mount(SloDiagramm,  {
             global: {
-                plugins: [Quasar],
+                plugins: [Quasar, VNetworkGraph],
             },
         });
     });
@@ -17,7 +18,7 @@ describe("Settings.vue", () => {
     });
 
     test("can render", () => {
-        expect(Settings).toBeTruthy();
+        expect(SloDiagramm).toBeTruthy();
         expect(wrapper.vm).toBeTruthy();
     });
 });

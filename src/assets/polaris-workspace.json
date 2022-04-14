@@ -1,0 +1,58 @@
+{
+    "targets": [
+        {
+            "id": "3313f968-63b5-4308-b8fd-bc3fa01e0001",
+            "name": "Target App",
+            "components": [
+                {
+                    "id": "3313f968-63b5-4308-b8fd-bc3fa01e0002",
+                    "name": "Component A"
+                },
+                {
+                    "id": "3313f968-63b5-4308-b8fd-bc3fa01e0003",
+                    "name": "Component B"
+                }
+            ]
+        }
+    ],
+    "metrics": [
+        {
+            "id": "3313f968-63b5-4308-b8fd-bc3fa01e0004",
+            "name": "Metric A",
+            "exposedBy": "3313f968-63b5-4308-b8fd-bc3fa01e0002"
+        },
+        {
+            "id": "3313f968-63b5-4308-b8fd-bc3fa01e0005",
+            "name": "Metric B",
+            "exposedBy": "3313f968-63b5-4308-b8fd-bc3fa01e0003"
+        }
+    ],
+    "slos": [
+        {
+            "id": "3313f968-63b5-4308-b8fd-bc3fa01e0006",
+            "name": "SLO",
+            "config": {
+                "valueA": 70,
+                "valueB": 100
+            },
+            "metrics": [
+                "3313f968-63b5-4308-b8fd-bc3fa01e0004",
+                "3313f968-63b5-4308-b8fd-bc3fa01e0005"
+            ],
+            "strategy": "3313f968-63b5-4308-b8fd-bc3fa01e0007",
+            "appliedTo": [
+                "3313f968-63b5-4308-b8fd-bc3fa01e0001"
+            ]
+        }
+    ],
+    "strategies": [
+        {
+            "id": "3313f968-63b5-4308-b8fd-bc3fa01e0007",
+            "name": "Elasticity Strategy",
+            "config": {
+                "minReplicas": 2,
+                "maxReplicas": 5
+            }
+        }
+    ]
+}
