@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "@electron/remote": "^2.0.8",
+    "@kubernetes/client-node": "^0.16.3",
     "@quasar/extras": "^1.13.3",
+    "axios": "^0.26.1",
     "quasar": "^2.6.1",
     "uuid": "^8.3.2",
     "v-network-graph": "^0.5.8",

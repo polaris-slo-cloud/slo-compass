@@ -1,8 +1,9 @@
 import { createApp } from 'vue';
 import { Quasar } from 'quasar';
 import App from './App.vue';
+
 import router from './router';
-import VNetworkGraph from "v-network-graph"
+import VNetworkGraph from 'v-network-graph';
 
 import ArrowTooltip from './components/ArrowTooltip.vue';
 

@@ -1,17 +1,25 @@
 <script setup>
 import SloDiagramm from '@/components/SloDiagramm.vue';
-import workspace from '@/assets/polaris-workspace.json';
-import { computed, ref } from '@vue/runtime-core';
+import { computed, ref, onMounted } from '@vue/runtime-core';
+import polarisConnector from '../polaris-connector';
 
+const workspace = ref(null);
 const selection = ref(null);
 const showDrawer = computed(() => {
   return !!selection.value;
+});
+
+onMounted(async () => {
+  workspace.value = await polarisConnector.getControllers();
 });
 </script>
 
 <template>
 <q-page class="column">
-    <SloDiagramm :workspace="workspace" v-model:selectedComponent="selection" class="col"/>
+    <SloDiagramm :workspace="workspace" v-model:selectedComponent="selection" class="col" v-if="workspace"/>
+    <div v-else class="col self-center row items-center">
+      <q-spinner color="primary" size="5em" /> 
+    </div>
     <teleport to="#main-layout">
       <q-drawer 
         side="right"

@@ -1,107 +1,135 @@
 <template>
-<div class="column">
-    <v-network-graph :nodes="data.nodes" :edges="data.edges" :configs="configs" :layouts="{ nodes: data.nodePositions }" v-model:selected-nodes="selectedNodes" class="col" ref="graph">
-        <template #edge-label="{ edge, ...slotProps }">
-            <v-edge-label :text="edge.label" align="center" vertical-align="above" v-bind="slotProps" v-if="edge.label"/>
-        </template>
+  <div class="column">
+    <v-network-graph
+      :nodes="data.nodes"
+      :edges="data.edges"
+      :configs="configs"
+      :layouts="{ nodes: data.nodePositions }"
+      v-model:selected-nodes="selectedNodes"
+      class="col"
+      ref="graph"
+    >
+      <template #edge-label="{ edge, ...slotProps }">
+        <v-edge-label
+          :text="edge.label"
+          align="center"
+          vertical-align="above"
+          v-bind="slotProps"
+          v-if="edge.label"
+        />
+      </template>
     </v-network-graph>
-    <q-card style="position: absolute; bottom: 10px; right: 10px;">
-        <q-card-actions>
-            <span class="q-pr-sm">Zoom</span>
-            <q-btn flat @click="zoomOut"><q-icon name="zoom_out"/></q-btn>
-            <q-btn flat @click="zoomIn"><q-icon name="zoom_in"/></q-btn>
-            <q-btn flat @click="fitToContents"><q-icon name="fit_screen"/></q-btn>
-        </q-card-actions>
+    <q-card style="position: absolute; bottom: 10px; right: 10px">
+      <q-card-actions>
+        <span class="q-pr-sm">Zoom</span>
+        <q-btn flat @click="zoomOut"><q-icon name="zoom_out" /></q-btn>
+        <q-btn flat @click="zoomIn"><q-icon name="zoom_in" /></q-btn>
+        <q-btn flat @click="fitToContents"><q-icon name="fit_screen" /></q-btn>
+      </q-card-actions>
     </q-card>
-</div>
+  </div>
 </template>
 <script setup>
 import { defineProps, computed, ref } from '@vue/runtime-core';
 import { colors } from 'quasar';
-import * as vNG from "v-network-graph"
+import * as vNG from 'v-network-graph';
 const props = defineProps({
-    workspace: Object,
-    selectedComponent: Object,
+  workspace: Object,
+  selectedComponent: Object,
 });
 const emit = defineEmits(['update:selectedComponent']);
 
 const selectedNodes = computed({
-    get() {
-        return props.selectedComponent ? [props.selectedComponent.id] : [];
-    },
-    set(value) {
-        if(value.length == 0) {
-            emit('update:selectedComponent', null);
-        } else {
-            emit('update:selectedComponent', data.value.nodes[value[0]].polarisComponent);
-        }
+  get() {
+    return props.selectedComponent ? [props.selectedComponent.id] : [];
+  },
+  set(value) {
+    if (value.length == 0) {
+      emit('update:selectedComponent', null);
+    } else {
+      emit(
+        'update:selectedComponent',
+        data.value.nodes[value[0]].polarisComponent
+      );
     }
-})
+  },
+});
 
 function zoomOut() {
-    if(graph.value) {
-        graph.value.zoomOut();
-    }
+  if (graph.value) {
+    graph.value.zoomOut();
+  }
 }
 
 function zoomIn() {
-    if(graph.value) {
-        graph.value.zoomIn();
-    }
+  if (graph.value) {
+    graph.value.zoomIn();
+  }
 }
 
 function fitToContents() {
-    if(graph.value) {
-        graph.value.fitToContents();
-    }
+  if (graph.value) {
+    graph.value.fitToContents();
+  }
 }
 
 const configs = vNG.defineConfigs({
   view: {
     scalingObjects: true,
-    autoPanAndZoomOnLoad: "fit-content",
+    autoPanAndZoomOnLoad: 'fit-content',
   },
   node: {
     selectable: true,
     normal: {
-      type: "rect",
+      type: 'rect',
       borderRadius: 5,
-      color: node => node.color || colors.getPaletteColor('primary'),
-      strokeColor: node => node.color == colors.getPaletteColor('white') ? colors.getPaletteColor('black') : node.color || colors.getPaletteColor('primary'),
+      color: (node) => node.color || colors.getPaletteColor('primary'),
+      strokeColor: (node) =>
+        node.color == colors.getPaletteColor('white')
+          ? colors.getPaletteColor('black')
+          : node.color || colors.getPaletteColor('primary'),
       strokeWidth: 2,
       width: 100,
       height: 50,
     },
     hover: {
-        width: 110,
-        height: 55,
-        color: node => colors.lighten(node.color ||  colors.getPaletteColor('primary'), -15),
-        strokeColor: node => node.color == colors.getPaletteColor('white') ? colors.getPaletteColor('black') : colors.lighten(node.color ||  colors.getPaletteColor('primary'), -15),
+      width: 110,
+      height: 55,
+      color: (node) =>
+        colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+      strokeColor: (node) =>
+        node.color == colors.getPaletteColor('white')
+          ? colors.getPaletteColor('black')
+          : colors.lighten(
+              node.color || colors.getPaletteColor('primary'),
+              -15
+            ),
     },
     selected: {
-        borderRadius: 5,
-        color: node => colors.lighten(node.color ||  colors.getPaletteColor('primary'), -15),
-        width: 100,
-        height: 50,
+      borderRadius: 5,
+      color: (node) =>
+        colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+      width: 100,
+      height: 50,
     },
     focusring: {
-        visible: true,
-        color: colors.getPaletteColor('yellow'),
+      visible: true,
+      color: colors.getPaletteColor('yellow'),
     },
     label: {
       fontSize: 11,
-      color: node => node.textColor || colors.getPaletteColor('white'),
-      direction: "center",
+      color: (node) => node.textColor || colors.getPaletteColor('white'),
+      direction: 'center',
     },
   },
   edge: {
     normal: {
-        color: "black",
-        dasharray: edge => edge.dashed ? '5' : '0',
+      color: 'black',
+      dasharray: (edge) => (edge.dashed ? '5' : '0'),
     },
     marker: {
       target: {
-        type: "arrow",
+        type: 'arrow',
         width: 5,
         height: 5,
       },
@@ -109,65 +137,120 @@ const configs = vNG.defineConfigs({
   },
 });
 const data = computed(() => {
-    const edges = {};
-    const nodes = {};
-    const nodePositions = {};
-    const canvasHeight = 1000;
+  const edges = {};
+  const nodes = {};
+  const nodePositions = {};
+  const canvasHeight = 1000;
 
-    if(!props.workspace) {
-        return { nodes, edges, nodePositions };
+  if (!props.workspace) {
+    return { nodes, edges, nodePositions };
+  }
+
+  let yDistance = canvasHeight / (props.workspace.targets.length + 1);
+  let nodeYPosition = yDistance;
+
+  let componentYDistance =
+    canvasHeight /
+    (props.workspace.targets.reduce(
+      (sum, curr) => sum + curr.components.length,
+      0
+    ) +
+      1);
+  let componentYPosition = componentYDistance;
+  for (const target of props.workspace.targets) {
+    nodes[target.id] = {
+      name: target.name,
+      color: colors.getPaletteColor('white'),
+      textColor: colors.getPaletteColor('black'),
+      polarisComponent: target,
+    };
+    nodePositions[target.id] = { x: 0, y: nodeYPosition };
+    nodeYPosition += yDistance;
+    for (const component of target.components) {
+      nodes[component.id] = {
+        ...component,
+        color: colors.getPaletteColor('white'),
+        textColor: colors.getPaletteColor('black'),
+        polarisComponent: component,
+      };
+      nodePositions[component.id] = { x: 200, y: componentYPosition };
+      componentYPosition += componentYDistance;
+      edges[`edge_${target.id}_${component.id}`] = {
+        source: target.id,
+        target: component.id,
+        dashed: true,
+      };
+    }
+  }
+
+  yDistance = canvasHeight / (props.workspace.metrics.length + 1);
+  nodeYPosition = yDistance;
+  for (const metric of props.workspace.metrics) {
+    nodes[metric.id] = {
+      name: metric.name,
+      color: colors.getPaletteColor('orange'),
+      textColor: colors.getPaletteColor('black'),
+      polarisComponent: metric,
+    };
+    nodePositions[metric.id] = { x: 400, y: nodeYPosition };
+    nodeYPosition = nodeYPosition + yDistance;
+    if (metric.exposedBy) {
+      edges[`edge_${metric.exposedBy}_${metric.id}`] = {
+        source: metric.exposedBy,
+        target: metric.id,
+        label: 'Exposes',
+      };
+    }
+  }
+
+  yDistance = canvasHeight / (props.workspace.slos.length + 1);
+  nodeYPosition = yDistance;
+  for (const slo of props.workspace.slos) {
+    nodes[slo.id] = {
+      name: slo.name,
+      color: colors.getPaletteColor('blue'),
+      polarisComponent: slo,
+    };
+    nodePositions[slo.id] = { x: 600, y: nodeYPosition };
+    nodeYPosition = nodeYPosition + yDistance;
+    if (slo.strategy) {
+      edges[`edge_${slo.id}_${slo.strategy}`] = {
+        source: slo.id,
+        target: slo.strategy,
+        label: 'Scales target with',
+      };
     }
 
-    let yDistance = canvasHeight / (props.workspace.targets.length + 1);
-    let nodeYPosition = yDistance;
-
-    let componentYDistance = canvasHeight / (props.workspace.targets.reduce((sum, curr) => sum + curr.components.length, 0) + 1);
-    let componentYPosition = componentYDistance;
-    for(const target of props.workspace.targets) {
-        nodes[target.id] = { name: target.name, color: colors.getPaletteColor('white'), textColor: colors.getPaletteColor('black'), polarisComponent: target };
-        nodePositions[target.id] = { x: 0, y: nodeYPosition };
-        nodeYPosition += yDistance;
-        for(const component of target.components) {
-            nodes[component.id] = { ...component, color: colors.getPaletteColor('white'), textColor: colors.getPaletteColor('black'), polarisComponent: component };
-            nodePositions[component.id] = { x: 200, y: componentYPosition };
-            componentYPosition += componentYDistance;
-            edges[`edge_${target.id}_${component.id}`] = { source: target.id, target: component.id, dashed: true };
-        }
+    if (slo.metrics) {
+      for (const metric of slo.metrics) {
+        edges[`edge_${metric}_${slo.id}`] = { source: metric, target: slo.id };
+      }
     }
-
-    yDistance = canvasHeight / (props.workspace.metrics.length + 1);
-    nodeYPosition = yDistance;
-    for(const metric of props.workspace.metrics) {
-        nodes[metric.id] = { name: metric.name, color: colors.getPaletteColor('orange'), textColor: colors.getPaletteColor('black'), polarisComponent: metric };
-        nodePositions[metric.id] = { x: 400, y: nodeYPosition };
-        nodeYPosition = nodeYPosition + yDistance;
-        edges[`edge_${metric.exposedBy}_${metric.id}`] = { source: metric.exposedBy, target: metric.id, label: 'Exposes' };
+    if (slo.appliedTo) {
+      for (const appliedTo of slo.appliedTo) {
+        edges[`edge_${slo.id}_${appliedTo}`] = {
+          source: slo.id,
+          target: appliedTo,
+          label: 'Applied to',
+        };
+      }
     }
+  }
 
-    yDistance = canvasHeight / (props.workspace.slos.length + 1);
-    nodeYPosition = yDistance;
-    for(const slo of props.workspace.slos) {
-        nodes[slo.id] = { name: slo.name, color: colors.getPaletteColor('blue'), polarisComponent: slo };
-        nodePositions[slo.id] = { x: 600, y: nodeYPosition };
-        nodeYPosition = nodeYPosition + yDistance;
-        edges[`edge_${slo.id}_${slo.strategy}`] = { source: slo.id, target: slo.strategy, label: 'Scales target with'};
-        for(const metric of slo.metrics) {
-            edges[`edge_${metric}_${slo.id}`] = { source: metric, target: slo.id };
-        }
-        for(const appliedTo of slo.appliedTo) {
-            edges[`edge_${slo.id}_${appliedTo}`] = { source: slo.id, target: appliedTo, label: 'Applied to' };
-        }
-    }
+  yDistance = canvasHeight / (props.workspace.strategies.length + 1);
+  nodeYPosition = yDistance;
+  for (const strategy of props.workspace.strategies) {
+    nodes[strategy.id] = {
+      name: strategy.name,
+      color: '#FFC000',
+      textColor: colors.getPaletteColor('black'),
+      polarisComponent: strategy,
+    };
+    nodePositions[strategy.id] = { x: 800, y: nodeYPosition };
+    nodeYPosition = nodeYPosition + yDistance;
+  }
 
-    yDistance = canvasHeight / (props.workspace.strategies.length + 1);
-    nodeYPosition = yDistance;
-    for(const strategy of props.workspace.strategies) {
-        nodes[strategy.id] = { name: strategy.name, color: '#FFC000', textColor: colors.getPaletteColor('black'), polarisComponent: strategy };
-        nodePositions[strategy.id] = { x: 800, y: nodeYPosition };
-        nodeYPosition = nodeYPosition + yDistance;
-    }
-
-    return { edges, nodes, nodePositions };
+  return { edges, nodes, nodePositions };
 });
 
 const graph = ref(null);
@@ -185,4 +268,3 @@ const graph = ref(null);
   width: 100%;
 }
 </style>
-
