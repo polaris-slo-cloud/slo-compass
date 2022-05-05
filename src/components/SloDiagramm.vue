@@ -9,6 +9,27 @@
       class="col"
       ref="graph"
     >
+      <template #override-node-label="{ shape, scale, text, config }">
+        <foreignObject
+          :x="(shape.width * scale) / -2"
+          :y="(shape.height * scale) / -2"
+          :width="shape.width * scale"
+          :height="shape.height * scale"
+          style="pointer-events: none"
+        >
+          <div
+            xmlns="http://www.w3.org/1999/xhtml"
+            class="row items-center justify-center full-height"
+          >
+            <span
+              xmlns="http://www.w3.org/1999/xhtml"
+              v-text="text"
+              class="text-center"
+              :style="`color: ${config.color}; font-size: ${config.fontSize * scale}px`"
+            ></span>
+          </div>
+        </foreignObject>
+      </template>
       <template #edge-label="{ edge, ...slotProps }">
         <v-edge-label
           :text="edge.label"
