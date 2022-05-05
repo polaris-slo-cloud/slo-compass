@@ -1,4 +1,5 @@
 import k8sApiProxy from './k8s-api-proxy';
+import { v4 as uuidV4 } from 'uuid';
 
 const k8sApi = window.k8sApi ? window.k8sApi : k8sApiProxy;
 const polarisMappingOrder = ['slo', 'metrics', 'elasticity'];
@@ -13,7 +14,44 @@ function addReferenceToSlo(crdObject, workspace, referenceSetter) {
   }
 }
 
-function addToWorkspace(customResourceDefinition, crdObject, workspace) {
+function normalize(name) {
+  return name
+    .replace('-', ' ')
+    .split(' ')
+    .map((x) => x.charAt(0).toUpperCase() + x.substring(1))
+    .join(' ')
+    .replace(/([A-Z])/g, ' $1')
+    .trim();
+}
+
+async function addReferenceToTarget(source, workspace) {
+  const targetRef = source.spec.targetRef;
+  const existing = workspace.targets.find(
+    (x) => x.deploymentName === targetRef.name
+  );
+  if (existing) {
+    return existing;
+  }
+
+  const deployment = await k8sApi.getDeployment(
+    targetRef.namespace || source.metadata.namespace,
+    targetRef.name
+  );
+  const component = {
+    name: normalize(targetRef.name),
+    deploymentName: targetRef.name,
+  };
+  component.id = !deployment ? uuidV4() : deployment.metadata.uid;
+  component.status = !deployment
+    ? 'NotFound'
+    : deployment.status.conditions[deployment.status.conditions.length - 1]
+        .type;
+
+  workspace.targets.push(component);
+  return component;
+}
+
+async function addToWorkspace(customResourceDefinition, crdObject, workspace) {
   const normalizedName = crdObject.kind
     .replace(/([A-Z])/g, ' $1')
     .trim()
@@ -25,16 +63,19 @@ function addToWorkspace(customResourceDefinition, crdObject, workspace) {
   };
 
   switch (customResourceDefinition.spec.group) {
-    case 'metrics.polaris-slo-cloud.github.io':
+    case 'metrics.polaris-slo-cloud.github.io': {
       addReferenceToSlo(
         crdObject,
         workspace,
         (slo, val) =>
           (slo.metrics = slo.metrics ? [...slo.metrics, val] : [val])
       );
+      const target = await addReferenceToTarget(crdObject, workspace);
       component.config = crdObject.spec.metricConfig;
+      component.exposedBy = target.id;
       workspace.metrics.push(component);
       break;
+    }
     case 'elasticity.polaris-slo-cloud.github.io':
       addReferenceToSlo(
         crdObject,
@@ -45,10 +86,13 @@ function addToWorkspace(customResourceDefinition, crdObject, workspace) {
       component.currentValue = crdObject.spec.sloOutputParams;
       workspace.strategies.push(component);
       break;
-    case 'slo.polaris-slo-cloud.github.io':
+    case 'slo.polaris-slo-cloud.github.io': {
+      const target = await addReferenceToTarget(crdObject, workspace);
+      component.appliedTo = [target.id];
       component.config = crdObject.spec.sloConfig;
       workspace.slos.push(component);
       break;
+    }
   }
 }
 export default {
@@ -79,7 +123,7 @@ export default {
     for (const { crd } of polarisCrds) {
       const crdObjects = await k8sApi.getCustomResourceObjects(crd);
       for (const crdObject of crdObjects) {
-        addToWorkspace(crd, crdObject, workspace);
+        await addToWorkspace(crd, crdObject, workspace);
       }
     }
 

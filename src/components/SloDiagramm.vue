@@ -173,7 +173,7 @@ const data = computed(() => {
   let componentYDistance =
     canvasHeight /
     (props.workspace.targets.reduce(
-      (sum, curr) => sum + curr.components.length,
+      (sum, curr) => sum + (curr.components?.length ?? 0),
       0
     ) +
       1);
@@ -187,20 +187,22 @@ const data = computed(() => {
     };
     nodePositions[target.id] = { x: 0, y: nodeYPosition };
     nodeYPosition += yDistance;
-    for (const component of target.components) {
-      nodes[component.id] = {
-        ...component,
-        color: colors.getPaletteColor('white'),
-        textColor: colors.getPaletteColor('black'),
-        polarisComponent: component,
-      };
-      nodePositions[component.id] = { x: 200, y: componentYPosition };
-      componentYPosition += componentYDistance;
-      edges[`edge_${target.id}_${component.id}`] = {
-        source: target.id,
-        target: component.id,
-        dashed: true,
-      };
+    if(target.components) {
+      for (const component of target.components) {
+        nodes[component.id] = {
+          ...component,
+          color: colors.getPaletteColor('white'),
+          textColor: colors.getPaletteColor('black'),
+          polarisComponent: component,
+        };
+        nodePositions[component.id] = {x: 200, y: componentYPosition};
+        componentYPosition += componentYDistance;
+        edges[`edge_${target.id}_${component.id}`] = {
+          source: target.id,
+          target: component.id,
+          dashed: true,
+        };
+      }
     }
   }
 
