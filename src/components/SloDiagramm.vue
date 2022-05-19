@@ -9,6 +9,28 @@
       class="col"
       ref="graph"
     >
+      <template #override-node="{ nodeId, scale, config, ...slotProps }">
+        <rect
+          class="node-rect draggable selectable"
+          :x="(config.width * scale) / -2"
+          :y="(config.height * scale) / -2"
+          :height="config.height * scale"
+          :width="config.width * scale"
+          :fill="config.color"
+          v-bind="slotProps"
+          :rx="config.borderRadius"
+          :ry="config.borderRadius"
+          :stroke="config.strokeColor"
+          :stroke-width="config.strokeWidth"
+        />
+        <circle
+          v-if="data.nodes[nodeId].statusColor"
+          :cx="((config.width - 15) * scale) / 2"
+          :cy="((config.height - 15) * scale) / -2"
+          :r="4 * scale"
+          :fill="data.nodes[nodeId].statusColor"
+        />
+      </template>
       <template #override-node-label="{ shape, scale, text, config }">
         <foreignObject
           :x="(shape.width * scale) / -2"
@@ -25,7 +47,9 @@
               xmlns="http://www.w3.org/1999/xhtml"
               v-text="text"
               class="text-center"
-              :style="`color: ${config.color}; font-size: ${config.fontSize * scale}px`"
+              :style="`color: ${config.color}; font-size: ${
+                config.fontSize * scale
+              }px`"
             ></span>
           </div>
         </foreignObject>
@@ -92,6 +116,15 @@ function fitToContents() {
   if (graph.value) {
     graph.value.fitToContents();
   }
+}
+
+function getStatusColor(status) {
+  const map = {
+    Success: 'green',
+    NotFound: 'red',
+  };
+  const colorName = map[status] ?? 'orange';
+  return colors.getPaletteColor(colorName);
 }
 
 const configs = vNG.defineConfigs({
@@ -183,11 +216,12 @@ const data = computed(() => {
       name: target.name,
       color: colors.getPaletteColor('white'),
       textColor: colors.getPaletteColor('black'),
+      statusColor: getStatusColor(target.status),
       polarisComponent: target,
     };
     nodePositions[target.id] = { x: 0, y: nodeYPosition };
     nodeYPosition += yDistance;
-    if(target.components) {
+    if (target.components) {
       for (const component of target.components) {
         nodes[component.id] = {
           ...component,
@@ -195,7 +229,7 @@ const data = computed(() => {
           textColor: colors.getPaletteColor('black'),
           polarisComponent: component,
         };
-        nodePositions[component.id] = {x: 200, y: componentYPosition};
+        nodePositions[component.id] = { x: 200, y: componentYPosition };
         componentYPosition += componentYDistance;
         edges[`edge_${target.id}_${component.id}`] = {
           source: target.id,
@@ -289,5 +323,9 @@ const graph = ref(null);
   left: 0;
   height: 100%;
   width: 100%;
+}
+.node-rect {
+  transition: fill 0.1s linear, stroke 0.1s linear, stroke-width 0.1s linear,
+    x 0.1s linear, y 0.1s linear, width 0.1s linear, height 0.1s linear;
 }
 </style>
