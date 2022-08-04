@@ -1,5 +1,6 @@
 const { contextBridge } = require('electron');
 const { BrowserWindow, dialog } = require('@electron/remote');
+const fs = require('fs/promises');
 const k8sApiClient = require('./k8s-api-client');
 
 contextBridge.exposeInMainWorld('polarisWindowAPI', {
@@ -22,12 +23,17 @@ contextBridge.exposeInMainWorld('polarisWindowAPI', {
   },
 });
 
-contextBridge.exposeInMainWorld('polarisFileSystemAPI', {
-  async openDirectory() {
-    const result = await dialog.showOpenDialog({
-      properties: ['openDirectory'],
+contextBridge.exposeInMainWorld('workspaceApi', {
+  async openWorkspaceFile() {
+    const files = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Workspace Configuration', extensions: ['json'] }],
     });
-    return result.canceled ? null : result.filePaths[0];
+    if (!files) {
+      return null;
+    }
+    const workspaceConfig = await fs.readFile(files[0]);
+    return workspaceConfig.toJSON();
   },
 });
 

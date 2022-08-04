@@ -1,22 +1,22 @@
 <script setup>
-import { RouterView } from "vue-router";
+import { RouterView } from 'vue-router';
 import { computed, ref } from 'vue';
 import AppIcon from '@/icons/AppIcon.vue';
-import { useQuasar } from "quasar";
+import { useQuasar } from 'quasar';
 const $q = useQuasar();
 
 const isMini = ref(true);
 const menuList = ref([
   {
-    icon: "dashboard",
-    label: "Dashboard",
-    to: "/",
+    icon: 'dashboard',
+    label: 'Dashboard',
+    to: '/',
   },
   {
-    icon: "settings",
-    label: "Settings",
-    to: "/settings",   
-  }
+    icon: 'settings',
+    label: 'Settings',
+    to: '/settings',
+  },
 ]);
 const isElectron = computed(() => {
   return $q.platform.is.electron;
@@ -29,7 +29,7 @@ function minimize() {
 }
 
 function toggleMaximize() {
-  if(isElectron.value) {
+  if (isElectron.value) {
     window.polarisWindowAPI.toggleMaximize();
   }
 }
@@ -40,7 +40,7 @@ function close() {
   }
 }
 
-function drawerClick(e) {
+function drawerClick() {
   if (!isElectron.value && isMini.value) {
     isMini.value = false;
   }
@@ -60,12 +60,6 @@ function drawerClick(e) {
         <q-btn dense flat icon="close" @click="close" />
       </q-bar>
     </q-header>
-    <q-header v-else>
-      <q-toolbar>
-        <AppIcon />
-        <q-toolbar-title>Polaris UI</q-toolbar-title>
-      </q-toolbar>
-    </q-header>
     <q-drawer
       :modelValue="true"
       behavior="desktop"
@@ -75,29 +69,41 @@ function drawerClick(e) {
     >
       <q-scroll-area class="fit">
         <q-list>
-          <q-item clickable v-ripple :to="item.to" v-for="(item, idx) in menuList" :key="idx">
+          <q-item
+            clickable
+            v-ripple
+            :to="item.to"
+            v-for="(item, idx) in menuList"
+            :key="idx"
+          >
             <q-item-section avatar>
               <q-icon :name="item.icon" />
             </q-item-section>
             <q-item-section>
               {{ item.label }}
             </q-item-section>
-            <ArrowTooltip v-if="isElectron" anchor="center end" self="center start" direction="left" :offset="[10, 14]">
+            <ArrowTooltip
+              v-if="isElectron"
+              anchor="center end"
+              self="center start"
+              direction="left"
+              :offset="[10, 14]"
+            >
               {{ item.label }}
             </ArrowTooltip>
           </q-item>
         </q-list>
       </q-scroll-area>
       <div class="q-mini-drawer-hide absolute" style="top: 15px; right: -17px">
-          <q-btn
-            dense
-            round
-            unelevated
-            color="accent"
-            icon="chevron_left"
-            @click="isMini = true"
-          />
-        </div>
+        <q-btn
+          dense
+          round
+          unelevated
+          color="accent"
+          icon="chevron_left"
+          @click="isMini = true"
+        />
+      </div>
     </q-drawer>
     <q-page-container>
       <RouterView />
