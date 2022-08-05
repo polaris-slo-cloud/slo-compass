@@ -1,12 +1,20 @@
 <script setup>
 import SloDiagramm from '@/components/SloDiagramm.vue';
-import { computed, ref } from '@vue/runtime-core';
+import NewWorkspaceItemSelector from '@/components/NewWorkspaceItemSelector.vue';
+import { computed, ref, watch } from 'vue';
 import { useWorkspaceStore } from '@/store';
 
 const store = useWorkspaceStore();
 const selection = ref(null);
+const showNewItemSelection = ref(false);
 const showDrawer = computed(() => {
-  return !!selection.value;
+  return showNewItemSelection.value || !!selection.value;
+});
+
+watch(selection, (value) => {
+  if (value) {
+    showNewItemSelection.value = false;
+  }
 });
 
 function createWorkspace() {
@@ -18,16 +26,17 @@ async function openWorkspace() {
 </script>
 
 <template>
-  <q-page v-if="store.isOpened">
+  <q-page v-if="store.isOpened" class="column">
     <q-toolbar class="bg-primary text-white">
       <q-toolbar-title>Workspace</q-toolbar-title>
-      <q-btn flat label="Add" icon="mdi-plus" />
+      <q-btn
+        flat
+        label="Add"
+        icon="mdi-plus"
+        @click="showNewItemSelection = true"
+      />
     </q-toolbar>
-    <SloDiagramm
-      :workspace="store.workspace"
-      v-model:selectedComponent="selection"
-      class="col"
-    />
+    <SloDiagramm v-model:selectedComponent="selection" class="col" />
     <teleport to="#main-layout">
       <q-drawer
         side="right"
@@ -36,9 +45,14 @@ async function openWorkspace() {
         id="drawer-right"
       >
         <div v-if="selection" class="q-pa-sm">
-          <h4>{{ selection.name }}</h4>
-          <q-list v-if="selection.config">
-            <q-item-label header>Config</q-item-label>
+          <div class="text-h4">{{ selection.name }}</div>
+          <div class="text-subtitle2">{{ selection.type }}</div>
+          <q-list>
+            <q-item>
+              <q-item-section>Description</q-item-section>
+              <q-item-section>{{ selection.description }}</q-item-section>
+            </q-item>
+            <q-item-label header v-if="selection.config">Config</q-item-label>
             <q-item
               v-for="configKey of Object.keys(selection.config)"
               :key="configKey"
@@ -48,6 +62,7 @@ async function openWorkspace() {
             </q-item>
           </q-list>
         </div>
+        <NewWorkspaceItemSelector v-if="showNewItemSelection" />
       </q-drawer>
     </teleport>
   </q-page>

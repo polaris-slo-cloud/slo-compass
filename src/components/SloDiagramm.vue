@@ -4,7 +4,6 @@
       :nodes="data.nodes"
       :edges="data.edges"
       :configs="configs"
-      :layouts="{ nodes: data.nodePositions }"
       v-model:selected-nodes="selectedNodes"
       class="col"
       ref="graph"
@@ -75,11 +74,14 @@
   </div>
 </template>
 <script setup>
-import { defineProps, computed, ref } from '@vue/runtime-core';
+import { computed, ref, reactive, watch } from 'vue';
 import { colors } from 'quasar';
 import * as vNG from 'v-network-graph';
+import { useWorkspaceStore } from '@/store';
+import { ForceLayout } from 'v-network-graph/lib/force-layout';
+
+const store = useWorkspaceStore();
 const props = defineProps({
-  workspace: Object,
   selectedComponent: Object,
 });
 const emit = defineEmits(['update:selectedComponent']);
@@ -127,190 +129,168 @@ function getStatusColor(status) {
   return colors.getPaletteColor(colorName);
 }
 
-const configs = vNG.defineConfigs({
-  view: {
-    scalingObjects: true,
-    autoPanAndZoomOnLoad: 'fit-content',
-  },
-  node: {
-    selectable: true,
-    normal: {
-      type: 'rect',
-      borderRadius: 5,
-      color: (node) => node.color || colors.getPaletteColor('primary'),
-      strokeColor: (node) =>
-        node.color == colors.getPaletteColor('white')
-          ? colors.getPaletteColor('black')
-          : node.color || colors.getPaletteColor('primary'),
-      strokeWidth: 2,
-      width: 100,
-      height: 50,
-    },
-    hover: {
-      width: 110,
-      height: 55,
-      color: (node) =>
-        colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
-      strokeColor: (node) =>
-        node.color == colors.getPaletteColor('white')
-          ? colors.getPaletteColor('black')
-          : colors.lighten(
-              node.color || colors.getPaletteColor('primary'),
-              -15
-            ),
-    },
-    selected: {
-      borderRadius: 5,
-      color: (node) =>
-        colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
-      width: 100,
-      height: 50,
-    },
-    focusring: {
-      visible: true,
-      color: colors.getPaletteColor('yellow'),
-    },
-    label: {
-      fontSize: 11,
-      color: (node) => node.textColor || colors.getPaletteColor('white'),
-      direction: 'center',
-    },
-  },
-  edge: {
-    normal: {
-      color: 'black',
-      dasharray: (edge) => (edge.dashed ? '5' : '0'),
-    },
-    marker: {
-      target: {
-        type: 'arrow',
-        width: 5,
-        height: 5,
-      },
-    },
+function onForceLayoutEnd() {
+  configs.view.layoutHandler = new vNG.SimpleLayout();
+  fitToContents();
+}
+
+const forceLayout = new ForceLayout({
+  positionFixedByDrag: false,
+  positionFixedByClickWithAltKey: true,
+  createSimulation: (d3, nodes, edges) => {
+    const forceLink = d3.forceLink(edges).id((d) => d.id);
+    return d3
+      .forceSimulation(nodes)
+      .force('edge', forceLink.distance(125).strength(0.2))
+      .force('charge', d3.forceManyBody())
+      .force('collide', d3.forceCollide(125).strength(0.2))
+      .alphaMin(0.1)
+      .on('tick', fitToContents)
+      .on('end', onForceLayoutEnd);
   },
 });
+
+const configs = reactive(
+  vNG.defineConfigs({
+    view: {
+      scalingObjects: true,
+      autoPanAndZoomOnLoad: 'fit-content',
+      layoutHandler: forceLayout,
+    },
+    node: {
+      selectable: true,
+      normal: {
+        type: 'rect',
+        borderRadius: 5,
+        color: (node) => node.color || colors.getPaletteColor('primary'),
+        strokeColor: (node) =>
+          node.color == colors.getPaletteColor('white')
+            ? colors.getPaletteColor('black')
+            : node.color || colors.getPaletteColor('primary'),
+        strokeWidth: 2,
+        width: 100,
+        height: 50,
+      },
+      hover: {
+        width: 110,
+        height: 55,
+        color: (node) =>
+          colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+        strokeColor: (node) =>
+          node.color == colors.getPaletteColor('white')
+            ? colors.getPaletteColor('black')
+            : colors.lighten(
+                node.color || colors.getPaletteColor('primary'),
+                -15
+              ),
+      },
+      selected: {
+        borderRadius: 5,
+        color: (node) =>
+          colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+        width: 100,
+        height: 50,
+      },
+      focusring: {
+        visible: true,
+        color: colors.getPaletteColor('yellow'),
+      },
+      label: {
+        fontSize: 11,
+        color: (node) => node.textColor || colors.getPaletteColor('white'),
+        direction: 'center',
+      },
+    },
+    edge: {
+      normal: {
+        color: 'black',
+        dasharray: (edge) => (edge.dashed ? '5' : '0'),
+      },
+      marker: {
+        target: {
+          type: 'arrow',
+          width: 5,
+          height: 5,
+        },
+      },
+    },
+  })
+);
 const data = computed(() => {
   const edges = {};
   const nodes = {};
-  const nodePositions = {};
-  const canvasHeight = 1000;
 
-  if (!props.workspace) {
-    return { nodes, edges, nodePositions };
-  }
-
-  let yDistance = canvasHeight / (props.workspace.targets.length + 1);
-  let nodeYPosition = yDistance;
-
-  let componentYDistance =
-    canvasHeight /
-    (props.workspace.targets.reduce(
-      (sum, curr) => sum + (curr.components?.length ?? 0),
-      0
-    ) +
-      1);
-  let componentYPosition = componentYDistance;
-  for (const target of props.workspace.targets) {
-    nodes[target.id] = {
-      name: target.name,
-      color: colors.getPaletteColor('white'),
-      textColor: colors.getPaletteColor('black'),
-      statusColor: getStatusColor(target.status),
-      polarisComponent: target,
-    };
-    nodePositions[target.id] = { x: 0, y: nodeYPosition };
-    nodeYPosition += yDistance;
-    if (target.components) {
-      for (const component of target.components) {
-        nodes[component.id] = {
-          ...component,
-          color: colors.getPaletteColor('white'),
-          textColor: colors.getPaletteColor('black'),
-          polarisComponent: component,
-        };
-        nodePositions[component.id] = { x: 200, y: componentYPosition };
-        componentYPosition += componentYDistance;
-        edges[`edge_${target.id}_${component.id}`] = {
-          source: target.id,
-          target: component.id,
-          dashed: true,
-        };
+  if (store.workspace.targets) {
+    for (const target of store.workspace.targets) {
+      nodes[target.id] = {
+        name: target.name,
+        type: target.type,
+        color: colors.getPaletteColor('white'),
+        textColor: colors.getPaletteColor('black'),
+        statusColor: getStatusColor(target.status),
+        polarisComponent: target,
+      };
+      if (target.children) {
+        for (const child of target.children) {
+          edges[`edge_${target.id}_${child}`] = {
+            source: target.id,
+            target: child,
+            dashed: true,
+          };
+        }
       }
     }
   }
 
-  yDistance = canvasHeight / (props.workspace.metrics.length + 1);
-  nodeYPosition = yDistance;
-  for (const metric of props.workspace.metrics) {
-    nodes[metric.id] = {
-      name: metric.name,
-      color: colors.getPaletteColor('orange'),
-      textColor: colors.getPaletteColor('black'),
-      polarisComponent: metric,
-    };
-    nodePositions[metric.id] = { x: 400, y: nodeYPosition };
-    nodeYPosition = nodeYPosition + yDistance;
-    if (metric.exposedBy) {
-      edges[`edge_${metric.exposedBy}_${metric.id}`] = {
-        source: metric.exposedBy,
-        target: metric.id,
-        label: 'Exposes',
+  if (store.workspace.slos) {
+    for (const slo of store.workspace.slos) {
+      nodes[slo.id] = {
+        name: slo.name,
+        color: colors.getPaletteColor('blue'),
+        polarisComponent: slo,
       };
-    }
-  }
-
-  yDistance = canvasHeight / (props.workspace.slos.length + 1);
-  nodeYPosition = yDistance;
-  for (const slo of props.workspace.slos) {
-    nodes[slo.id] = {
-      name: slo.name,
-      color: colors.getPaletteColor('blue'),
-      polarisComponent: slo,
-    };
-    nodePositions[slo.id] = { x: 600, y: nodeYPosition };
-    nodeYPosition = nodeYPosition + yDistance;
-    if (slo.strategy) {
-      edges[`edge_${slo.id}_${slo.strategy}`] = {
-        source: slo.id,
-        target: slo.strategy,
-        label: 'Scales target with',
-      };
-    }
-
-    if (slo.metrics) {
-      for (const metric of slo.metrics) {
-        edges[`edge_${metric}_${slo.id}`] = { source: metric, target: slo.id };
-      }
-    }
-    if (slo.appliedTo) {
-      for (const appliedTo of slo.appliedTo) {
-        edges[`edge_${slo.id}_${appliedTo}`] = {
+      if (slo.strategy) {
+        edges[`edge_${slo.id}_${slo.strategy}`] = {
           source: slo.id,
-          target: appliedTo,
-          label: 'Applied to',
+          target: slo.strategy,
+          label: 'Scales target with',
         };
+      }
+
+      if (slo.targets) {
+        for (const target of slo.targets) {
+          edges[`edge_${target}_${slo.id}`] = {
+            source: target,
+            target: slo.id,
+          };
+        }
       }
     }
   }
 
-  yDistance = canvasHeight / (props.workspace.strategies.length + 1);
-  nodeYPosition = yDistance;
-  for (const strategy of props.workspace.strategies) {
-    nodes[strategy.id] = {
-      name: strategy.name,
-      color: '#FFC000',
-      textColor: colors.getPaletteColor('black'),
-      polarisComponent: strategy,
-    };
-    nodePositions[strategy.id] = { x: 800, y: nodeYPosition };
-    nodeYPosition = nodeYPosition + yDistance;
+  if (store.workspace.strategies) {
+    for (const strategy of store.workspace.strategies) {
+      nodes[strategy.id] = {
+        name: strategy.name,
+        color: '#FFC000',
+        textColor: colors.getPaletteColor('black'),
+        polarisComponent: strategy,
+      };
+    }
   }
 
-  return { edges, nodes, nodePositions };
+  return { edges, nodes };
 });
 
 const graph = ref(null);
+
+const nodeCount = computed(() => Object.keys(data.value.nodes).length);
+watch(nodeCount, (value, oldValue) => {
+  if (value === oldValue) {
+    return;
+  }
+  configs.view.layoutHandler = forceLayout;
+});
 </script>
 <style lang="scss">
 // Fixes sizing problems

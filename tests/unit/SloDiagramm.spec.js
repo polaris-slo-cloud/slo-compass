@@ -2,6 +2,8 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { Quasar } from 'quasar';
 import VNetworkGraph from 'v-network-graph';
+import { createTestingPinia } from '@pinia/testing';
+import sinon from 'sinon';
 import SloDiagramm from '@/components/SloDiagramm.vue';
 
 describe('SloDiagramm.vue', () => {
@@ -9,7 +11,7 @@ describe('SloDiagramm.vue', () => {
   beforeEach(() => {
     wrapper = mount(SloDiagramm, {
       global: {
-        plugins: [Quasar, VNetworkGraph],
+        plugins: [Quasar, VNetworkGraph, createTestingPinia({ createSpy: sinon.spy })],
       },
     });
   });
