@@ -3,10 +3,12 @@ import SloDiagramm from '@/components/SloDiagramm.vue';
 import NewWorkspaceItemSelector from '@/components/NewWorkspaceItemSelector.vue';
 import { computed, ref, watch } from 'vue';
 import { useWorkspaceStore } from '@/store';
+import EditWorkspaceItemDialog from '@/components/WorkspaceItems/WorkspaceItemDialog.vue';
 
 const store = useWorkspaceStore();
 const selection = ref(null);
 const showNewItemSelection = ref(false);
+const showEditItemDialog = ref(false);
 const showDrawer = computed(() => {
   return showNewItemSelection.value || !!selection.value;
 });
@@ -16,6 +18,12 @@ watch(selection, (value) => {
     showNewItemSelection.value = false;
   }
 });
+const selectionConfigKeys = computed(() =>
+  selection.value?.config ? Object.keys(selection.value.config) : []
+);
+const selectionComponents = computed(() =>
+  selection.value ? store.getComponents(selection.value.id) : []
+);
 
 function createWorkspace() {
   store.createWorkspace();
@@ -37,6 +45,7 @@ async function openWorkspace() {
       />
     </q-toolbar>
     <SloDiagramm v-model:selectedComponent="selection" class="col" />
+    <EditWorkspaceItemDialog v-model:show="showEditItemDialog" :item="selection" />
     <teleport to="#main-layout">
       <q-drawer
         side="right"
@@ -52,15 +61,33 @@ async function openWorkspace() {
               <q-item-section>Description</q-item-section>
               <q-item-section>{{ selection.description }}</q-item-section>
             </q-item>
+            <q-expansion-item v-if="selectionComponents.length > 0" label="Components" default-opened>
+              <q-list>
+                <q-item v-for="component in selectionComponents" :key="component.id">
+                  <q-item-section>
+                    <q-item-label>{{ component.name }}</q-item-label>
+                    <q-item-label caption>{{ component.type }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-expansion-item>
             <q-item-label header v-if="selection.config">Config</q-item-label>
             <q-item
-              v-for="configKey of Object.keys(selection.config)"
+              v-for="configKey of selectionConfigKeys"
               :key="configKey"
             >
               <q-item-section>{{ configKey }}</q-item-section>
               <q-item-section>{{ selection.config[configKey] }}</q-item-section>
             </q-item>
           </q-list>
+          <div class="flex justify-end">
+            <q-btn
+              icon="mdi-pencil"
+              label="Edit"
+              flat
+              @click="showEditItemDialog = true"
+            />
+          </div>
         </div>
         <NewWorkspaceItemSelector v-if="showNewItemSelection" />
       </q-drawer>

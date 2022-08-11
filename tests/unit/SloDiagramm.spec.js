@@ -11,7 +11,11 @@ describe('SloDiagramm.vue', () => {
   beforeEach(() => {
     wrapper = mount(SloDiagramm, {
       global: {
-        plugins: [Quasar, VNetworkGraph, createTestingPinia({ createSpy: sinon.spy })],
+        plugins: [
+          Quasar,
+          VNetworkGraph,
+          createTestingPinia({ createSpy: sinon.spy }),
+        ],
       },
     });
   });

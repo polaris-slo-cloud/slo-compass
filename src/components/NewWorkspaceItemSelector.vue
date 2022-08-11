@@ -42,25 +42,22 @@
         </q-card>
       </q-expansion-item>
     </q-list>
-    <AddSloTargetDialog
-      v-model="showAddSloTargetDialog"
-      :type="sloTargetType"
-    />
+    <WorkspaceItemDialog v-model:show="showAddItemDialog" :item="newItem" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import WorkspaceItem from '@/components/WorkspaceItem.vue';
-import AddSloTargetDialog from './AddSloTargetDialog.vue';
+import WorkspaceItemDialog from '@/components/WorkspaceItems/WorkspaceItemDialog.vue';
 
 const search = ref(null);
 
-const showAddSloTargetDialog = ref(false);
-const sloTargetType = ref('');
+const showAddItemDialog = ref(false);
+const newItem = ref({});
 
 function showAddTarget(type) {
-  showAddSloTargetDialog.value = true;
-  sloTargetType.value = type;
+  showAddItemDialog.value = true;
+  newItem.value = { type };
 }
 </script>

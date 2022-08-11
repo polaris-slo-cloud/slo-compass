@@ -153,6 +153,7 @@ const forceLayout = new ForceLayout({
 const configs = reactive(
   vNG.defineConfigs({
     view: {
+      maxZoomLevel: 16,
       scalingObjects: true,
       autoPanAndZoomOnLoad: 'fit-content',
       layoutHandler: forceLayout,
@@ -230,8 +231,8 @@ const data = computed(() => {
         statusColor: getStatusColor(target.status),
         polarisComponent: target,
       };
-      if (target.children) {
-        for (const child of target.children) {
+      if (target.components) {
+        for (const child of target.components) {
           edges[`edge_${target.id}_${child}`] = {
             source: target.id,
             target: child,

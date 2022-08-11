@@ -16,14 +16,35 @@ export const useWorkspaceStore = defineStore('workspace', {
       this.workspace = await workspaceFileService.openWorkspaceFile();
       this.isOpened = true;
     },
-    addTarget(component) {
+    saveTarget(component) {
       if (!this.workspace.targets) {
         this.$patch({ workspace: { ...this.workspace, targets: [] } });
       }
       if (!component.id) {
         component.id = uuidv4();
       }
-      this.workspace.targets.push(component);
+      const existingIndex = this.workspace.targets.findIndex(
+        (x) => x.id === component.id
+      );
+      if (existingIndex >= 0) {
+        this.workspace.targets[existingIndex] = component;
+      } else {
+        this.workspace.targets.push(component);
+      }
+    },
+  },
+  getters: {
+    getComponents: (state) => {
+      const componentMap = state.workspace.targets.reduce((map, target) => {
+        map.set(target.id, target);
+        return map;
+      }, new Map());
+      return (componentId) => {
+        const components =
+          state.workspace.targets.find((x) => x.id === componentId)
+            ?.components || [];
+        return components.map((x) => componentMap.get(x)).filter((x) => !!x);
+      };
     },
   },
 });
