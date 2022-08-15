@@ -21,6 +21,7 @@ export default defineConfig({
     },
   },
   server: {
+    port: 3000,
     // Applies to the DEV Server
     proxy: {
       // Used to proxy requests to the k8s proxy in order to prevent CORS issues

@@ -9,11 +9,13 @@ module.exports = {
   extends: [
     "plugin:vue/vue3-essential",
     "eslint:recommended",
+    '@vue/typescript/recommended',
     "@vue/eslint-config-prettier",
     'prettier',
   ],
   plugins: [
     "vue",
+    "@typescript-eslint"
   ],
   env: {
     "vue/setup-compiler-macros": true,

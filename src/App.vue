@@ -13,6 +13,11 @@ const menuList = ref([
     to: '/',
   },
   {
+    icon: 'mdi-connection',
+    label: 'Connections',
+    to: '/connections',
+  },
+  {
     icon: 'settings',
     label: 'Settings',
     to: '/settings',

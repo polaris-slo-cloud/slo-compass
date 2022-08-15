@@ -4,7 +4,8 @@ import {
   createWebHashHistory,
 } from 'vue-router';
 import { Platform } from 'quasar';
-import DashboardView from '../views/DashboardView.vue';
+import DashboardView from '@/views/DashboardView.vue';
+import ConnectionsView from '@/views/ConnectionsView.vue';
 
 console.log(import.meta.env);
 const router = createRouter({
@@ -16,6 +17,11 @@ const router = createRouter({
       path: '/',
       name: 'dashboard',
       component: DashboardView,
+    },
+    {
+      path: '/connections',
+      name: 'connections',
+      component: ConnectionsView,
     },
     {
       path: '/settings',
