@@ -2,29 +2,32 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card style="min-width: 350px">
       <q-card-section>
-        <div class="text-h6">
-          {{ model.id ? 'Edit' : 'New' }} {{ model.type }}
-        </div>
+        <div class="text-h6">{{ model.id ? 'Edit' : 'New' }} {{ model.type }}</div>
         <q-input
           ref="nameInput"
           autofocus
           v-model="model.name"
+          @change="nameChanged = true"
           label="Name"
-          :rules="[
-            (val) =>
-              (!!val && val.trim().length > 0) || 'You need to provide a name',
-          ]"
+          :rules="[(val) => (!!val && val.trim().length > 0) || 'You need to provide a name']"
         />
-        <q-input v-model="model.deployment" label="Deployment">
-          <template #prepend>
-            <q-icon name="mdi-kubernetes" color="blue" />
+        <q-select
+          v-model="model.deployment"
+          label="Deployment"
+          :options="filteredDeploymentOptions"
+          use-input
+          @filter="updateDeploymentOptionsFilter"
+          :readonly="!orchestratorConnected"
+        >
+          <template #prepend v-if="orchestratorConnected">
+            <q-icon :name="orchestratorIcon" color="blue" />
           </template>
-        </q-input>
-        <q-input
-          v-model="model.description"
-          label="Description"
-          type="textarea"
-        />
+          <q-tooltip v-if="!orchestratorConnected" class="bg-red text-body2">
+            <q-icon name="mdi-alert-circle" />
+            Please connect to an orchestrator in order to select a Deployment!
+          </q-tooltip>
+        </q-select>
+        <q-input v-model="model.description" label="Description" type="textarea" />
         <q-select
           v-model="model.components"
           label="Components"
@@ -55,8 +58,27 @@
 <script setup>
 import { ref, watch, defineEmits, computed, nextTick, onMounted } from 'vue';
 import { useWorkspaceStore } from '@/store';
+import { useOrchestratorApi } from '../../connections/orchestrator-api';
+import orchestratorIconMap from '../../connections/orchestrator-icon-map';
 
 const store = useWorkspaceStore();
+const orchestratorApi = useOrchestratorApi();
+
+const orchestratorConnected = ref(false);
+const orchestratorIcon = computed(
+  () => orchestratorIconMap[orchestratorApi.orchestratorName.value]
+);
+const deploymentOptions = ref([]);
+const deploymentOptionsFilter = ref('');
+const filteredDeploymentOptions = computed(() =>
+  deploymentOptions.value.filter((x) => x.toLowerCase().includes(deploymentOptionsFilter.value))
+);
+function updateDeploymentOptionsFilter(val, update) {
+  update(() => {
+    deploymentOptionsFilter.value = val.toLowerCase();
+  });
+}
+
 const props = defineProps({
   show: Boolean,
   item: Object,
@@ -72,6 +94,8 @@ const showDialog = computed({
 });
 
 const model = ref({});
+const nameChanged = ref(false);
+
 const mapStoreComponent = (comp) => ({
   value: comp.id,
   label: comp.name,
@@ -80,21 +104,25 @@ const mapStoreComponent = (comp) => ({
 function updateModel(value) {
   model.value = { ...value };
   if (value.id) {
-    model.value.components = store
-      .getComponents(value.id)
-      .map(mapStoreComponent);
+    model.value.components = store.getComponents(value.id).map(mapStoreComponent);
   }
 }
 
 watch(() => props.item, updateModel, { deep: true });
+watch(
+  () => model.value.deployment,
+  (val) => {
+    if (!nameChanged.value) {
+      model.value.name = val;
+    }
+  }
+);
 
 const componentOptions = computed(() => {
   if (store.workspace.targets) {
     return store.workspace.targets
       .filter((x) => x.id !== model.value.id)
-      .filter(
-        (x) => x.name.toLowerCase().indexOf(componentOptionsFilter.value) >= 0
-      )
+      .filter((x) => x.name.toLowerCase().indexOf(componentOptionsFilter.value) >= 0)
       .map(mapStoreComponent);
   }
   return [];
@@ -125,10 +153,18 @@ function save() {
 function cancel() {
   model.value = {};
 }
-
-onMounted(() => {
+async function updateOrchestratorSettings() {
+  orchestratorConnected.value = await orchestratorApi.test();
+  if (orchestratorConnected.value) {
+    const deployments = await orchestratorApi.findDeployments();
+    deploymentOptions.value = deployments.map((x) => x.name);
+  }
+}
+onMounted(async () => {
   updateModel(props.item);
+  await updateOrchestratorSettings();
 });
+watch(() => orchestratorApi.orchestratorName.value, updateOrchestratorSettings);
 </script>
 
 <style scoped></style>

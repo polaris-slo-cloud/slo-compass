@@ -1,4 +1,4 @@
-import { IOrchestratorApi } from '@/connections/orchestrator-api';
+import {IDeployment, IOrchestratorApi} from '@/connections/orchestrator-api';
 import axios, { AxiosInstance } from 'axios';
 
 export default class KubernetesApi implements IOrchestratorApi {
@@ -7,8 +7,13 @@ export default class KubernetesApi implements IOrchestratorApi {
   constructor(baseURL: string) {
     this.client = axios.create({ baseURL });
   }
-  searchDeployments(query: string): Promise<any> {
-    return Promise.resolve(undefined);
+  async findDeployments(query?: string): Promise<IDeployment[]> {
+    try {
+      const { data } = await this.client.get('/apis/apps/v1/deployments');
+      return data.items.map((x) => ({ name: x.metadata.name }));
+    } catch (e) {
+      return [];
+    }
   }
 
   async test(): Promise<boolean> {

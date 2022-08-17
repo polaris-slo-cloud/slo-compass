@@ -13,10 +13,14 @@ declare global {
   }
 }
 
+export interface IDeployment {
+  name: string;
+}
+
 export interface IOrchestratorApi {
   name: string;
   test(): Promise<boolean>;
-  searchDeployments(query: string): Promise<any>;
+  findDeployments(query?: string): Promise<IDeployment[]>;
 }
 
 export interface IOrchestratorApiConnection extends IOrchestratorApi {
@@ -36,7 +40,7 @@ class OrchestratorNotConnected implements IOrchestratorApi {
   test(): Promise<boolean> {
     return Promise.resolve(false);
   }
-  searchDeployments(query: string): Promise<any> {
+  findDeployments(query?: string): Promise<IDeployment[]> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -77,7 +81,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     testConnection,
     name: api.value.name,
     orchestratorName: computed(() => api.value.name),
-    searchDeployments: (query) => api.value.searchDeployments(query),
+    findDeployments: (query?) => api.value.findDeployments(query),
     test: () => api.value.test(),
   };
 }

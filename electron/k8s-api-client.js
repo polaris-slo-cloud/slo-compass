@@ -23,11 +23,14 @@ module.exports = {
       return false;
     }
   },
-  async searchDeployments(query) {
+  async findDeployments(query) {
     try {
       const { body } = await k8sAppsApi.listDeploymentForAllNamespaces();
-      const lowerQuery = query.toLowerCase();
-      return body.items.filter((x) => x.metadata.name.toLowerCase().includes(lowerQuery));
+      if (query) {
+        const lowerQuery = query.toLowerCase();
+        return body.items.filter((x) => x.metadata.name.toLowerCase().includes(lowerQuery));
+      }
+      return body.items;
     } catch (e) {
       return [];
     }
