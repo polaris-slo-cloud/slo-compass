@@ -23,13 +23,25 @@ export const useWorkspaceStore = defineStore('workspace', {
       if (!component.id) {
         component.id = uuidv4();
       }
-      const existingIndex = this.workspace.targets.findIndex(
-        (x) => x.id === component.id
-      );
+      const existingIndex = this.workspace.targets.findIndex((x) => x.id === component.id);
       if (existingIndex >= 0) {
         this.workspace.targets[existingIndex] = component;
       } else {
         this.workspace.targets.push(component);
+      }
+    },
+    saveSlo(slo) {
+      if (!this.workspace.slos) {
+        this.$patch({ workspace: { ...this.workspace, slos: [] } });
+      }
+      if (!slo.id) {
+        slo.id = uuidv4();
+      }
+      const existingIndex = this.workspace.slos.findIndex((x) => x.id === slo.id);
+      if (existingIndex >= 0) {
+        this.workspace.slos[existingIndex] = slo;
+      } else {
+        this.workspace.slos.push(slo);
       }
     },
   },
@@ -41,8 +53,7 @@ export const useWorkspaceStore = defineStore('workspace', {
       }, new Map());
       return (componentId) => {
         const components =
-          state.workspace.targets.find((x) => x.id === componentId)
-            ?.components || [];
+          state.workspace.targets.find((x) => x.id === componentId)?.components || [];
         return components.map((x) => componentMap.get(x)).filter((x) => !!x);
       };
     },

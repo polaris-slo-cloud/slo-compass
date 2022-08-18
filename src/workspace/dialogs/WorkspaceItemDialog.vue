@@ -1,8 +1,5 @@
 <template>
-  <component
-    :is="component"
-    v-bind="{ ...props, ...$attrs }"
-  />
+  <component :is="component" v-bind="{ ...props, ...$attrs }" />
 </template>
 <script>
 export default {
@@ -13,10 +10,12 @@ export default {
 <script setup>
 import { computed, defineProps } from 'vue';
 import EditSloTarget from './EditSloTargetDialog.vue';
+import EditSlo from './EditSloDialog.vue';
 
 const props = defineProps({
   show: Boolean,
   item: Object,
+  template: Object,
 });
 
 const component = computed(() => {
@@ -24,6 +23,8 @@ const component = computed(() => {
     case 'application':
     case 'component':
       return EditSloTarget;
+    case 'slo':
+      return EditSlo;
   }
   return 'div';
 });

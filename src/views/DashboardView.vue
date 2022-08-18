@@ -3,7 +3,7 @@ import SloDiagramm from '@/components/SloDiagramm.vue';
 import NewWorkspaceItemSelector from '@/components/NewWorkspaceItemSelector.vue';
 import { computed, ref, watch } from 'vue';
 import { useWorkspaceStore } from '@/store';
-import EditWorkspaceItemDialog from '@/components/WorkspaceItems/WorkspaceItemDialog.vue';
+import EditWorkspaceItemDialog from '@/workspace/dialogs/WorkspaceItemDialog.vue';
 
 const store = useWorkspaceStore();
 const selection = ref(null);

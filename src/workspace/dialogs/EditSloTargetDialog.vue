@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="showDialog" persistent>
-    <q-card style="min-width: 350px">
+    <q-card style="width: 700px; max-width: 80vw;">
       <q-card-section>
         <div class="text-h6">{{ model.id ? 'Edit' : 'New' }} {{ model.type }}</div>
         <q-input
@@ -28,24 +28,7 @@
           </q-tooltip>
         </q-select>
         <q-input v-model="model.description" label="Description" type="textarea" />
-        <q-select
-          v-model="model.components"
-          label="Components"
-          multiple
-          :options="componentOptions"
-          @filter="updateComponentOptionsFilter"
-          use-input
-          use-chips
-        >
-          <template v-slot:option="scope">
-            <q-item v-bind="scope.itemProps">
-              <q-item-section>
-                <q-item-label>{{ scope.opt.label }}</q-item-label>
-                <q-item-label caption>{{ scope.opt.type }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </template>
-        </q-select>
+        <TargetSelection v-model="model.components" label="Components" :hideId="model.id" />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="cancel" v-close-popup />
@@ -60,6 +43,7 @@ import { ref, watch, defineEmits, computed, nextTick, onMounted } from 'vue';
 import { useWorkspaceStore } from '@/store';
 import { useOrchestratorApi } from '../../connections/orchestrator-api';
 import orchestratorIconMap from '../../connections/orchestrator-icon-map';
+import TargetSelection from '@/components/TargetSelection.vue';
 
 const store = useWorkspaceStore();
 const orchestratorApi = useOrchestratorApi();
@@ -117,22 +101,6 @@ watch(
     }
   }
 );
-
-const componentOptions = computed(() => {
-  if (store.workspace.targets) {
-    return store.workspace.targets
-      .filter((x) => x.id !== model.value.id)
-      .filter((x) => x.name.toLowerCase().indexOf(componentOptionsFilter.value) >= 0)
-      .map(mapStoreComponent);
-  }
-  return [];
-});
-const componentOptionsFilter = ref('');
-function updateComponentOptionsFilter(val, update) {
-  update(() => {
-    componentOptionsFilter.value = val.toLowerCase();
-  });
-}
 
 const nameInput = ref(null);
 const isValid = computed(() => !nameInput.value?.hasError);
