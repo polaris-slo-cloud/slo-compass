@@ -46,9 +46,7 @@
               xmlns="http://www.w3.org/1999/xhtml"
               v-text="text"
               class="text-center"
-              :style="`color: ${config.color}; font-size: ${
-                config.fontSize * scale
-              }px`"
+              :style="`color: ${config.color}; font-size: ${config.fontSize * scale}px`"
             ></span>
           </div>
         </foreignObject>
@@ -94,10 +92,7 @@ const selectedNodes = computed({
     if (value.length == 0) {
       emit('update:selectedComponent', null);
     } else {
-      emit(
-        'update:selectedComponent',
-        data.value.nodes[value[0]].polarisComponent
-      );
+      emit('update:selectedComponent', data.value.nodes[value[0]].polarisComponent);
     }
   },
 });
@@ -159,13 +154,13 @@ const configs = reactive(
       layoutHandler: forceLayout,
     },
     node: {
-      selectable: true,
+      selectable: 1,
       normal: {
         type: 'rect',
         borderRadius: 5,
         color: (node) => node.color || colors.getPaletteColor('primary'),
         strokeColor: (node) =>
-          node.color == colors.getPaletteColor('white')
+          node.color === colors.getPaletteColor('white')
             ? colors.getPaletteColor('black')
             : node.color || colors.getPaletteColor('primary'),
         strokeWidth: 2,
@@ -175,20 +170,20 @@ const configs = reactive(
       hover: {
         width: 110,
         height: 55,
-        color: (node) =>
-          colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+        color: (node) => colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
         strokeColor: (node) =>
-          node.color == colors.getPaletteColor('white')
+          node.color === colors.getPaletteColor('white')
             ? colors.getPaletteColor('black')
-            : colors.lighten(
-                node.color || colors.getPaletteColor('primary'),
-                -15
-              ),
+            : colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
       },
       selected: {
         borderRadius: 5,
-        color: (node) =>
-          colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+        color: (node) => colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+        strokeColor: (node) =>
+          node.color === colors.getPaletteColor('white')
+            ? colors.getPaletteColor('black')
+            : colors.lighten(node.color || colors.getPaletteColor('primary'), -15),
+        strokeWidth: 2,
         width: 100,
         height: 50,
       },
@@ -306,7 +301,7 @@ watch(nodeCount, (value, oldValue) => {
   width: 100%;
 }
 .node-rect {
-  transition: fill 0.1s linear, stroke 0.1s linear, stroke-width 0.1s linear,
-    x 0.1s linear, y 0.1s linear, width 0.1s linear, height 0.1s linear;
+  transition: fill 0.1s linear, stroke 0.1s linear, stroke-width 0.1s linear, x 0.1s linear,
+    y 0.1s linear, width 0.1s linear, height 0.1s linear;
 }
 </style>
