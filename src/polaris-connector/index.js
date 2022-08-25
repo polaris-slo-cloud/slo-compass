@@ -8,7 +8,7 @@ function addReferenceToSlo(crdObject, workspace, referenceSetter) {
   const slo = crdObject.metadata.ownerReferences.find((x) =>
     x.apiVersion.startsWith('slo.polaris-slo-cloud.github.io')
   );
-  const workspaceSlo = workspace.slos.find((x) => x.id == slo?.uid);
+  const workspaceSlo = workspace.slos.find((x) => x.id === slo?.uid);
   if (workspaceSlo) {
     referenceSetter(workspaceSlo, crdObject.metadata.uid);
   }
@@ -26,9 +26,7 @@ function normalize(name) {
 
 async function addReferenceToTarget(source, workspace) {
   const targetRef = source.spec.targetRef;
-  const existing = workspace.targets.find(
-    (x) => x.deploymentName === targetRef.name
-  );
+  const existing = workspace.targets.find((x) => x.deploymentName === targetRef.name);
   if (existing) {
     return existing;
   }
@@ -44,8 +42,7 @@ async function addReferenceToTarget(source, workspace) {
   component.id = !deployment ? uuidV4() : deployment.metadata.uid;
   component.status = !deployment
     ? 'NotFound'
-    : deployment.status.conditions[deployment.status.conditions.length - 1]
-        .type;
+    : deployment.status.conditions[deployment.status.conditions.length - 1].type;
 
   workspace.targets.push(component);
   return component;
@@ -67,8 +64,7 @@ async function addToWorkspace(customResourceDefinition, crdObject, workspace) {
       addReferenceToSlo(
         crdObject,
         workspace,
-        (slo, val) =>
-          (slo.metrics = slo.metrics ? [...slo.metrics, val] : [val])
+        (slo, val) => (slo.metrics = slo.metrics ? [...slo.metrics, val] : [val])
       );
       const target = await addReferenceToTarget(crdObject, workspace);
       component.config = crdObject.spec.metricConfig;
@@ -77,11 +73,7 @@ async function addToWorkspace(customResourceDefinition, crdObject, workspace) {
       break;
     }
     case 'elasticity.polaris-slo-cloud.github.io':
-      addReferenceToSlo(
-        crdObject,
-        workspace,
-        (slo, val) => (slo.strategy = val)
-      );
+      addReferenceToSlo(crdObject, workspace, (slo, val) => (slo.strategy = val));
       component.config = crdObject.spec.staticConfig;
       component.currentValue = crdObject.spec.sloOutputParams;
       workspace.strategies.push(component);
@@ -109,9 +101,7 @@ export default {
       })
       .filter((x) => x.type);
     polarisCrds.sort(
-      (a, b) =>
-        polarisMappingOrder.indexOf(a.type) -
-        polarisMappingOrder.indexOf(b.type)
+      (a, b) => polarisMappingOrder.indexOf(a.type) - polarisMappingOrder.indexOf(b.type)
     );
 
     const workspace = {

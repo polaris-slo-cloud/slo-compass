@@ -117,10 +117,11 @@ function fitToContents() {
 
 function getStatusColor(status) {
   const map = {
-    Success: 'green',
+    Available: 'green',
+    Processing: 'orange',
     NotFound: 'red',
   };
-  const colorName = map[status] ?? 'orange';
+  const colorName = map[status] ?? 'grey';
   return colors.getPaletteColor(colorName);
 }
 
@@ -223,7 +224,7 @@ const data = computed(() => {
         type: target.type,
         color: colors.getPaletteColor('white'),
         textColor: colors.getPaletteColor('black'),
-        statusColor: getStatusColor(target.status),
+        statusColor: getStatusColor(target.deployment?.status),
         polarisComponent: target,
       };
       if (target.components) {

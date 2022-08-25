@@ -1,10 +1,10 @@
 const localStorageKey = 'orchestrator-connections';
 
 export interface IOrchestratorConnectionSettings {
-  id: string,
+  id: string;
   active: boolean;
   orchestrator: string;
-  options: any;
+  options: unknown;
 }
 
 export default {

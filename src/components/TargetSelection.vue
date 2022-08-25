@@ -2,7 +2,7 @@
   <q-select
     v-model="model"
     :label="label"
-    multiple
+    :multiple="multiple"
     :options="options"
     @filter="updateOptionsFilter"
     use-input
@@ -28,6 +28,7 @@ const props = defineProps({
   modelValue: Object,
   label: String,
   hideId: String,
+  multiple: Boolean,
 });
 const emit = defineEmits(['update:modelValue']);
 

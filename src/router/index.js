@@ -1,8 +1,4 @@
-import {
-  createRouter,
-  createWebHistory,
-  createWebHashHistory,
-} from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
 import { Platform } from 'quasar';
 import DashboardView from '@/views/DashboardView.vue';
 import ConnectionsView from '@/views/ConnectionsView.vue';

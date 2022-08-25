@@ -6,9 +6,7 @@ const k8sClient = axios.create({
 
 export default {
   async getCustomResourceDefinitions() {
-    const { data } = await k8sClient.get(
-      '/apis/apiextensions.k8s.io/v1/customresourcedefinitions'
-    );
+    const { data } = await k8sClient.get('/apis/apiextensions.k8s.io/v1/customresourcedefinitions');
     return data.items;
   },
   async getCustomResourceObjects(crd) {

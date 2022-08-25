@@ -1,0 +1,12 @@
+//Overwrite Outlined Field Labels
+.q-field--outlined.q-field--float .q-field__label {
+  max-width: 133%;
+  transform: translateY(-130%) scale(.75);
+  transition: transform .36s cubic-bezier(.4,0,.2,1),max-width .396s cubic-bezier(.4,0,.2,1);
+  background: white;
+  padding: 0 map-get($space-xs, x);
+  z-index: 50;
+}
+.q-field--outlined.q-field--labeled .q-field__native {
+  padding-top: 8px;
+}

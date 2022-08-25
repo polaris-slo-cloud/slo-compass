@@ -8,7 +8,7 @@ import App from './App.vue';
 import router from './router';
 import VNetworkGraph from 'v-network-graph';
 
-import ArrowTooltip from './components/ArrowTooltip.vue';
+import crosscutting from '@/crosscutting';
 
 import './styles.scss';
 
@@ -29,7 +29,6 @@ app.use(Quasar, {
   iconSet: iconSet,
 });
 app.use(VNetworkGraph);
-
-app.component('ArrowTooltip', ArrowTooltip);
+app.use(crosscutting);
 
 app.mount('#app');

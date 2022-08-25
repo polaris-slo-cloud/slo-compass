@@ -1,2 +1,2 @@
 // Placeholder
-export {}
+export {};

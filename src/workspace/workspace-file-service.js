@@ -19,8 +19,6 @@ const browserWorkspaceFileService = {
   },
 };
 
-const service = window.workspaceApi
-  ? window.workspaceApi
-  : browserWorkspaceFileService;
+const service = window.workspaceApi ? window.workspaceApi : browserWorkspaceFileService;
 
 export default service;

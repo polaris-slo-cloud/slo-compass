@@ -1,4 +1,4 @@
-import {IDeployment, IOrchestratorApi} from '@/connections/orchestrator-api';
+import { IDeployment, IOrchestratorApi } from '@/connections/orchestrator-api';
 import axios, { AxiosInstance } from 'axios';
 
 export default class KubernetesApi implements IOrchestratorApi {
@@ -10,7 +10,14 @@ export default class KubernetesApi implements IOrchestratorApi {
   async findDeployments(query?: string): Promise<IDeployment[]> {
     try {
       const { data } = await this.client.get('/apis/apps/v1/deployments');
-      return data.items.map((x) => ({ name: x.metadata.name }));
+      const items = data.items.map((x) => ({
+        id: x.metadata.uid,
+        name: x.metadata.name,
+        status: x.status.conditions[x.status.conditions.length - 1].type,
+        connectionMetadata: { name: x.metadata.name, namespace: x.metadata.namespace },
+      }));
+      const lowerCaseQuery = query?.toLowerCase();
+      return query ? items.filter((x) => x.name.toLowerCase().includes(lowerCaseQuery)) : items;
     } catch (e) {
       return [];
     }

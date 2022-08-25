@@ -1,4 +1,4 @@
-import {computed, ComputedRef, ref} from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import KubernetesApi from '@/connections/kubernetes-api';
 import connectionsStorage, { IOrchestratorConnectionSettings } from '@/connections/storage';
@@ -14,7 +14,10 @@ declare global {
 }
 
 export interface IDeployment {
+  id: string;
   name: string;
+  status: string;
+  connectionMetadata: unknown;
 }
 
 export interface IOrchestratorApi {
@@ -40,6 +43,7 @@ class OrchestratorNotConnected implements IOrchestratorApi {
   test(): Promise<boolean> {
     return Promise.resolve(false);
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   findDeployments(query?: string): Promise<IDeployment[]> {
     throw new OrchestratorNotConnectedError();
   }
@@ -50,12 +54,15 @@ function createOrchestratorApi(
   connectionSettings: IOrchestratorConnectionSettings
 ): IOrchestratorApi {
   switch (connectionSettings.orchestrator) {
-    case 'Kubernetes':
+    case 'Kubernetes': {
+      const options =
+        typeof connectionSettings.options === 'string' ? connectionSettings.options : undefined;
       if (window.k8sApi) {
-        window.k8sApi.connectToContext(connectionSettings.options);
+        window.k8sApi.connectToContext(options);
         return window.k8sApi;
       }
-      return new KubernetesApi(connectionSettings.options);
+      return new KubernetesApi(options);
+    }
   }
   return new OrchestratorNotConnected();
 }

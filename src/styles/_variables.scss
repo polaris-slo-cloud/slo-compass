@@ -1,3 +1,12 @@
-@import 'quasar/src/css/variables.sass';
+@import "@/styles/quasar.variables.sass";
 
-//Overwrite quasar variables here
+//Project Variables
+$text-muted-color: $grey-6;
+$text-label-color: $grey-9;
+
+$spaces-none: map-get($space-none, y) map-get($space-none, x) !default;
+$spaces-xs: map-get($space-xs, y) map-get($space-xs, x) !default;
+$spaces-sm: map-get($space-sm, y) map-get($space-sm, x) !default;
+$spaces-md: map-get($space-md, y) map-get($space-md, x) !default;
+$spaces-lg: map-get($space-lg, y) map-get($space-lg, x) !default;
+$spaces-xl: map-get($space-xl, y) map-get($space-xl, x) !default;

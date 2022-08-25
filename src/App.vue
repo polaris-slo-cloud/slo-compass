@@ -74,13 +74,7 @@ function drawerClick() {
     >
       <q-scroll-area class="fit">
         <q-list>
-          <q-item
-            clickable
-            v-ripple
-            :to="item.to"
-            v-for="(item, idx) in menuList"
-            :key="idx"
-          >
+          <q-item clickable v-ripple :to="item.to" v-for="(item, idx) in menuList" :key="idx">
             <q-item-section avatar>
               <q-icon :name="item.icon" />
             </q-item-section>
@@ -100,14 +94,7 @@ function drawerClick() {
         </q-list>
       </q-scroll-area>
       <div class="q-mini-drawer-hide absolute" style="top: 15px; right: -17px">
-        <q-btn
-          dense
-          round
-          unelevated
-          color="accent"
-          icon="chevron_left"
-          @click="isMini = true"
-        />
+        <q-btn dense round unelevated color="accent" icon="chevron_left" @click="isMini = true" />
       </div>
     </q-drawer>
     <q-page-container>

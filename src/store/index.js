@@ -6,7 +6,10 @@ import workspaceFileService from '../workspace/workspace-file-service';
 export const useWorkspaceStore = defineStore('workspace', {
   state: () => ({
     isOpened: false,
-    workspace: {},
+    workspace: {
+      targets: [],
+      slos: [],
+    },
   }),
   actions: {
     createWorkspace() {
@@ -16,10 +19,18 @@ export const useWorkspaceStore = defineStore('workspace', {
       this.workspace = await workspaceFileService.openWorkspaceFile();
       this.isOpened = true;
     },
-    saveTarget(component) {
-      if (!this.workspace.targets) {
-        this.$patch({ workspace: { ...this.workspace, targets: [] } });
+    save(item) {
+      switch (item.type.toLowerCase()) {
+        case 'application':
+        case 'component':
+          this.saveTarget(item);
+          break;
+        case 'slo':
+          this.saveSlo(item);
+          break;
       }
+    },
+    saveTarget(component) {
       if (!component.id) {
         component.id = uuidv4();
       }
@@ -31,9 +42,6 @@ export const useWorkspaceStore = defineStore('workspace', {
       }
     },
     saveSlo(slo) {
-      if (!this.workspace.slos) {
-        this.$patch({ workspace: { ...this.workspace, slos: [] } });
-      }
       if (!slo.id) {
         slo.id = uuidv4();
       }
@@ -56,6 +64,15 @@ export const useWorkspaceStore = defineStore('workspace', {
           state.workspace.targets.find((x) => x.id === componentId)?.components || [];
         return components.map((x) => componentMap.get(x)).filter((x) => !!x);
       };
+    },
+    getItem: (state) => {
+      const mapItemById = (map, item) => {
+        map.set(item.id, item);
+        return map;
+      };
+      let itemsMap = state.workspace.targets.reduce(mapItemById, new Map());
+      itemsMap = state.workspace.slos.reduce(mapItemById, itemsMap);
+      return (id) => itemsMap.get(id);
     },
   },
 });

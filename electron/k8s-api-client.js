@@ -49,10 +49,7 @@ module.exports = {
   },
   async getDeployment(namespace, name) {
     try {
-      const { body } = await k8sAppsApi.readNamespacedDeployment(
-        name,
-        namespace
-      );
+      const { body } = await k8sAppsApi.readNamespacedDeployment(name, namespace);
       return body;
     } catch (e) {
       if (e.statusCode === 404) {

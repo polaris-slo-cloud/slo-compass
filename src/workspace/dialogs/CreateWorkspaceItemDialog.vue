@@ -9,22 +9,22 @@ export default {
 </script>
 <script setup>
 import { computed, defineProps } from 'vue';
-import EditSloTarget from './EditSloTargetDialog.vue';
-import EditSlo from './EditSloDialog.vue';
+import AddSloTarget from './AddSloTargetDialog.vue';
+import AddSlo from './AddSloDialog.vue';
 
 const props = defineProps({
   show: Boolean,
-  item: Object,
+  type: String,
   template: Object,
 });
 
 const component = computed(() => {
-  switch (props.item?.type?.toLowerCase()) {
+  switch (props.type?.toLowerCase()) {
     case 'application':
     case 'component':
-      return EditSloTarget;
+      return AddSloTarget;
     case 'slo':
-      return EditSlo;
+      return AddSlo;
   }
   return 'div';
 });

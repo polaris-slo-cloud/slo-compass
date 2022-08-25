@@ -10,17 +10,15 @@
           label="Name *"
           :rules="[(val) => (!!val && val.trim().length > 0) || 'You need to provide a name']"
         />
-        <TargetSelection label="Targets" v-model="model.targets" />
+        <TargetSelection label="Targets" v-model="model.targets" multiple />
         <q-input v-model="model.description" label="Description" autogrow />
         <div class="text-h6 q-mt-lg q-mb-sm" v-if="template.config.length > 0">Config</div>
-        <q-input
+        <ConfigTemplateInput
           v-for="(config, idx) of template.config"
           :key="config.parameter"
           v-model="model.config[config.parameter]"
-          :type="configType(config)"
-          :label="configLabel(config)"
-          :rules="configRules(config)"
-          :ref="el => { optionInputs[idx] = el }"
+          :template="config"
+          :ref="(el) => { optionInputs[idx] = el; }"
         />
       </q-card-section>
       <q-card-actions align="right">
@@ -32,15 +30,14 @@
 </template>
 
 <script setup>
-import { ref, computed, defineEmits, nextTick, onMounted, onBeforeUpdate, watch } from 'vue';
+import { ref, computed, defineEmits, nextTick, onBeforeUpdate } from 'vue';
 import TargetSelection from '@/components/TargetSelection.vue';
 import { useWorkspaceStore } from '@/store';
-import { ParameterType } from '@/polaris-templates/slo-template';
+import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 
 const store = useWorkspaceStore();
 const props = defineProps({
   show: Boolean,
-  item: Object,
   template: Object,
 });
 
@@ -54,51 +51,9 @@ const showDialog = computed({
   },
 });
 
-function configType(template) {
-  switch (template.type) {
-    case ParameterType.Integer:
-    case ParameterType.Decimal:
-      return 'number';
-  }
-  return 'text';
-}
-function configLabel(template) {
-  const label = template.displayName;
-  return template.optional ? label : `${label} *`;
-}
-function configRules(template) {
-  const rules = [];
-  if (!template.optional) {
-    rules.push(
-      (val) => (val !== undefined && val !== null && val !== '') || 'This parameter is required'
-    );
-  }
-  if (template.type === ParameterType.Integer) {
-    rules.push((val) => Math.floor(val) === Number(val) || 'Please provide an integer');
-  }
-  return rules;
-}
-
 const model = ref({
   config: {},
 });
-
-const mapStoreComponent = (comp) => ({
-  value: comp.id,
-  label: comp.name,
-  type: comp.type,
-});
-function updateModel(value) {
-  model.value = { ...value };
-  if (value.id) {
-    model.value.targets = store.getComponents(value.id).map(mapStoreComponent);
-  }
-  if (!model.value.config) {
-    model.value.config = {};
-  }
-}
-
-watch(() => props.item, updateModel, { deep: true });
 
 const nameInput = ref(null);
 const optionInputs = ref([]);
@@ -109,7 +64,7 @@ function save() {
   nameInput.value.validate();
   optionInputs.value.forEach((x) => x.validate());
   if (isValid.value) {
-    const slo = { ...model.value };
+    const slo = { ...model.value, type: 'SLO', configTemplate: props.template.config };
     slo.targets = slo.targets?.map((x) => x.value) || [];
     store.saveSlo(slo);
     showDialog.value = false;
@@ -121,11 +76,8 @@ function save() {
   }
 }
 function cancel() {
-  updateModel({});
+  model.value = {};
 }
-onMounted(() => {
-  updateModel(props.item);
-});
 onBeforeUpdate(() => {
   // Reset optionInput refs before component updates
   optionInputs.value = [];

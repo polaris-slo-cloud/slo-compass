@@ -41,29 +41,33 @@
         </q-card>
       </q-expansion-item>
     </q-list>
-    <WorkspaceItemDialog v-model:show="showAddItemDialog" :item="newItem" :template="newItemTemplate" />
+    <CreateWorkspaceItemDialog
+      v-model:show="showAddItemDialog"
+      :type="newItemType"
+      :template="newItemTemplate"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import WorkspaceItem from '@/components/WorkspaceItem.vue';
-import WorkspaceItemDialog from '@/workspace/dialogs/WorkspaceItemDialog.vue';
+import WorkspaceItem from '@/workspace/WorkspaceItem.vue';
+import CreateWorkspaceItemDialog from '@/workspace/dialogs/CreateWorkspaceItemDialog.vue';
 import sloTemplates from '@/polaris-templates/slo-template';
 
 const search = ref(null);
 
 const showAddItemDialog = ref(false);
-const newItem = ref({});
+const newItemType = ref('');
 const newItemTemplate = ref({});
 
 function showAddTarget(type) {
   showAddItemDialog.value = true;
-  newItem.value = { type };
+  newItemType.value = type;
 }
 function showAddSlo(template) {
   showAddItemDialog.value = true;
-  newItem.value = { type: 'SLO', name: template.name, description: template.description };
+  newItemType.value = 'SLO';
   newItemTemplate.value = template;
 }
 </script>
