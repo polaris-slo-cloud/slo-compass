@@ -1,26 +1,22 @@
 <template>
   <div>
-    <div v-if="isEditing('name')">
+    <div v-if="isEditingName">
       <q-input v-model="editModel" label="Name" outlined />
       <div class="flex justify-end q-mt-xs q-gutter-sm">
-        <q-btn flat label="Cancel" @click="cancelEdit" />
-        <q-btn label="Save" @click="saveName" />
+        <q-btn outline icon="mdi-close" @click="cancelEditName" />
+        <q-btn outline icon="mdi-check" @click="saveName" />
       </div>
     </div>
     <h1 v-else class="q-ma-none flex items-start no-wrap">
       <span>{{ item.name }}</span>
-      <IconButton
-        icon="mdi-pencil"
-        class="q-ml-sm"
-        @click="startEdit('name', item.name)"
-        size=".5em"
-      />
+      <IconButton icon="mdi-pencil" class="q-ml-sm" @click="startEditName" size=".5em" />
     </h1>
     <div class="text-subtitle1 text-muted">{{ item.type }}</div>
     <EditableField label="Deployment" v-model="deployment" v-if="canHaveDeployment">
-      <div v-if="deployment">
+      <div v-if="deployment" class="flex items-center">
+        <q-icon v-bind="orchestratorIcon" size="sm" class="q-mr-xs" />
         <span class="text-italic q-mr-md">{{ deployment.name }}</span>
-        <q-icon name="mdi-circle" :color="deploymentStatusColor" />
+        <q-icon name="mdi-circle q-mr-xs" :color="deploymentStatusColor" />
         {{ deployment.status }}
       </div>
       <div v-else>
@@ -77,6 +73,9 @@
         </div>
       </template>
     </EditableField>
+    <div class="flex justify-end q-mt-lg">
+      <q-btn v-if="canBeDeployed" label="Deploy" color="primary" @click="deploy" />
+    </div>
   </div>
 </template>
 
@@ -87,8 +86,12 @@ import TargetSelection from '@/components/TargetSelection.vue';
 import EditableField from '@/workspace/EditableField.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import DeploymentSelection from '@/workspace/DeploymentSelection.vue';
+import orchestratorIconMap from '@/orchestrator/orchestrator-icon-map';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { getTemplate } from '@/polaris-templates/slo-template';
 
 const store = useWorkspaceStore();
+const orchestratorApi = useOrchestratorApi();
 
 const props = defineProps({
   itemId: String,
@@ -107,6 +110,9 @@ const deployment = computed({
     store.save({ ...item.value, deployment: v });
   },
 });
+const orchestratorIcon = computed(
+  () => orchestratorIconMap[orchestratorApi.orchestratorName.value]
+);
 const deploymentStatusColor = computed(() => {
   if (!deployment.value) {
     return 'grey';
@@ -128,14 +134,19 @@ const description = computed({
 });
 
 const configKeys = computed(() => (item.value?.config ? Object.keys(item.value.config) : []));
-const configTemplate = computed(() =>
-  item.value?.configTemplate
-    ? item.value.configTemplate.reduce((map, curr) => {
+const configTemplate = computed(() => {
+  if (!item.value?.template) {
+    return {};
+  }
+
+  const template = getTemplate(item.value.template);
+  return template
+    ? template.config.reduce((map, curr) => {
         map[curr.parameter] = curr;
         return map;
       }, {})
-    : {}
-);
+    : {};
+});
 const configEditModel = computed({
   get() {
     return item.value.config;
@@ -150,14 +161,10 @@ const canHaveComponents = computed(() =>
 );
 const componentsEditModel = computed({
   get() {
-    return components.value.map((comp) => ({
-      value: comp.id,
-      label: comp.name,
-      type: comp.type,
-    }));
+    return components.value;
   },
   set(v) {
-    store.save({ ...item.value, components: v.map((x) => x.value) });
+    store.save({ ...item.value, components: v.map((x) => x.id) });
   },
 });
 
@@ -190,26 +197,32 @@ const targetEditModel = computed({
   },
 });
 
-const editingField = ref(null);
-const editModel = ref(null);
-const isEditing = (field) => editingField.value === field;
+const canBeDeployed = computed(
+  () =>
+    ['strategy', 'slo'].includes(item.value?.type.toLowerCase()) &&
+    !store.hasRunningDeployment(item.value.id) &&
+    (!item.value.deploymentStatus || item.value.deploymentStatus.some((x) => !x.success))
+);
 
-function startEdit(field, model) {
-  editingField.value = field;
-  editModel.value = model;
+const isEditingName = ref(false);
+const editModel = ref(null);
+
+function startEditName() {
+  isEditingName.value = true;
+  editModel.value = item.value.name;
 }
-function cancelEdit() {
-  editingField.value = null;
+function cancelEditName() {
+  isEditingName.value = false;
   editModel.value = null;
 }
 function saveName() {
-  const updated = { ...item.value, name: editModel.value };
-  save(updated);
-}
-function save(updated) {
-  store.save(updated);
-  editingField.value = null;
+  store.save({ ...item.value, name: editModel.value });
+  isEditingName.value = false;
   editModel.value = null;
+}
+
+function deploy() {
+  store.deploy(item.value);
 }
 </script>
 

@@ -19,6 +19,12 @@ const drawerWidth = computed(() => {
   return Math.min(width, maxDrawerWidth);
 });
 
+const hasUndismissedDeploymentAction = computed(() => store.hasUndismissedDeploymentActions);
+const deploymentNames = computed(() => store.runningDeploymentNames);
+function dismissDeploymentNotification() {
+  store.dismissRunningDeploymentActions();
+}
+
 watch(selection, (value) => {
   if (value) {
     showNewItemSelection.value = false;
@@ -38,6 +44,13 @@ async function openWorkspace() {
       <q-toolbar-title>Workspace</q-toolbar-title>
       <q-btn flat label="Add" icon="mdi-plus" @click="showNewItemSelection = true" />
     </q-toolbar>
+    <q-banner inline-actions class="bg-secondary text-white" v-if="hasUndismissedDeploymentAction">
+      <q-spinner-gears size="2em" />
+      <span class="q-ml-md">A Deployment for {{ deploymentNames }} is currently running</span>
+      <template #action
+        ><q-btn flat label="Dismiss" @click="dismissDeploymentNotification"
+      /></template>
+    </q-banner>
     <SloDiagramm v-model:selectedComponent="selection" class="col" />
     <teleport to="#main-layout">
       <q-drawer

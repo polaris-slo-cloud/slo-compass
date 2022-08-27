@@ -7,8 +7,8 @@
     <div v-if="isEditing">
       <slot name="edit" v-bind="scope"></slot>
       <div class="flex justify-end q-mt-xs q-gutter-sm">
-        <q-btn flat label="Cancel" @click="cancel" />
-        <q-btn label="Save" @click="save" />
+        <q-btn outline icon="mdi-close" @click="cancel" />
+        <q-btn outline icon="mdi-check" @click="save" />
       </div>
     </div>
     <div v-else>

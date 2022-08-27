@@ -25,7 +25,7 @@
 <script setup>
 import { ref, defineEmits, computed, onMounted } from 'vue';
 import { useQuasar } from "quasar";
-import { useOrchestratorApi } from '@/connections/orchestrator-api';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import KubernetesApiSettings from '@/connections/orchestrator-settings/KubernetesApiSettings.vue';
 import KubernetesClientSettings from '@/connections/orchestrator-settings/KubernetesClientSettings.vue';
 

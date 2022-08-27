@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="showDialog" persistent>
-    <q-card style="width: 700px; max-width: 80vw;">
+    <q-card style="width: 700px; max-width: 80vw">
       <q-card-section>
         <div class="text-h6">{{ model.type }}</div>
         <q-input
@@ -13,7 +13,12 @@
         />
         <DeploymentSelection v-model="model.deployment" label="Deployment" />
         <q-input v-model="model.description" label="Description" type="textarea" />
-        <TargetSelection v-model="model.components" label="Components" :hideId="model.id" multiple />
+        <TargetSelection
+          v-model="model.components"
+          label="Components"
+          :hideId="model.id"
+          multiple
+        />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="cancel" v-close-popup />
@@ -54,7 +59,7 @@ watch(
     if (!nameChanged.value) {
       model.value.name = val;
     }
-  },
+  }
 );
 
 const nameInput = ref(null);
@@ -63,7 +68,7 @@ function save() {
   nameInput.value.validate();
   if (isValid.value) {
     const component = { ...model.value, type: props.type };
-    component.components = component.components?.map((x) => x.value) || [];
+    component.components = component.components?.map((x) => x.id) || [];
     store.saveTarget(component);
     showDialog.value = false;
     model.value = {};

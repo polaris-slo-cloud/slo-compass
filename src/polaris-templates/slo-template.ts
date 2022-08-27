@@ -2,7 +2,13 @@ export interface ISloTemplateMetadata {
   key: string;
   name: string;
   description?: string;
+  controllerName: string;
+  containerImage: string;
+  sloMappingTypeApiGroup: string;
+  sloMappingResources: string;
+  sloMappingKind: string;
   config: ISloParameter[];
+  metrics?: ISloMetricSource[];
 }
 
 export enum ParameterType {
@@ -16,13 +22,23 @@ export interface ISloParameter {
   type: ParameterType;
   optional: boolean;
 }
+export interface ISloMetricSource {
+  controllerName: string;
+  containerImage: string;
+  composedMetricResources: string;
+}
 
-const templates: ISloTemplateMetadata[] = [
+export const templates: ISloTemplateMetadata[] = [
   {
     key: 'costEfficiencySlo',
     name: 'Cost Efficiency',
     description:
       'This SLO calculates a cost efficiency using the response time and cost of the target',
+    controllerName: 'cost-efficiency-slo-controller',
+    containerImage: 'polarissloc/slo-cost-efficiency:latest',
+    sloMappingTypeApiGroup: 'slo.polaris-slo-cloud.github.io',
+    sloMappingResources: 'costefficiencyslomappings',
+    sloMappingKind: 'CostEfficiencySloMapping',
     config: [
       {
         parameter: 'responseTimeThresholdMs',
@@ -43,11 +59,23 @@ const templates: ISloTemplateMetadata[] = [
         optional: true,
       },
     ],
+    metrics: [
+      {
+        controllerName: 'metrics-rest-api-cost-efficiency-controller',
+        containerImage: 'polarissloc/metrics-rest-api-cost-efficiency-controller:latest',
+        composedMetricResources: 'costefficiencymetricmappings',
+      },
+    ],
   },
   {
     key: 'cpuUsageSlo',
     name: 'CPU Usage',
     description: 'This SLO utilizes the CPU usage metrics to calculate its compliance',
+    controllerName: 'cpu-usage-slo-controller',
+    containerImage: 'polarissloc/slo-cpu-usage:latest',
+    sloMappingTypeApiGroup: 'slo.polaris-slo-cloud.github.io',
+    sloMappingResources: 'cpuusageslomappings',
+    sloMappingKind: 'CpuUsageSloMapping',
     config: [
       {
         parameter: 'targetAvgCPUUtilizationPercentage',
@@ -59,4 +87,6 @@ const templates: ISloTemplateMetadata[] = [
   },
 ];
 
-export default templates;
+export function getTemplate(key: string): ISloTemplateMetadata {
+  return templates.find((x) => x.key === key);
+}

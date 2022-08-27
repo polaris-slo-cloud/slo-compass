@@ -10,7 +10,7 @@
     :readonly="!orchestratorConnected"
   >
     <template #prepend v-if="orchestratorConnected">
-      <q-icon :name="orchestratorIcon" color="blue" />
+      <q-icon v-bind="orchestratorIcon" />
     </template>
     <q-tooltip v-if="!orchestratorConnected" class="bg-red text-body2">
       <q-icon name="mdi-alert-circle" />
@@ -21,8 +21,8 @@
 
 <script setup>
 import { computed, onMounted, ref, watch, defineEmits } from 'vue';
-import { useOrchestratorApi } from '@/connections/orchestrator-api';
-import orchestratorIconMap from '@/connections/orchestrator-icon-map';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import orchestratorIconMap from '@/orchestrator/orchestrator-icon-map';
 
 const orchestratorApi = useOrchestratorApi();
 

@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import workspaceFileService from '../workspace/workspace-file-service';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 //import polarisConnector from "../polaris-connector";
+const orchestratorApi = useOrchestratorApi();
 
 export const useWorkspaceStore = defineStore('workspace', {
   state: () => ({
@@ -10,6 +12,7 @@ export const useWorkspaceStore = defineStore('workspace', {
       targets: [],
       slos: [],
     },
+    runningDeploymentActions: {},
   }),
   actions: {
     createWorkspace() {
@@ -52,6 +55,25 @@ export const useWorkspaceStore = defineStore('workspace', {
         this.workspace.slos.push(slo);
       }
     },
+    deploy(item) {
+      switch (item.type.toLowerCase()) {
+        case 'slo':
+          this.deploySlo(item);
+          break;
+      }
+    },
+    async deploySlo(slo) {
+      this.runningDeploymentActions[slo.id] = {
+        type: 'SLO',
+        name: slo.name,
+        dismissed: false,
+      };
+      slo.deploymentStatus = await orchestratorApi.deploySlo(slo);
+      delete this.runningDeploymentActions[slo.id];
+    },
+    dismissRunningDeploymentActions() {
+      Object.values(this.runningDeploymentActions).forEach((val) => (val.dismissed = true));
+    },
   },
   getters: {
     getComponents: (state) => {
@@ -74,6 +96,13 @@ export const useWorkspaceStore = defineStore('workspace', {
       itemsMap = state.workspace.slos.reduce(mapItemById, itemsMap);
       return (id) => itemsMap.get(id);
     },
+    runningDeploymentNames: (state) =>
+      Object.values(state.runningDeploymentActions)
+        .map((x) => x.name)
+        .join(', '),
+    hasUndismissedDeploymentActions: (state) =>
+      Object.values(state.runningDeploymentActions).some((x) => !x.dismissed),
+    hasRunningDeployment: (state) => (id) => !!state.runningDeploymentActions[id],
   },
 });
 /*

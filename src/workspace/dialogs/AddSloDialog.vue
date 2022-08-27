@@ -18,7 +18,11 @@
           :key="config.parameter"
           v-model="model.config[config.parameter]"
           :template="config"
-          :ref="(el) => { optionInputs[idx] = el; }"
+          :ref="
+            (el) => {
+              optionInputs[idx] = el;
+            }
+          "
         />
       </q-card-section>
       <q-card-actions align="right">
@@ -64,11 +68,13 @@ function save() {
   nameInput.value.validate();
   optionInputs.value.forEach((x) => x.validate());
   if (isValid.value) {
-    const slo = { ...model.value, type: 'SLO', configTemplate: props.template.config };
-    slo.targets = slo.targets?.map((x) => x.value) || [];
+    const slo = { ...model.value, type: 'SLO', template: props.template.key };
+    slo.targets = slo.targets?.map((x) => x.id) || [];
     store.saveSlo(slo);
     showDialog.value = false;
-    model.value = {};
+    model.value = {
+      config: {},
+    };
   } else {
     nextTick(() => {
       nameInput.value.focus();
@@ -76,7 +82,9 @@ function save() {
   }
 }
 function cancel() {
-  model.value = {};
+  model.value = {
+    config: {},
+  };
 }
 onBeforeUpdate(() => {
   // Reset optionInput refs before component updates

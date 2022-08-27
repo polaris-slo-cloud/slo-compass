@@ -1,17 +1,8 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
-import KubernetesApi from '@/connections/kubernetes-api';
+import KubernetesApi, { K8sConnectionOptions } from '@/orchestrator/kubernetes/api';
 import connectionsStorage, { IOrchestratorConnectionSettings } from '@/connections/storage';
-
-interface IKubernetesClientApi extends IOrchestratorApi {
-  connectToContext(context: string);
-}
-
-declare global {
-  interface Window {
-    k8sApi: IKubernetesClientApi;
-  }
-}
+import ISlo from '@/slo/ISlo';
 
 export interface IDeployment {
   id: string;
@@ -19,11 +10,18 @@ export interface IDeployment {
   status: string;
   connectionMetadata: unknown;
 }
+export interface IResourceDeploymentStatus {
+  resource: unknown;
+  success: boolean;
+}
 
 export interface IOrchestratorApi {
   name: string;
   test(): Promise<boolean>;
   findDeployments(query?: string): Promise<IDeployment[]>;
+  // TODO: find more specific return type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  deploySlo(slo: ISlo): Promise<IResourceDeploymentStatus[]>;
 }
 
 export interface IOrchestratorApiConnection extends IOrchestratorApi {
@@ -43,8 +41,12 @@ class OrchestratorNotConnected implements IOrchestratorApi {
   test(): Promise<boolean> {
     return Promise.resolve(false);
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  findDeployments(query?: string): Promise<IDeployment[]> {
+
+  findDeployments(): Promise<IDeployment[]> {
+    throw new OrchestratorNotConnectedError();
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  deploySlo(): Promise<any> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -55,13 +57,7 @@ function createOrchestratorApi(
 ): IOrchestratorApi {
   switch (connectionSettings.orchestrator) {
     case 'Kubernetes': {
-      const options =
-        typeof connectionSettings.options === 'string' ? connectionSettings.options : undefined;
-      if (window.k8sApi) {
-        window.k8sApi.connectToContext(options);
-        return window.k8sApi;
-      }
-      return new KubernetesApi(options);
+      return new KubernetesApi(connectionSettings.options as K8sConnectionOptions);
     }
   }
   return new OrchestratorNotConnected();
@@ -90,5 +86,6 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     orchestratorName: computed(() => api.value.name),
     findDeployments: (query?) => api.value.findDeployments(query),
     test: () => api.value.test(),
+    deploySlo: (slo) => api.value.deploySlo(slo),
   };
 }

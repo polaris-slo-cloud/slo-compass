@@ -53,7 +53,7 @@
 import { ref } from 'vue';
 import WorkspaceItem from '@/workspace/WorkspaceItem.vue';
 import CreateWorkspaceItemDialog from '@/workspace/dialogs/CreateWorkspaceItemDialog.vue';
-import sloTemplates from '@/polaris-templates/slo-template';
+import { templates as sloTemplates } from '@/polaris-templates/slo-template';
 
 const search = ref(null);
 

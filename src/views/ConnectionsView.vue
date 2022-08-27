@@ -61,7 +61,7 @@
 import { onMounted, ref, computed } from 'vue';
 import ConnectOrchestratorDialog from '@/connections/ConnectOrchestratorDialog.vue';
 import connectionsStorage from '@/connections/storage';
-import { useOrchestratorApi } from '@/connections/orchestrator-api';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { v4 as uuidv4 } from 'uuid';
 import {useQuasar} from "quasar";
 

@@ -5,13 +5,15 @@
     :multiple="multiple"
     :options="options"
     @filter="updateOptionsFilter"
+    option-label="name"
+    option-value="id"
     use-input
     use-chips
   >
     <template v-slot:option="scope">
       <q-item v-bind="scope.itemProps">
         <q-item-section>
-          <q-item-label>{{ scope.opt.label }}</q-item-label>
+          <q-item-label>{{ scope.opt.name }}</q-item-label>
           <q-item-label caption>{{ scope.opt.type }}</q-item-label>
         </q-item-section>
       </q-item>
@@ -41,17 +43,11 @@ const model = computed({
   },
 });
 
-const mapStoreComponent = (comp) => ({
-  value: comp.id,
-  label: comp.name,
-  type: comp.type,
-});
 const options = computed(() => {
   if (store.workspace.targets) {
     return store.workspace.targets
       .filter((x) => x.id !== props.hideId)
-      .filter((x) => x.name.toLowerCase().indexOf(optionsFilter.value) >= 0)
-      .map(mapStoreComponent);
+      .filter((x) => x.name.toLowerCase().indexOf(optionsFilter.value) >= 0);
   }
   return [];
 });
