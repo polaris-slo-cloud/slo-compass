@@ -51,7 +51,7 @@ async function openWorkspace() {
         ><q-btn flat label="Dismiss" @click="dismissDeploymentNotification"
       /></template>
     </q-banner>
-    <SloDiagramm v-model:selectedComponent="selection" class="col" />
+    <SloDiagramm v-model:selectedComponent="selection" class="col" @click="showNewItemSelection = false" />
     <teleport to="#main-layout">
       <q-drawer
         side="right"

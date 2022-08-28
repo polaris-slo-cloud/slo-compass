@@ -11,6 +11,7 @@ export const useWorkspaceStore = defineStore('workspace', {
     workspace: {
       targets: [],
       slos: [],
+      elasticityStrategies: [],
     },
     runningDeploymentActions: {},
   }),
@@ -30,6 +31,9 @@ export const useWorkspaceStore = defineStore('workspace', {
           break;
         case 'slo':
           this.saveSlo(item);
+          break;
+        case 'elasticitystrategy':
+          this.saveElasticityStrategy(item);
           break;
       }
     },
@@ -53,6 +57,19 @@ export const useWorkspaceStore = defineStore('workspace', {
         this.workspace.slos[existingIndex] = slo;
       } else {
         this.workspace.slos.push(slo);
+      }
+    },
+    saveElasticityStrategy(strategy) {
+      if (!strategy.id) {
+        strategy.id = uuidv4();
+      }
+      const existingIndex = this.workspace.elasticityStrategies.findIndex(
+        (x) => x.id === strategy.id
+      );
+      if (existingIndex >= 0) {
+        this.workspace.elasticityStrategies[existingIndex] = strategy;
+      } else {
+        this.workspace.elasticityStrategies.push(strategy);
       }
     },
     deploy(item) {
@@ -92,8 +109,12 @@ export const useWorkspaceStore = defineStore('workspace', {
         map.set(item.id, item);
         return map;
       };
-      let itemsMap = state.workspace.targets.reduce(mapItemById, new Map());
-      itemsMap = state.workspace.slos.reduce(mapItemById, itemsMap);
+      const allItems = [
+        ...state.workspace.targets,
+        ...state.workspace.slos,
+        ...state.workspace.elasticityStrategies,
+      ];
+      const itemsMap = allItems.reduce(mapItemById, new Map());
       return (id) => itemsMap.get(id);
     },
     runningDeploymentNames: (state) =>

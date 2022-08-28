@@ -4,7 +4,7 @@
 
 <script setup>
 import { ref, computed, defineEmits } from 'vue';
-import { ParameterType } from '@/polaris-templates/slo-template';
+import { ParameterType } from '@/polaris-templates/parameters';
 
 const props = defineProps({
   modelValue: [String, Number],
@@ -30,12 +30,16 @@ const inputType = computed(() => {
   switch (props.template.type) {
     case ParameterType.Integer:
     case ParameterType.Decimal:
+    case ParameterType.Percentage:
       return 'number';
   }
   return 'text';
 });
 const label = computed(() => {
-  const label = props.template.displayName;
+  let label = props.template.displayName;
+  if (props.template.type === ParameterType.Percentage) {
+    label += ' (%)';
+  }
   return props.template.optional ? label : `${label} *`;
 });
 const validationRules = computed(() => {

@@ -135,7 +135,7 @@ const description = computed({
 
 const configKeys = computed(() => (item.value?.config ? Object.keys(item.value.config) : []));
 const configTemplate = computed(() => {
-  if (!item.value?.template) {
+  if (item.value?.type !== 'SLO') {
     return {};
   }
 

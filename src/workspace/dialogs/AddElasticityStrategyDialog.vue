@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card style="width: 700px; max-width: 80vw">
       <q-card-section>
-        <div class="text-h5">{{ template.name }} SLO</div>
+        <div class="text-h5">{{ template.name }}</div>
         <q-input
           ref="nameInput"
           autofocus
@@ -10,20 +10,7 @@
           label="Name *"
           :rules="[(val) => (!!val && val.trim().length > 0) || 'You need to provide a name']"
         />
-        <TargetSelection label="Targets" v-model="model.targets" multiple />
         <q-input v-model="model.description" label="Description" autogrow />
-        <div class="text-h6 q-mt-lg q-mb-sm" v-if="template.config.length > 0">Config</div>
-        <ConfigTemplateInput
-          v-for="(config, idx) of template.config"
-          :key="config.parameter"
-          v-model="model.config[config.parameter]"
-          :template="config"
-          :ref="
-            (el) => {
-              optionInputs[idx] = el;
-            }
-          "
-        />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="resetModel" v-close-popup />
@@ -34,10 +21,8 @@
 </template>
 
 <script setup>
-import { ref, computed, defineEmits, nextTick, onBeforeUpdate } from 'vue';
-import TargetSelection from '@/components/TargetSelection.vue';
 import { useWorkspaceStore } from '@/store';
-import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
+import { computed, defineEmits, nextTick, ref, watch } from 'vue';
 
 const store = useWorkspaceStore();
 const props = defineProps({
@@ -58,28 +43,22 @@ const showDialog = computed({
 const model = ref({
   name: props.template?.name,
   description: props.template?.description,
-  config: {},
 });
+watch(() => props.template, resetModel, { deep: true });
 function resetModel() {
   model.value = {
     name: props.template?.name,
     description: props.template?.description,
-    config: {},
   };
 }
 
 const nameInput = ref(null);
-const optionInputs = ref([]);
-const isValid = computed(
-  () => !nameInput.value?.hasError && !optionInputs.value.some((x) => x.hasError)
-);
+const isValid = computed(() => !nameInput.value?.hasError);
 function save() {
   nameInput.value.validate();
-  optionInputs.value.forEach((x) => x.validate());
   if (isValid.value) {
-    const slo = { ...model.value, type: 'SLO', template: props.template.key };
-    slo.targets = slo.targets?.map((x) => x.id) || [];
-    store.saveSlo(slo);
+    const strategy = { ...model.value, type: 'ElasticityStrategy', template: props.template.key };
+    store.saveElasticityStrategy(strategy);
     showDialog.value = false;
     resetModel();
   } else {
@@ -88,11 +67,6 @@ function save() {
     });
   }
 }
-
-onBeforeUpdate(() => {
-  // Reset optionInput refs before component updates
-  optionInputs.value = [];
-});
 </script>
 
 <style scoped></style>

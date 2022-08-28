@@ -1,6 +1,6 @@
 <template>
-  <q-btn flat no-caps @click="$emit('click')">
-    <div class="d-flex flex-center">
+  <q-btn flat no-caps @click="$emit('click')" class="q-px-xs workspace-item">
+    <div class="column flex-center">
       <svg width="80" height="40">
         <g>
           <rect
@@ -31,10 +31,12 @@ const props = defineProps({
 
 const fillColor = computed(() => colors.getPaletteColor(props.color));
 const strokeColor = computed(() =>
-  props.color === 'white'
-    ? colors.getPaletteColor('black')
-    : colors.getPaletteColor(props.color)
+  props.color === 'white' ? colors.getPaletteColor('black') : colors.getPaletteColor(props.color)
 );
 </script>
 
-<style scoped></style>
+<style lang="scss">
+.workspace-item .q-btn__content {
+  align-items: start;
+}
+</style>

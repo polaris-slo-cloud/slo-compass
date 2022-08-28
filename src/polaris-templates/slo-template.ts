@@ -1,3 +1,5 @@
+import {IConfigParameter, ParameterType} from "@/polaris-templates/parameters";
+
 export interface ISloTemplateMetadata {
   key: string;
   name: string;
@@ -7,21 +9,10 @@ export interface ISloTemplateMetadata {
   sloMappingTypeApiGroup: string;
   sloMappingResources: string;
   sloMappingKind: string;
-  config: ISloParameter[];
+  config: IConfigParameter[];
   metrics?: ISloMetricSource[];
 }
 
-export enum ParameterType {
-  Integer,
-  Decimal,
-}
-
-export interface ISloParameter {
-  parameter: string;
-  displayName: string;
-  type: ParameterType;
-  optional: boolean;
-}
 export interface ISloMetricSource {
   controllerName: string;
   containerImage: string;
@@ -55,7 +46,7 @@ export const templates: ISloTemplateMetadata[] = [
       {
         parameter: 'minRequestsPercentile',
         displayName: 'Minimum Requests Percentile',
-        type: ParameterType.Decimal,
+        type: ParameterType.Percentage,
         optional: true,
       },
     ],

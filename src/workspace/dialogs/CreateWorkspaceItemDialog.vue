@@ -11,6 +11,7 @@ export default {
 import { computed, defineProps } from 'vue';
 import AddSloTarget from './AddSloTargetDialog.vue';
 import AddSlo from './AddSloDialog.vue';
+import AddElasticityStrategy from './AddElasticityStrategyDialog.vue';
 
 const props = defineProps({
   show: Boolean,
@@ -25,6 +26,8 @@ const component = computed(() => {
       return AddSloTarget;
     case 'slo':
       return AddSlo;
+    case 'elasticitystrategy':
+      return AddElasticityStrategy;
   }
   return 'div';
 });

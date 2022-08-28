@@ -265,11 +265,11 @@ const data = computed(() => {
     }
   }
 
-  if (store.workspace.strategies) {
-    for (const strategy of store.workspace.strategies) {
+  if (store.workspace.elasticityStrategies) {
+    for (const strategy of store.workspace.elasticityStrategies) {
       nodes[strategy.id] = {
         name: strategy.name,
-        color: '#FFC000',
+        color: colors.getPaletteColor('amber'),
         textColor: colors.getPaletteColor('black'),
         polarisComponent: strategy,
       };
