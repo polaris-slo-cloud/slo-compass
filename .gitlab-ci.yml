@@ -32,9 +32,9 @@ deploy:
   image: electronuserland/builder:wine
   stage: deploy
   script:
-    - yarn
-    - yarn build:electron 
-    - yarn dist -wl
+    - npm ci --cache .npm --prefer-offline --ignore-scripts
+    - npm run build:electron
+    - npm run dist -- -wl
   artifacts:
     paths:
       - dist_electron
