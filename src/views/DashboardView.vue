@@ -1,5 +1,5 @@
 <script setup>
-import SloDiagramm from '@/components/SloDiagramm.vue';
+import WorkspaceDiagramm from '@/workspace/WorkspaceDiagramm.vue';
 import NewWorkspaceItemSelector from '@/workspace/NewWorkspaceItemSelector.vue';
 import WorkspaceItemDetails from '@/workspace/WorkspaceItemDetails.vue';
 import { computed, ref, watch } from 'vue';
@@ -36,13 +36,18 @@ function createWorkspace() {
 async function openWorkspace() {
   await store.openWorkspace();
 }
+
+function openNewItemSelection() {
+  selection.value = null;
+  showNewItemSelection.value = true;
+}
 </script>
 
 <template>
   <q-page v-if="store.isOpened" class="column">
     <q-toolbar class="bg-primary text-white">
       <q-toolbar-title>Workspace</q-toolbar-title>
-      <q-btn flat label="Add" icon="mdi-plus" @click="showNewItemSelection = true" />
+      <q-btn flat label="Add" icon="mdi-plus" @click="openNewItemSelection" />
     </q-toolbar>
     <q-banner inline-actions class="bg-secondary text-white" v-if="hasUndismissedDeploymentAction">
       <q-spinner-gears size="2em" />
@@ -51,7 +56,11 @@ async function openWorkspace() {
         ><q-btn flat label="Dismiss" @click="dismissDeploymentNotification"
       /></template>
     </q-banner>
-    <SloDiagramm v-model:selectedComponent="selection" class="col" @click="showNewItemSelection = false" />
+    <WorkspaceDiagramm
+      v-model:selectedComponent="selection"
+      class="col"
+      @click="showNewItemSelection = false"
+    />
     <teleport to="#main-layout">
       <q-drawer
         side="right"

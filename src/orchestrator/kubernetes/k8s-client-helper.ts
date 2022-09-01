@@ -1,6 +1,6 @@
 // DISCLAIMER: The code in this file have been taken from https://github.com/kubernetes-client/javascript/blob/master/src/object.ts and slightly modified
 import { KubernetesObject, V1APIResource, V1APIResourceList } from '@kubernetes/client-node';
-import {AxiosInstance, AxiosRequestConfig} from 'axios';
+import { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 /** Kubernetes API verbs. */
 type KubernetesApiAction = 'create' | 'delete' | 'patch' | 'read' | 'list' | 'replace';

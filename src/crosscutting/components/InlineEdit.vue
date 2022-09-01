@@ -1,40 +1,56 @@
 <template>
   <div v-if="isEditing">
-    <slot name="edit"></slot>
+    <slot name="edit" v-bind="scope"></slot>
+    <div class="flex justify-end q-mt-xs q-gutter-sm">
+      <q-btn outline icon="mdi-close" @click="cancel" />
+      <q-btn outline icon="mdi-check" @click="save" />
+    </div>
   </div>
-  <div v-else class="view-container q-pa-sm" @click="isEditing = true">
-    <slot></slot>
-    <q-icon name="mdi-pencil" class="edit-icon" size="1rem" />
-  </div>
+  <component v-else :is="displayType" class="q-ma-none flex items-start no-wrap">
+    <span>{{ modelValue }}</span>
+    <IconButton icon="mdi-pencil" class="q-ml-sm" @click="startEdit" size=".5em" />
+  </component>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+
+const props = defineProps({
+  modelValue: String,
+  displayType: {
+    type: String,
+    required: false,
+    default: () => 'div',
+  },
+});
+const emit = defineEmits(['update:modelValue']);
 
 const isEditing = ref(false);
-</script>
+const editModel = ref(null);
+const scope = computed(() => {
+  const scope = {};
+  Object.defineProperty(scope, 'value', {
+    get() {
+      return editModel.value;
+    },
+    set(v) {
+      editModel.value = v;
+    },
+    enumerable: true,
+  });
+  return scope;
+});
 
-<style lang="scss" scoped>
-.view-container:hover {
-  background: $grey-4;
-  .edit-icon {
-    visibility: visible;
-  }
+function startEdit() {
+  editModel.value = props.modelValue;
+  isEditing.value = true;
 }
-.view-container {
-  padding: map-get($space-sm, y) map-get($space-sm, x);
-  border: 1px solid transparent;
-  border-radius: $generic-border-radius;
-  position: relative;
+function cancel() {
+  isEditing.value = false;
+  editModel.value = null;
 }
-.edit-icon {
-  visibility: hidden;
-  position: absolute;
-  // Position inside border
-  top: -1px;
-  right: -1px;
-  padding: map-get($space-sm, y) map-get($space-sm, x);
-  background: $grey-1;
-  opacity: 80%;
+function save() {
+  isEditing.value = false;
+  emit('update:modelValue', scope.value.value);
 }
-</style>
+</script>

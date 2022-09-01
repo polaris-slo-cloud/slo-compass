@@ -1,4 +1,4 @@
-import {IConfigParameter, ParameterType} from "@/polaris-templates/parameters";
+import { IConfigParameter, ParameterType } from '@/polaris-templates/parameters';
 
 export interface ISloTemplateMetadata {
   key: string;

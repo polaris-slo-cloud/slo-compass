@@ -1,5 +1,4 @@
 const k8s = require('@kubernetes/client-node');
-const { KubernetesObject } = require('@kubernetes/client-node');
 const { KubernetesPatchStrategies } = require('@/orchestrator/kubernetes/k8s-client-helper');
 
 const k8sConfig = new k8s.KubeConfig();

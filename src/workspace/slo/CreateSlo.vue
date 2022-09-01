@@ -35,7 +35,7 @@
 
 <script setup>
 import { ref, computed, defineEmits, nextTick, onBeforeUpdate } from 'vue';
-import TargetSelection from '@/components/TargetSelection.vue';
+import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import { useWorkspaceStore } from '@/store';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 

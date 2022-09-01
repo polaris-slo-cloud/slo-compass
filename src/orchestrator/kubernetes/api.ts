@@ -1,7 +1,7 @@
 import { IDeployment, IOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
 import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
-import ISlo from '@/slo/ISlo';
+import ISlo from '@/workspace/slo/ISlo';
 
 export interface K8sConnectionOptions {
   connectionString: string;

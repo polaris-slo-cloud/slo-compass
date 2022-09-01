@@ -1,6 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { KubernetesObject, V1DeploymentList } from '@kubernetes/client-node';
-import K8sClientHelper, {KubernetesPatchStrategies} from '@/orchestrator/kubernetes/k8s-client-helper';
+import K8sClientHelper, {
+  KubernetesPatchStrategies,
+} from '@/orchestrator/kubernetes/k8s-client-helper';
 
 export interface K8sClient {
   listAllDeployments(): Promise<V1DeploymentList>;

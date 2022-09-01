@@ -15,13 +15,13 @@
                 class="col-6 col-md-4 col-xl-3"
                 title="Application"
                 color="white"
-                @click="showAddTarget('Application')"
+                @click="showAddTarget(workspaceItemTypes.targets.application)"
               />
               <WorkspaceItem
                 class="col-6 col-md-4 col-xl-3"
                 title="Component"
                 color="white"
-                @click="showAddTarget('Component')"
+                @click="showAddTarget(workspaceItemTypes.targets.component)"
               />
             </div>
           </q-card-section>
@@ -65,7 +65,8 @@
         </q-card>
       </q-expansion-item>
     </q-list>
-    <CreateWorkspaceItemDialog
+    <component
+      :is="workspaceItemDialog"
       v-model:show="showAddItemDialog"
       :type="newItemType"
       :template="newItemTemplate"
@@ -74,11 +75,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import WorkspaceItem from '@/workspace/WorkspaceItem.vue';
-import CreateWorkspaceItemDialog from '@/workspace/dialogs/CreateWorkspaceItemDialog.vue';
 import { templates as sloTemplates } from '@/polaris-templates/slo-template';
 import { templates as strategyTemplates } from '@/polaris-templates/strategy-template';
+import { workspaceItemTypes } from '@/workspace/constants';
+import AddSloTarget from '@/workspace/targets/CreateSloTarget.vue';
+import AddSlo from '@/workspace/slo/CreateSlo.vue';
+import AddElasticityStrategy from '@/workspace/elasticity-strategy/CreateElasticityStrategy.vue';
 
 const search = ref(null);
 
@@ -92,12 +96,25 @@ function showAddTarget(type) {
 }
 function showAddSlo(template) {
   showAddItemDialog.value = true;
-  newItemType.value = 'SLO';
+  newItemType.value = workspaceItemTypes.slo;
   newItemTemplate.value = template;
 }
 function showAddStrategy(template) {
   showAddItemDialog.value = true;
-  newItemType.value = 'ElasticityStrategy';
+  newItemType.value = workspaceItemTypes.elasticityStrategy;
   newItemTemplate.value = template;
 }
+
+const workspaceItemDialog = computed(() => {
+  switch (newItemType.value) {
+    case workspaceItemTypes.targets.application:
+    case workspaceItemTypes.targets.component:
+      return AddSloTarget;
+    case workspaceItemTypes.slo:
+      return AddSlo;
+    case workspaceItemTypes.elasticityStrategy:
+      return AddElasticityStrategy;
+  }
+  return 'div';
+});
 </script>

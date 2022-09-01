@@ -31,7 +31,7 @@
 <script setup>
 import { ref, watch, defineEmits, computed, nextTick } from 'vue';
 import { useWorkspaceStore } from '@/store';
-import TargetSelection from '@/components/TargetSelection.vue';
+import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import DeploymentSelection from '@/workspace/DeploymentSelection.vue';
 
 const store = useWorkspaceStore();

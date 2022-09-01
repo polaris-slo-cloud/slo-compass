@@ -72,13 +72,6 @@ export const useWorkspaceStore = defineStore('workspace', {
         this.workspace.elasticityStrategies.push(strategy);
       }
     },
-    deploy(item) {
-      switch (item.type.toLowerCase()) {
-        case 'slo':
-          this.deploySlo(item);
-          break;
-      }
-    },
     async deploySlo(slo) {
       this.runningDeploymentActions[slo.id] = {
         type: 'SLO',

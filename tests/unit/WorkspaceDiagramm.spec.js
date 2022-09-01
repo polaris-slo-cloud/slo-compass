@@ -4,9 +4,9 @@ import { Quasar } from 'quasar';
 import VNetworkGraph from 'v-network-graph';
 import { createTestingPinia } from '@pinia/testing';
 import sinon from 'sinon';
-import SloDiagramm from '@/components/SloDiagramm.vue';
+import SloDiagramm from '@/workspace/WorkspaceDiagramm.vue';
 
-describe('SloDiagramm.vue', () => {
+describe('WorkspaceDiagramm.vue', () => {
   let wrapper;
   beforeEach(() => {
     wrapper = mount(SloDiagramm, {

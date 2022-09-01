@@ -8,7 +8,6 @@
     option-label="name"
     option-value="id"
     use-input
-    use-chips
   >
     <template v-slot:option="scope">
       <q-item v-bind="scope.itemProps">
@@ -18,12 +17,24 @@
         </q-item-section>
       </q-item>
     </template>
+    <template v-slot:selected-item="scope">
+      <q-chip
+        removable
+        dense
+        @remove="scope.removeAtIndex(scope.index)"
+        :tabindex="scope.tabindex"
+        :icon="componentIcon(scope.opt)"
+      >
+        {{ scope.opt.name }}
+      </q-chip>
+    </template>
   </q-select>
 </template>
 
 <script setup>
 import { computed, ref, defineEmits } from 'vue';
 import { useWorkspaceStore } from '@/store';
+import componentIcon from '@/workspace/targets/component-icon';
 
 const store = useWorkspaceStore();
 const props = defineProps({

@@ -2,7 +2,7 @@ import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import KubernetesApi, { K8sConnectionOptions } from '@/orchestrator/kubernetes/api';
 import connectionsStorage, { IOrchestratorConnectionSettings } from '@/connections/storage';
-import ISlo from '@/slo/ISlo';
+import ISlo from '@/workspace/slo/ISlo';
 
 export interface IDeployment {
   id: string;
