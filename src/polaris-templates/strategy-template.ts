@@ -1,6 +1,6 @@
-import { IConfigParameter, ParameterType } from '@/polaris-templates/parameters';
+import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
 
-export interface IElasticityStrategyTemplateMetadata {
+export interface ElasticityStrategyTemplateMetadata {
   key: string;
   name: string;
   description?: string;
@@ -8,10 +8,10 @@ export interface IElasticityStrategyTemplateMetadata {
   containerImage: string;
   strategyTypeApiGroup: string;
   strategyResources: string;
-  sloSpecificConfig: IConfigParameter[];
+  sloSpecificConfig: ConfigParameter[];
 }
 
-export const templates: IElasticityStrategyTemplateMetadata[] = [
+export const templates: ElasticityStrategyTemplateMetadata[] = [
   {
     key: 'horizontalElasticityStrategy',
     name: 'Horizontal Elasticity Strategy',
@@ -73,3 +73,7 @@ export const templates: IElasticityStrategyTemplateMetadata[] = [
     ],
   },
 ];
+
+export function getTemplate(key: string): ElasticityStrategyTemplateMetadata {
+  return templates.find((x) => x.key === key);
+}

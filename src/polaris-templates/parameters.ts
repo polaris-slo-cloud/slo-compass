@@ -5,7 +5,7 @@ export enum ParameterType {
   Percentage = 'Percentage',
 }
 
-export interface IConfigParameter {
+export interface ConfigParameter {
   parameter: string;
   displayName: string;
   type: ParameterType;

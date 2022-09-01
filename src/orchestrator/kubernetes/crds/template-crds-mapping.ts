@@ -1,6 +1,8 @@
 const crdsMap = {
   costEfficiencySlo: ['costefficiencymetricmappings.metrics', 'costefficiencyslomappings.slo'],
   cpuUsageSlo: ['cpuusageslomappings.slo'],
+  horizontalElasticityStrategy: ['horizontalelasticitystrategies.elasticity'],
+  verticalElasticityStrategy: ['verticalelasticitystrategies.elasticity'],
 };
 
 export default async function loadCrdsForTemplate(templateName: string) {

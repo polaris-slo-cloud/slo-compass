@@ -2,7 +2,8 @@ import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import KubernetesApi, { K8sConnectionOptions } from '@/orchestrator/kubernetes/api';
 import connectionsStorage, { IOrchestratorConnectionSettings } from '@/connections/storage';
-import ISlo from '@/workspace/slo/ISlo';
+import Slo from '@/workspace/slo/Slo';
+import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 
 export interface IDeployment {
   id: string;
@@ -19,9 +20,10 @@ export interface IOrchestratorApi {
   name: string;
   test(): Promise<boolean>;
   findDeployments(query?: string): Promise<IDeployment[]>;
-  // TODO: find more specific return type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deploySlo(slo: ISlo): Promise<IResourceDeploymentStatus[]>;
+  deploySlo(slo: Slo): Promise<IResourceDeploymentStatus[]>;
+  deployElasticityStrategy(
+    elasticityStrategy: ElasticityStrategy
+  ): Promise<IResourceDeploymentStatus[]>;
 }
 
 export interface IOrchestratorApiConnection extends IOrchestratorApi {
@@ -45,8 +47,12 @@ class OrchestratorNotConnected implements IOrchestratorApi {
   findDeployments(): Promise<IDeployment[]> {
     throw new OrchestratorNotConnectedError();
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deploySlo(): Promise<any> {
+
+  deploySlo(): Promise<IResourceDeploymentStatus[]> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  deployElasticityStrategy(): Promise<IResourceDeploymentStatus[]> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -87,5 +93,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     findDeployments: (query?) => api.value.findDeployments(query),
     test: () => api.value.test(),
     deploySlo: (slo) => api.value.deploySlo(slo),
+    deployElasticityStrategy: (elasticityStrategy) =>
+      api.value.deployElasticityStrategy(elasticityStrategy),
   };
 }

@@ -1,6 +1,6 @@
-import { IConfigParameter, ParameterType } from '@/polaris-templates/parameters';
+import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
 
-export interface ISloTemplateMetadata {
+export interface SloTemplateMetadata {
   key: string;
   name: string;
   description?: string;
@@ -9,17 +9,17 @@ export interface ISloTemplateMetadata {
   sloMappingTypeApiGroup: string;
   sloMappingResources: string;
   sloMappingKind: string;
-  config: IConfigParameter[];
-  metrics?: ISloMetricSource[];
+  config: ConfigParameter[];
+  metrics?: SloMetricSource[];
 }
 
-export interface ISloMetricSource {
+export interface SloMetricSource {
   controllerName: string;
   containerImage: string;
   composedMetricResources: string;
 }
 
-export const templates: ISloTemplateMetadata[] = [
+export const templates: SloTemplateMetadata[] = [
   {
     key: 'costEfficiencySlo',
     name: 'Cost Efficiency',
@@ -78,6 +78,6 @@ export const templates: ISloTemplateMetadata[] = [
   },
 ];
 
-export function getTemplate(key: string): ISloTemplateMetadata {
+export function getTemplate(key: string): SloTemplateMetadata {
   return templates.find((x) => x.key === key);
 }

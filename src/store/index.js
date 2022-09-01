@@ -74,12 +74,23 @@ export const useWorkspaceStore = defineStore('workspace', {
     },
     async deploySlo(slo) {
       this.runningDeploymentActions[slo.id] = {
-        type: 'SLO',
+        type: slo.type,
         name: slo.name,
         dismissed: false,
       };
       slo.deploymentStatus = await orchestratorApi.deploySlo(slo);
       delete this.runningDeploymentActions[slo.id];
+    },
+    async deployElasticityStrategy(elasticityStrategy) {
+      this.runningDeploymentActions[elasticityStrategy.id] = {
+        type: elasticityStrategy.type,
+        name: elasticityStrategy.name,
+        dismissed: false,
+      };
+      elasticityStrategy.deploymentStatus = await orchestratorApi.deployElasticityStrategy(
+        elasticityStrategy
+      );
+      delete this.runningDeploymentActions[elasticityStrategy.id];
     },
     dismissRunningDeploymentActions() {
       Object.values(this.runningDeploymentActions).forEach((val) => (val.dismissed = true));

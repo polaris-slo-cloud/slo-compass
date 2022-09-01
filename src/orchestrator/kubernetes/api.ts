@@ -1,7 +1,13 @@
-import { IDeployment, IOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import {
+  IDeployment,
+  IOrchestratorApi,
+  IResourceDeploymentStatus,
+} from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
 import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
-import ISlo from '@/workspace/slo/ISlo';
+import Slo from '@/workspace/slo/Slo';
+import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
+import { KubernetesObject } from '@kubernetes/client-node';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -45,12 +51,29 @@ export default class Api implements IOrchestratorApi {
 
   test = async (): Promise<boolean> => await this.client.test();
 
-  async deploySlo(slo: ISlo) {
+  async deploySlo(slo: Slo): Promise<IResourceDeploymentStatus[]> {
     const resources = await resourceGenerator.generateSloResources(
       slo,
       this.connectionOptions.polarisNamespace
     );
 
+    return await this.deployResources(resources);
+  }
+
+  async deployElasticityStrategy(
+    elasticityStrategy: ElasticityStrategy
+  ): Promise<IResourceDeploymentStatus[]> {
+    const resources = await resourceGenerator.generateElasticityStrategyResources(
+      elasticityStrategy,
+      this.connectionOptions.polarisNamespace
+    );
+
+    return await this.deployResources(resources);
+  }
+
+  private async deployResources(
+    resources: KubernetesObject[]
+  ): Promise<IResourceDeploymentStatus[]> {
     const resourceDeploymentStatus = [];
     for (const resource of resources) {
       const existing = await this.client.read(resource);
