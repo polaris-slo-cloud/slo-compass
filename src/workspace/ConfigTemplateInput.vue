@@ -50,7 +50,7 @@ const validationRules = computed(() => {
     );
   }
   if (props.template.type === ParameterType.Integer) {
-    rules.push((val) => Math.floor(val) === Number(val) || 'Please provide an integer');
+    rules.push((val) => !val || Math.floor(val) === Number(val) || 'Please provide an integer');
   }
   return rules;
 });

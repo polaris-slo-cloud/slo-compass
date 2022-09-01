@@ -7,10 +7,16 @@ interface SloTarget {
   deployment: IDeployment;
 }
 
+interface SloElasticityStrategy {
+  id: string;
+  config: unknown;
+}
+
 export default interface Slo {
   name: string;
   description: string;
   targets: SloTarget[];
   config: unknown;
   template: string;
+  elasticityStrategy?: SloElasticityStrategy;
 }

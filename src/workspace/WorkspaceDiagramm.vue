@@ -246,10 +246,10 @@ const data = computed(() => {
         color: colors.getPaletteColor('blue'),
         polarisComponent: slo,
       };
-      if (slo.strategy) {
-        edges[`edge_${slo.id}_${slo.strategy}`] = {
+      if (slo.elasticityStrategy) {
+        edges[`edge_${slo.id}_${slo.elasticityStrategy.id}`] = {
           source: slo.id,
-          target: slo.strategy,
+          target: slo.elasticityStrategy.id,
           label: 'Scales target with',
         };
       }

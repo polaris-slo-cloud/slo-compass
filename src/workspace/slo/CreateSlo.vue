@@ -14,15 +14,29 @@
         <q-input v-model="model.description" label="Description" autogrow />
         <div class="text-h6 q-mt-lg q-mb-sm" v-if="template.config.length > 0">Config</div>
         <ConfigTemplateInput
-          v-for="(config, idx) of template.config"
+          v-for="config of template.config"
           :key="config.parameter"
           v-model="model.config[config.parameter]"
           :template="config"
-          :ref="
-            (el) => {
-              optionInputs[idx] = el;
-            }
-          "
+          ref="optionInputs"
+        />
+        <ElasticityStrategySelection
+          class="q-mt-lg"
+          label="Elasticity Strategy"
+          v-model="elasticityStrategy"
+        />
+        <div
+          class="text-h6 q-mt-lg q-mb-sm"
+          v-if="elasticityStrategy && elasticityStrategyTemplate.sloSpecificConfig.length > 0"
+        >
+          Elasticity Strategy Config
+        </div>
+        <ConfigTemplateInput
+          v-for="config of elasticityStrategyTemplate.sloSpecificConfig"
+          :key="config.parameter"
+          v-model="elasticityStrategyConfig[config.parameter]"
+          :template="config"
+          ref="elasticityOptionInputs"
         />
       </q-card-section>
       <q-card-actions align="right">
@@ -34,10 +48,12 @@
 </template>
 
 <script setup>
-import { ref, computed, defineEmits, nextTick, onBeforeUpdate } from 'vue';
-import TargetSelection from '@/workspace/targets/TargetSelection.vue';
+import { ref, computed, defineEmits, nextTick, onBeforeUpdate, watch } from 'vue';
 import { useWorkspaceStore } from '@/store';
+import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
+import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
+import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
 
 const store = useWorkspaceStore();
 const props = defineProps({
@@ -60,7 +76,20 @@ const model = ref({
   description: props.template?.description,
   config: {},
 });
+const elasticityStrategy = ref(null);
+const elasticityStrategyConfig = ref({});
+watch(
+  elasticityStrategy,
+  (value, oldValue) => {
+    if (value?.template !== oldValue?.template) {
+      elasticityStrategyConfig.value = {};
+    }
+  },
+  { deep: true }
+);
 function resetModel() {
+  elasticityStrategy.value = null;
+  elasticityStrategyConfig.value = {};
   model.value = {
     name: props.template?.name,
     description: props.template?.description,
@@ -68,17 +97,32 @@ function resetModel() {
   };
 }
 
+const elasticityStrategyTemplate = computed(() =>
+  elasticityStrategy.value ? getElasticityStrategyTemplate(elasticityStrategy.value.template) : {}
+);
+
 const nameInput = ref(null);
 const optionInputs = ref([]);
+const elasticityOptionInputs = ref([]);
 const isValid = computed(
-  () => !nameInput.value?.hasError && !optionInputs.value.some((x) => x.hasError)
+  () =>
+    !nameInput.value?.hasError &&
+    !optionInputs.value.some((x) => x.hasError) &&
+    !elasticityOptionInputs.value.some((x) => x.hasError)
 );
 function save() {
   nameInput.value.validate();
   optionInputs.value.forEach((x) => x.validate());
+  elasticityOptionInputs.value.forEach((x) => x.validate());
   if (isValid.value) {
     const slo = { ...model.value, type: 'SLO', template: props.template.key };
     slo.targets = slo.targets?.map((x) => x.id) || [];
+    if (elasticityStrategy.value) {
+      slo.elasticityStrategy = {
+        id: elasticityStrategy.value.id,
+        config: elasticityStrategyConfig.value,
+      };
+    }
     store.saveSlo(slo);
     showDialog.value = false;
     resetModel();
@@ -92,6 +136,7 @@ function save() {
 onBeforeUpdate(() => {
   // Reset optionInput refs before component updates
   optionInputs.value = [];
+  elasticityOptionInputs.value = [];
 });
 </script>
 
