@@ -1,9 +1,9 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
-import KubernetesApi, { K8sConnectionOptions } from '@/orchestrator/kubernetes/api';
-import connectionsStorage, { IOrchestratorConnectionSettings } from '@/connections/storage';
+import { IOrchestratorConnection } from '@/connections/storage';
 import Slo from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
+import { getOrchestrator } from '@/orchestrator/orchestrators';
 
 export interface IDeployment {
   id: string;
@@ -26,10 +26,14 @@ export interface IOrchestratorApi {
   ): Promise<IResourceDeploymentStatus[]>;
 }
 
+export interface IPolarisOrchestratorApi extends IOrchestratorApi {
+  configure(polarisOptions: unknown): void;
+}
+
 export interface IOrchestratorApiConnection extends IOrchestratorApi {
   orchestratorName: ComputedRef<string>;
-  connect(connectionSettings: IOrchestratorConnectionSettings): void;
-  testConnection(connectionSettings: IOrchestratorConnectionSettings): Promise<boolean>;
+  connect(connection: IOrchestratorConnection, polarisOptions: unknown): void;
+  testConnection(connection: IOrchestratorConnection): Promise<boolean>;
 }
 
 class OrchestratorNotConnectedError extends Error {
@@ -38,10 +42,14 @@ class OrchestratorNotConnectedError extends Error {
   }
 }
 
-class OrchestratorNotConnected implements IOrchestratorApi {
+class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   public name = 'No Orchestrator';
   test(): Promise<boolean> {
     return Promise.resolve(false);
+  }
+
+  configure(): void {
+    throw new OrchestratorNotConnectedError();
   }
 
   findDeployments(): Promise<IDeployment[]> {
@@ -56,32 +64,22 @@ class OrchestratorNotConnected implements IOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 }
-const api: Ref<IOrchestratorApi> = ref(new OrchestratorNotConnected());
+const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
 
-function createOrchestratorApi(
-  connectionSettings: IOrchestratorConnectionSettings
-): IOrchestratorApi {
-  switch (connectionSettings.orchestrator) {
-    case 'Kubernetes': {
-      return new KubernetesApi(connectionSettings.options as K8sConnectionOptions);
-    }
-  }
-  return new OrchestratorNotConnected();
+function createOrchestratorApi(connection: IOrchestratorConnection): IPolarisOrchestratorApi {
+  const orchestratorConfig = getOrchestrator(connection.orchestrator);
+  return orchestratorConfig
+    ? orchestratorConfig.createOrchestratorApi(connection)
+    : new OrchestratorNotConnected();
 }
 
-function connect(connectionSettings: IOrchestratorConnectionSettings): void {
-  api.value = createOrchestratorApi(connectionSettings);
+function connect(connection: IOrchestratorConnection, polarisOptions: unknown): void {
+  api.value = createOrchestratorApi(connection);
+  api.value.configure(polarisOptions);
 }
-async function testConnection(
-  connectionSettings: IOrchestratorConnectionSettings
-): Promise<boolean> {
-  const connection = createOrchestratorApi(connectionSettings);
-  return await connection.test();
-}
-
-const activeConnection = connectionsStorage.getActiveConnectionSettings();
-if (activeConnection) {
-  connect(activeConnection);
+async function testConnection(connection: IOrchestratorConnection): Promise<boolean> {
+  const apiConnection = createOrchestratorApi(connection);
+  return await apiConnection.test();
 }
 
 export function useOrchestratorApi(): IOrchestratorApiConnection {

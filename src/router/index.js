@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
 import { Platform } from 'quasar';
 import DashboardView from '@/views/DashboardView.vue';
+import WelcomeView from '@/views/WelcomeView.vue';
 import ConnectionsView from '@/views/ConnectionsView.vue';
+import { useWorkspaceStore } from '@/store';
 
-console.log(import.meta.env);
 const router = createRouter({
   history: Platform.is.electron
     ? createWebHashHistory()
@@ -11,8 +12,29 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'dashboard',
+      name: 'home',
+      component: WelcomeView,
+      beforeEnter: (to, from, next) => {
+        const store = useWorkspaceStore();
+        if (store.isOpened) {
+          next({ name: 'workspace' });
+        } else {
+          next();
+        }
+      },
+    },
+    {
+      path: '/workspace',
+      name: 'workspace',
       component: DashboardView,
+      beforeEnter: (to, from, next) => {
+        const store = useWorkspaceStore();
+        if (!store.isOpened) {
+          next(from.name ? false : { name: 'home' });
+        } else {
+          next();
+        }
+      },
     },
     {
       path: '/connections',

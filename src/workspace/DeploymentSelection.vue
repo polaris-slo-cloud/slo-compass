@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch, defineEmits } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import orchestratorIconMap from '@/orchestrator/orchestrator-icon-map';
 

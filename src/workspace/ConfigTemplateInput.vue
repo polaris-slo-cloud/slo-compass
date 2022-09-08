@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { ref, computed, defineEmits } from 'vue';
+import { ref, computed } from 'vue';
 import { ParameterType } from '@/polaris-templates/parameters';
 
 const props = defineProps({

@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps } from 'vue';
+import { computed } from 'vue';
 import { colors } from 'quasar';
 
 const props = defineProps({

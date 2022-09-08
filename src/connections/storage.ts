@@ -1,22 +1,23 @@
 const localStorageKey = 'orchestrator-connections';
 
-export interface IOrchestratorConnectionSettings {
+export interface IOrchestratorConnection {
   id: string;
-  active: boolean;
+  name: string;
   orchestrator: string;
-  options: unknown;
+  connectionSettings: unknown;
 }
 
 export default {
-  getConnectionSettings(): IOrchestratorConnectionSettings[] {
+  getConnectionSettings(): IOrchestratorConnection[] {
     const connections = localStorage.getItem(localStorageKey);
     return connections ? JSON.parse(connections) : [];
   },
-  saveConnectionSettings(connections: IOrchestratorConnectionSettings[]) {
-    localStorage.setItem(localStorageKey, JSON.stringify(connections));
-  },
-  getActiveConnectionSettings(): IOrchestratorConnectionSettings | undefined {
+  addConnectionSetting(connection: IOrchestratorConnection) {
     const connections = this.getConnectionSettings();
-    return connections.find((x) => x.active);
+    connections.push(connection);
+    this.saveConnectionSettings(connections);
+  },
+  saveConnectionSettings(connections: IOrchestratorConnection[]) {
+    localStorage.setItem(localStorageKey, JSON.stringify(connections));
   },
 };

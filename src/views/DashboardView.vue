@@ -30,12 +30,6 @@ watch(selection, (value) => {
     showNewItemSelection.value = false;
   }
 });
-function createWorkspace() {
-  store.createWorkspace();
-}
-async function openWorkspace() {
-  await store.openWorkspace();
-}
 
 function openNewItemSelection() {
   selection.value = null;
@@ -44,7 +38,7 @@ function openNewItemSelection() {
 </script>
 
 <template>
-  <q-page v-if="store.isOpened" class="column">
+  <q-page class="column">
     <q-toolbar class="bg-primary text-white">
       <q-toolbar-title>Workspace</q-toolbar-title>
       <q-btn flat label="Add" icon="mdi-plus" @click="openNewItemSelection" />
@@ -75,18 +69,5 @@ function openNewItemSelection() {
         <NewWorkspaceItemSelector v-if="showNewItemSelection" />
       </q-drawer>
     </teleport>
-  </q-page>
-  <q-page v-else class="flex flex-center">
-    <div class="column">
-      <q-btn flat label="New Workspace" icon="mdi-file" no-caps @click="createWorkspace"></q-btn>
-      <q-btn
-        flat
-        class="q-mt-md"
-        label="Open Workspace"
-        icon="mdi-folder-open"
-        no-caps
-        @click="openWorkspace"
-      ></q-btn>
-    </div>
   </q-page>
 </template>

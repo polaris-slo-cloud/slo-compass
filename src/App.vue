@@ -3,7 +3,11 @@ import { RouterView } from 'vue-router';
 import { computed, ref } from 'vue';
 import AppIcon from '@/icons/AppIcon.vue';
 import { useQuasar } from 'quasar';
+import { loadCurrentWorkspace, setupAutosave } from '@/workspace/store-helper';
 const $q = useQuasar();
+
+setupAutosave();
+loadCurrentWorkspace();
 
 const isMini = ref(true);
 const menuList = ref([

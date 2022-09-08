@@ -22,7 +22,7 @@
 
 <script setup>
 import { useWorkspaceStore } from '@/store';
-import { computed, defineEmits, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
 const store = useWorkspaceStore();
 const props = defineProps({

@@ -48,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, computed, defineEmits, nextTick, onBeforeUpdate, watch } from 'vue';
+import { ref, computed, nextTick, onBeforeUpdate, watch } from 'vue';
 import { useWorkspaceStore } from '@/store';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';

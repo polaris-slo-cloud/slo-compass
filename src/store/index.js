@@ -2,12 +2,17 @@ import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import workspaceFileService from '../workspace/workspace-file-service';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { getWorkspace, markWorkspaceAsUsed } from '@/workspace/store-helper';
 //import polarisConnector from "../polaris-connector";
 const orchestratorApi = useOrchestratorApi();
 
 export const useWorkspaceStore = defineStore('workspace', {
   state: () => ({
     isOpened: false,
+    workspaceId: null,
+    name: null,
+    location: null,
+    orchestrator: null,
     workspace: {
       targets: [],
       slos: [],
@@ -16,8 +21,34 @@ export const useWorkspaceStore = defineStore('workspace', {
     runningDeploymentActions: {},
   }),
   actions: {
-    createWorkspace() {
-      this.isOpened = true;
+    createWorkspace(config) {
+      let location = null;
+      if (config.workspaceDirectory && window.filesApi) {
+        location = window.filesApi.combinePaths(config.workspaceDirectory, 'workspace.pui');
+      }
+      this.$patch({
+        isOpened: true,
+        workspaceId: uuidv4(),
+        name: config.name,
+        location,
+        orchestrator: config.orchestrator,
+      });
+      orchestratorApi.connect(config.orchestrator.connection, config.orchestrator.polarisOptions);
+      markWorkspaceAsUsed(this.$state);
+    },
+    async loadWorkspace(workspaceId) {
+      const workspace = await getWorkspace(workspaceId);
+      this.$patch({
+        ...workspace,
+        isOpened: true,
+      });
+      markWorkspaceAsUsed(this.$state);
+      if (workspace.orchestrator) {
+        orchestratorApi.connect(
+          workspace.orchestrator.connection,
+          workspace.orchestrator.polarisOptions
+        );
+      }
     },
     async openWorkspace() {
       this.workspace = await workspaceFileService.openWorkspaceFile();

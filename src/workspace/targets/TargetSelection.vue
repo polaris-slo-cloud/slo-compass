@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { computed, ref, defineEmits } from 'vue';
+import { computed, ref } from 'vue';
 import { useWorkspaceStore } from '@/store';
 import componentIcon from '@/workspace/targets/component-icon';
 

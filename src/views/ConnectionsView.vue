@@ -34,11 +34,10 @@
               <q-td key="name" :props="props">
                 {{ props.row.name }}
               </q-td>
-              <q-td key="options" :props="props">
-                {{ props.row.options }}
+              <q-td key="connectionSettings" :props="props">
+                {{ props.row.connectionSettings }}
               </q-td>
               <q-td key="actions" :props="props">
-                <q-btn v-if="!props.row.active" flat icon="mdi-connection" label="Connect"  @click="connect(props.row)"/>
                 <q-btn flat icon="mdi-delete" color="red" @click="deleteConnection(props.row)" />
               </q-td>
             </q-tr>
@@ -53,17 +52,19 @@
         <span class="text-muted">Not Connected</span>
       </div>
     </div>
-    <ConnectOrchestratorDialog v-model:show="showOrchestratorDialog" @added="saveConnection" />
+    <AddOrchestratorConnectionDialog
+      v-model:show="showOrchestratorDialog"
+      @added="connectionAdded"
+    />
   </q-page>
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import ConnectOrchestratorDialog from '@/connections/ConnectOrchestratorDialog.vue';
+import AddOrchestratorConnectionDialog from '@/connections/AddOrchestratorConnectionDialog.vue';
 import connectionsStorage from '@/connections/storage';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import { v4 as uuidv4 } from 'uuid';
-import {useQuasar} from "quasar";
+import { useQuasar } from 'quasar';
 
 const orchestratorApi = useOrchestratorApi();
 const $q = useQuasar();
@@ -71,7 +72,13 @@ const $q = useQuasar();
 const orchestratorConnectionColumns = [
   { name: 'active', field: 'active' },
   { name: 'name', required: true, label: 'Name', align: 'left', field: 'name' },
-  { name: 'options', required: true, label: 'Location', align: 'left', field: 'options' },
+  {
+    name: 'connectionSettings',
+    required: true,
+    label: 'Connection Settings',
+    align: 'left',
+    field: 'connectionSettings',
+  },
   { name: 'actions' },
 ];
 const orchestratorConnections = ref([]);
@@ -83,36 +90,14 @@ function openAddOrchestratorDialog() {
   showOrchestratorDialog.value = true;
 }
 
-async function saveConnection(conn) {
-  orchestratorConnections.value = orchestratorConnections.value.map((x) => ({
-    ...x,
-    active: false,
-  }));
-  orchestratorConnections.value.push({ id: uuidv4(), ...conn, active: true });
-  connectionsStorage.saveConnectionSettings(orchestratorConnections.value);
+async function connectionAdded(conn) {
+  orchestratorConnections.value.push(conn);
   orchestratorConnected.value = await orchestratorApi.test();
 }
 
 function loadConnections() {
   orchestratorConnections.value = connectionsStorage.getConnectionSettings();
 }
-async function connect(conn) {
-  if (await orchestratorApi.testConnection(conn)) {
-    orchestratorApi.connect(conn);
-    orchestratorConnections.value = orchestratorConnections.value.map((x) => ({
-      ...x,
-      active: x.id === conn.id,
-    }));
-    connectionsStorage.saveConnectionSettings(orchestratorConnections.value);
-  } else {
-    $q.notify({
-      color: 'negative',
-      message: `Unable to connect to orchestrator ${conn.orchestrator} at ${conn.options}`,
-      icon: 'report_problem',
-    });
-  }
-}
-
 function deleteConnection(conn) {
   orchestratorConnections.value = orchestratorConnections.value.filter((x) => x.id !== conn.id);
   connectionsStorage.saveConnectionSettings(orchestratorConnections.value);

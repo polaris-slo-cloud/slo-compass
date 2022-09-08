@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref, computed, defineEmits } from 'vue';
+import { ref, computed } from 'vue';
 const props = defineProps({
   label: String,
   modelValue: [String, Number, Boolean, Array, Object],

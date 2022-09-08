@@ -1,6 +1,6 @@
 import {
   IDeployment,
-  IOrchestratorApi,
+  IPolarisOrchestratorApi,
   IResourceDeploymentStatus,
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
@@ -14,15 +14,20 @@ export interface K8sConnectionOptions {
   polarisNamespace: string;
 }
 
-export default class Api implements IOrchestratorApi {
+export default class Api implements IPolarisOrchestratorApi {
   public name = 'Kubernetes';
   private client: K8sClient;
   private connectionOptions: K8sConnectionOptions;
 
-  constructor(options: K8sConnectionOptions) {
-    this.client = createClient(options.connectionString);
-    this.connectionOptions = options;
+  constructor(connectionSettings: string) {
+    this.client = createClient(connectionSettings);
+    this.connectionOptions = { connectionString: connectionSettings, polarisNamespace: 'default' };
   }
+
+  configure(polarisOptions: string) {
+    this.connectionOptions.polarisNamespace = polarisOptions;
+  }
+
   async findDeployments(query?: string): Promise<IDeployment[]> {
     try {
       const data = await this.client.listAllDeployments();

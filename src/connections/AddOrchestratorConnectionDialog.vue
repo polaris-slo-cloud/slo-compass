@@ -4,8 +4,12 @@
       <q-card-section>
         <div class="text-h6">New Orchestrator Connection</div>
         <q-input autofocus label="Name" v-model="model.name" />
-        <q-select label="Orchestrator" v-model="model.orchestrator" :options="availableOrchestrators" />
-        <component :is="orchestratorSettingsComponent" v-model="model.options" />
+        <q-select
+          label="Orchestrator"
+          v-model="model.orchestrator"
+          :options="availableOrchestrators"
+        />
+        <component :is="orchestratorSettingsComponent" v-model="model.connectionSettings" />
         <div class="q-mt-md flex items-center">
           <q-btn flat label="Test Connection" no-caps @click="testConnection" />
           <span class="q-mx-sm">{{ model.orchestrator }} </span>
@@ -16,32 +20,25 @@
       <q-card-actions>
         <q-space />
         <q-btn flat label="Cancel" @click="closeDialog" />
-        <q-btn color="primary" label="Connect" icon="mdi-connection" @click="connect" />
+        <q-btn color="primary" label="Add" icon="mdi-plus" @click="add" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup>
-import { ref, defineEmits, computed, onMounted } from 'vue';
-import { useQuasar } from "quasar";
+import { ref, computed, onMounted } from 'vue';
+import { useQuasar } from 'quasar';
+import { v4 as uuidv4 } from 'uuid';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import KubernetesApiSettings from '@/connections/orchestrator-settings/KubernetesApiSettings.vue';
-import KubernetesClientSettings from '@/connections/orchestrator-settings/KubernetesClientSettings.vue';
-
-const apiOptionsComponents = {
-  Kubernetes: KubernetesApiSettings,
-};
-const nativeOptionsComponents = {
-  Kubernetes: KubernetesClientSettings,
-};
+import { availableOrchestrators, getOrchestrator } from '@/orchestrator/orchestrators';
+import connectionsStorage from '@/connections/storage';
 
 const props = defineProps({
   show: Boolean,
 });
 const emit = defineEmits(['update:show', 'added']);
 const orchestratorApi = useOrchestratorApi();
-const availableOrchestrators = ['Kubernetes'];
 const model = ref({});
 const $q = useQuasar();
 const isElectron = computed(() => $q.platform.is.electron);
@@ -62,10 +59,11 @@ const showDialog = computed({
 });
 
 const orchestratorSettingsComponent = computed(() => {
-  const key = model.value.orchestrator;
-  return isElectron.value ?
-    nativeOptionsComponents[key] :
-    apiOptionsComponents[key];
+  const config = getOrchestrator(model.value.orchestrator);
+  const component = isElectron.value
+    ? config?.connectionSettingsComponent?.native
+    : config?.connectionSettingsComponent?.web;
+  return component || 'div';
 });
 
 const connectionStatus = ref('not-checked');
@@ -94,23 +92,19 @@ async function testConnection() {
   connectionStatus.value = 'checking';
   const settings = {
     orchestrator: model.value.orchestrator,
-    options: model.value.options,
+    connectionSettings: model.value.connectionSettings,
   };
   const success = await orchestratorApi.testConnection(settings);
   connectionStatus.value = success ? 'success' : 'error';
   return success;
 }
-async function connect() {
-  const success = await testConnection();
-  if (!success) {
-    return;
-  }
+async function add() {
   const settings = {
-    orchestrator: model.value.orchestrator,
-    options: model.value.options,
+    id: uuidv4(),
+    ...model.value,
   };
-  orchestratorApi.connect(settings);
-  emit('added', model.value);
+  connectionsStorage.addConnectionSetting(settings);
+  emit('added', settings);
   closeDialog();
 }
 onMounted(resetModel);

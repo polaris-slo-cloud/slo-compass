@@ -1,12 +1,7 @@
 const k8s = require('@kubernetes/client-node');
-const { KubernetesPatchStrategies } = require('@/orchestrator/kubernetes/k8s-client-helper');
 
 const k8sConfig = new k8s.KubeConfig();
 k8sConfig.loadFromDefault();
-const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
-const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
-const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
-const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
 
 module.exports = {
   connectToContext(ctx) {
@@ -17,6 +12,7 @@ module.exports = {
   },
   async read(spec) {
     try {
+      const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
       const { body } = await k8sObjectApi.read(spec);
       return body;
     } catch (e) {
@@ -24,6 +20,7 @@ module.exports = {
     }
   },
   async create(resource) {
+    const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
     const { body } = await k8sObjectApi.create(resource);
     return body;
   },
@@ -31,8 +28,9 @@ module.exports = {
     const headers = {};
     // The ServiceMonitor type is not able to handle the default StrategicMergePatch
     if (resource.kind === 'ServiceMonitor') {
-      headers['content-type'] = KubernetesPatchStrategies.MergePatch;
+      headers['content-type'] = 'application/merge-patch+json';
     }
+    const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
     const { body } = await k8sObjectApi.patch(
       resource,
       undefined,
@@ -53,14 +51,17 @@ module.exports = {
     }
   },
   async listAllDeployments() {
+    const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
     const { body } = await k8sAppsApi.listDeploymentForAllNamespaces();
     return body;
   },
   async getCustomResourceDefinitions() {
+    const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
     const { body } = await k8sApiExtensionsApi.listCustomResourceDefinition();
     return body.items;
   },
   async getCustomResourceObjects(crd) {
+    const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
     const { body } = await k8sCustomObjectsApi.listClusterCustomObject(
       crd.spec.group,
       crd.spec.versions[0].name,
@@ -70,6 +71,7 @@ module.exports = {
   },
   async getDeployment(namespace, name) {
     try {
+      const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
       const { body } = await k8sAppsApi.readNamespacedDeployment(name, namespace);
       return body;
     } catch (e) {
