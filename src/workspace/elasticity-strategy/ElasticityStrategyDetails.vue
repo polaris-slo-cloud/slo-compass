@@ -16,7 +16,7 @@ const store = useWorkspaceStore();
 const canBeDeployed = computed(
   () =>
     !store.hasRunningDeployment(props.item.id) &&
-    (!props.item.deploymentStatus || props.item.deploymentStatus.some((x) => !x.success))
+    props.item.polarisControllers.some((x) => !x.deployment)
 );
 
 function deploy() {

@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card style="width: 700px; max-width: 80vw">
       <q-card-section>
-        <div class="text-h5">{{ template.name }}</div>
+        <div class="text-h3">{{ template.name }}</div>
         <q-input
           ref="nameInput"
           autofocus
@@ -23,6 +23,7 @@
 <script setup>
 import { useWorkspaceStore } from '@/store';
 import { computed, nextTick, ref, watch } from 'vue';
+import { getPolarisControllers } from '@/polaris-templates/strategy-template';
 
 const store = useWorkspaceStore();
 const props = defineProps({
@@ -54,10 +55,16 @@ function resetModel() {
 
 const nameInput = ref(null);
 const isValid = computed(() => !nameInput.value?.hasError);
+
 function save() {
   nameInput.value.validate();
   if (isValid.value) {
-    const strategy = { ...model.value, type: 'ElasticityStrategy', template: props.template.key };
+    const strategy = {
+      ...model.value,
+      type: 'ElasticityStrategy',
+      template: props.template.key,
+      polarisControllers: getPolarisControllers(props.template),
+    };
     store.saveElasticityStrategy(strategy);
     showDialog.value = false;
     resetModel();

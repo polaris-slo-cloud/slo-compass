@@ -4,6 +4,7 @@ import { IOrchestratorConnection } from '@/connections/storage';
 import Slo from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
+import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
 
 export interface IDeployment {
   id: string;
@@ -11,19 +12,20 @@ export interface IDeployment {
   status: string;
   connectionMetadata: unknown;
 }
-export interface IResourceDeploymentStatus {
-  resource: unknown;
-  success: boolean;
+export interface PolarisDeploymentResult {
+  failedResources: unknown[];
+  deployedControllers: PolarisController[];
 }
 
 export interface IOrchestratorApi {
   name: string;
   test(): Promise<boolean>;
   findDeployments(query?: string): Promise<IDeployment[]>;
-  deploySlo(slo: Slo): Promise<IResourceDeploymentStatus[]>;
+  deploySlo(slo: Slo): Promise<PolarisDeploymentResult>;
   deployElasticityStrategy(
     elasticityStrategy: ElasticityStrategy
-  ): Promise<IResourceDeploymentStatus[]>;
+  ): Promise<PolarisDeploymentResult>;
+  retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
 }
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
@@ -56,11 +58,15 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  deploySlo(): Promise<IResourceDeploymentStatus[]> {
+  deploySlo(): Promise<PolarisDeploymentResult> {
     throw new OrchestratorNotConnectedError();
   }
 
-  deployElasticityStrategy(): Promise<IResourceDeploymentStatus[]> {
+  deployElasticityStrategy(): Promise<PolarisDeploymentResult> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  retryDeployment(): Promise<PolarisDeploymentResult> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -93,5 +99,6 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     deploySlo: (slo) => api.value.deploySlo(slo),
     deployElasticityStrategy: (elasticityStrategy) =>
       api.value.deployElasticityStrategy(elasticityStrategy),
+    retryDeployment: (item) => api.value.retryDeployment(item),
   };
 }

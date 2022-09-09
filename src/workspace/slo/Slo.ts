@@ -1,4 +1,5 @@
 import { IDeployment } from '@/orchestrator/orchestrator-api';
+import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
 
 interface SloTarget {
   id: string;
@@ -12,11 +13,12 @@ interface SloElasticityStrategy {
   config: unknown;
 }
 
-export default interface Slo {
+export default interface Slo extends PolarisComponent {
   name: string;
   description: string;
   targets: SloTarget[];
   config: unknown;
   template: string;
   elasticityStrategy?: SloElasticityStrategy;
+  polarisControllers: PolarisController[];
 }

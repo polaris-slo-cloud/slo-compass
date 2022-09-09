@@ -1,4 +1,5 @@
 import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
+import PolarisController from '@/workspace/PolarisComponent';
 
 export interface ElasticityStrategyTemplateMetadata {
   key: string;
@@ -76,4 +77,16 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
 
 export function getTemplate(key: string): ElasticityStrategyTemplateMetadata {
   return templates.find((x) => x.key === key);
+}
+
+export function getPolarisControllers(
+  template: ElasticityStrategyTemplateMetadata
+): PolarisController[] {
+  return [
+    {
+      type: 'Elasticity Strategy Controller',
+      name: template.controllerName,
+      deployment: null,
+    },
+  ];
 }

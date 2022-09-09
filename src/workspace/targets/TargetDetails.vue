@@ -4,7 +4,7 @@
       <div v-if="deployment" class="flex items-center">
         <q-icon v-bind="orchestratorIcon" size="sm" class="q-mr-xs" />
         <span class="text-italic q-mr-md">{{ deployment.name }}</span>
-        <q-icon name="mdi-circle q-mr-xs" :color="deploymentStatusColor" />
+        <q-badge rounded :color="deploymentStatusColor" class="q-mr-sm" />
         {{ deployment.status }}
       </div>
       <div v-else>

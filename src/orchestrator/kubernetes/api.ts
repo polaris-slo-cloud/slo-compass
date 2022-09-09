@@ -1,13 +1,14 @@
 import {
   IDeployment,
   IPolarisOrchestratorApi,
-  IResourceDeploymentStatus,
+  PolarisDeploymentResult,
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
 import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
 import Slo from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { KubernetesObject } from '@kubernetes/client-node';
+import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -56,43 +57,75 @@ export default class Api implements IPolarisOrchestratorApi {
 
   test = async (): Promise<boolean> => await this.client.test();
 
-  async deploySlo(slo: Slo): Promise<IResourceDeploymentStatus[]> {
+  async deploySlo(slo: Slo): Promise<PolarisDeploymentResult> {
     const resources = await resourceGenerator.generateSloResources(
       slo,
       this.connectionOptions.polarisNamespace
     );
 
-    return await this.deployResources(resources);
+    return await this.deployResources(resources, slo.polarisControllers);
   }
 
   async deployElasticityStrategy(
     elasticityStrategy: ElasticityStrategy
-  ): Promise<IResourceDeploymentStatus[]> {
+  ): Promise<PolarisDeploymentResult> {
     const resources = await resourceGenerator.generateElasticityStrategyResources(
       elasticityStrategy,
       this.connectionOptions.polarisNamespace
     );
 
-    return await this.deployResources(resources);
+    return await this.deployResources(resources, elasticityStrategy.polarisControllers);
+  }
+
+  async retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult> {
+    if (item.failedDeployments && item.failedDeployments.length > 0) {
+      return await this.deployResources(item.failedDeployments, item.polarisControllers);
+    }
+    return {
+      failedResources: [],
+      deployedControllers: [],
+    };
   }
 
   private async deployResources(
-    resources: KubernetesObject[]
-  ): Promise<IResourceDeploymentStatus[]> {
-    const resourceDeploymentStatus = [];
+    resources: KubernetesObject[],
+    polarisControllers: PolarisController[]
+  ): Promise<PolarisDeploymentResult> {
+    const failedResources = [];
+    const deployedControllers = [];
     for (const resource of resources) {
-      const existing = await this.client.read(resource);
+      const deploymentStatusResource = {
+        ...resource,
+        displayName: `${resource.metadata.name} (${resource.apiVersion}/${resource.kind})`,
+      };
       try {
+        const existing = await this.client.read(resource);
         if (existing === null) {
           await this.client.create(resource);
         } else {
           await this.client.patch(resource);
         }
-        resourceDeploymentStatus.push({ resource, success: true });
+        const controller = polarisControllers.find(
+          (x) => x.name === resource.metadata.name && resource.kind === 'Deployment'
+        );
+        if (controller) {
+          deployedControllers.push({
+            ...controller,
+            deployment: {
+              kind: resource.kind,
+              apiVersion: resource.apiVersion,
+              name: resource.metadata.name,
+              namespace: resource.metadata.namespace,
+            },
+          });
+        }
       } catch (e) {
-        resourceDeploymentStatus.push({ resource, success: false });
+        failedResources.push(deploymentStatusResource);
       }
     }
-    return resourceDeploymentStatus;
+    return {
+      failedResources,
+      deployedControllers,
+    };
   }
 }

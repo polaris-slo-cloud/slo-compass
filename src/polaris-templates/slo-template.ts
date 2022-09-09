@@ -1,4 +1,5 @@
 import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
+import PolarisController from '@/workspace/PolarisComponent';
 
 export interface SloTemplateMetadata {
   key: string;
@@ -80,4 +81,24 @@ export const templates: SloTemplateMetadata[] = [
 
 export function getTemplate(key: string): SloTemplateMetadata {
   return templates.find((x) => x.key === key);
+}
+
+export function getPolarisControllers(template: SloTemplateMetadata): PolarisController[] {
+  const metricsControllers =
+    template.metrics?.map(
+      (x): PolarisController => ({
+        type: 'Metrics Controller',
+        name: x.controllerName,
+        deployment: null,
+      })
+    ) ?? [];
+
+  return [
+    {
+      type: 'SLO Controller',
+      name: template.controllerName,
+      deployment: null,
+    },
+    ...metricsControllers,
+  ];
 }

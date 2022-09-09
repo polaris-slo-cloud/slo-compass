@@ -1,5 +1,6 @@
 const { app, BrowserWindow } = require('electron');
 const { initialize, enable } = require('@electron/remote/main');
+const { default: installExtension, VUEJS3_DEVTOOLS } = require('electron-devtools-installer');
 const path = require('path');
 
 const createWindow = () => {
@@ -33,6 +34,9 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow();
+  if (!app.isPackaged) {
+    installExtension(VUEJS3_DEVTOOLS);
+  }
   // Open a new window if the app is activated again after closing all windows
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

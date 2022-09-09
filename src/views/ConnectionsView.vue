@@ -6,12 +6,12 @@
     <div class="q-layout-padding">
       <div>
         <div class="text-h4">Orchestrator</div>
-        <span>{{ currentOrchestratorName }} - </span>
+        <span class="q-mr-sm">{{ currentOrchestratorName }} -</span>
         <span v-if="orchestratorConnected" class="text-green text-italic connection-status">
-          <q-icon name="mdi-circle" /> Connected
+          <q-badge rounded color="green" class="q-mr-sm" /> Connected
         </span>
         <span class="text-red connection-status" v-else>
-          <q-icon name="mdi-circle" /> Not Connected
+          <q-badge rounded color="red" class="q-mr-sm" /> Not Connected
         </span>
         <q-table
           class="q-mt-md"

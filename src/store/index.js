@@ -6,6 +6,20 @@ import { getWorkspace, markWorkspaceAsUsed } from '@/workspace/store-helper';
 //import polarisConnector from "../polaris-connector";
 const orchestratorApi = useOrchestratorApi();
 
+function applyDeploymentResult(item, result) {
+  item.failedDeployments = result.failedResources;
+  item.polarisControllers = item.polarisControllers.map((controller) => {
+    const mapped = { ...controller };
+    const deployment = result.deployedControllers.find(
+      (x) => x.name === controller.name
+    )?.deployment;
+    if (deployment) {
+      mapped.deployment = deployment;
+    }
+    return mapped;
+  });
+}
+
 export const useWorkspaceStore = defineStore('workspace', {
   state: () => ({
     isOpened: false,
@@ -109,7 +123,8 @@ export const useWorkspaceStore = defineStore('workspace', {
         name: slo.name,
         dismissed: false,
       };
-      slo.deploymentStatus = await orchestratorApi.deploySlo(slo);
+      const result = await orchestratorApi.deploySlo(slo);
+      applyDeploymentResult(slo, result);
       delete this.runningDeploymentActions[slo.id];
     },
     async deployElasticityStrategy(elasticityStrategy) {
@@ -118,10 +133,19 @@ export const useWorkspaceStore = defineStore('workspace', {
         name: elasticityStrategy.name,
         dismissed: false,
       };
-      elasticityStrategy.deploymentStatus = await orchestratorApi.deployElasticityStrategy(
-        elasticityStrategy
-      );
+      const result = await orchestratorApi.deployElasticityStrategy(elasticityStrategy);
+      applyDeploymentResult(elasticityStrategy, result);
       delete this.runningDeploymentActions[elasticityStrategy.id];
+    },
+    async retryDeployment(item) {
+      this.runningDeploymentActions[item.id] = {
+        type: item.type,
+        name: item.name,
+        dismissed: false,
+      };
+      const result = await orchestratorApi.retryDeployment(item);
+      applyDeploymentResult(item, result);
+      delete this.runningDeploymentActions[item.id];
     },
     dismissRunningDeploymentActions() {
       Object.values(this.runningDeploymentActions).forEach((val) => (val.dismissed = true));

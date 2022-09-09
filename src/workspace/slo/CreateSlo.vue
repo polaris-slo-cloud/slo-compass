@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card style="width: 700px; max-width: 80vw">
       <q-card-section>
-        <div class="text-h5">{{ template.name }} SLO</div>
+        <div class="text-h3">{{ template.name }} SLO</div>
         <q-input
           ref="nameInput"
           autofocus
@@ -51,6 +51,7 @@
 import { ref, computed, nextTick, onBeforeUpdate, watch } from 'vue';
 import { useWorkspaceStore } from '@/store';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
+import { getPolarisControllers } from '@/polaris-templates/slo-template';
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
@@ -110,12 +111,18 @@ const isValid = computed(
     !optionInputs.value.some((x) => x.hasError) &&
     !elasticityOptionInputs.value.some((x) => x.hasError)
 );
+
 function save() {
   nameInput.value.validate();
   optionInputs.value.forEach((x) => x.validate());
   elasticityOptionInputs.value.forEach((x) => x.validate());
   if (isValid.value) {
-    const slo = { ...model.value, type: 'SLO', template: props.template.key };
+    const slo = {
+      ...model.value,
+      type: 'SLO',
+      template: props.template.key,
+      polarisControllers: getPolarisControllers(props.template),
+    };
     slo.targets = slo.targets?.map((x) => x.id) || [];
     if (elasticityStrategy.value) {
       slo.elasticityStrategy = {
