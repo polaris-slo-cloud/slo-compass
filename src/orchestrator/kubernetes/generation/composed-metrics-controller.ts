@@ -4,7 +4,7 @@ import {
   V1Deployment,
   V1Service,
 } from '@kubernetes/client-node';
-import constants from '../constants';
+import { polarisApiGroups, env } from '../constants';
 
 export const generateMetricSourceClusterRole = (
   name: string,
@@ -17,12 +17,12 @@ export const generateMetricSourceClusterRole = (
   },
   rules: [
     {
-      apiGroups: [constants.polarisApiGroups.metrics],
+      apiGroups: [polarisApiGroups.metrics],
       resources: [composedMetricResources],
       verbs: ['get', 'watch', 'list'],
     },
     {
-      apiGroups: [constants.polarisApiGroups.metrics],
+      apiGroups: [polarisApiGroups.metrics],
       resources: [`${composedMetricResources}/status`],
       verbs: ['get'],
     },
@@ -130,15 +130,15 @@ export const generateComposedMetricsControllerDeployment = (
               privileged: false,
             },
             env: [
-              { name: 'PROMETHEUS_HOST', value: constants.env.prometheusHost },
-              { name: 'PROMETHEUS_PORT', value: constants.env.prometheusPort },
+              { name: 'PROMETHEUS_HOST', value: env.prometheusHost },
+              { name: 'PROMETHEUS_PORT', value: env.prometheusPort },
               {
                 name: 'PROMETHEUS_METRICS_ENDPOINT_PORT',
-                value: constants.env.prometheusMetricsEndpointPort,
+                value: env.prometheusMetricsEndpointPort,
               },
               {
                 name: 'PROMETHEUS_METRICS_ENDPOINT_PATH',
-                value: constants.env.prometheusMetricsEndpointPath,
+                value: env.prometheusMetricsEndpointPath,
               },
               { name: 'COMPOSED_METRIC_COMPUTATION_INTERVAL_MS', value: '20000' },
               { name: 'KUBERNETES_SERVICE_HOST', value: 'kubernetes.default.svc' },

@@ -1,4 +1,5 @@
 const k8s = require('@kubernetes/client-node');
+const request = require('request');
 
 const k8sConfig = new k8s.KubeConfig();
 k8sConfig.loadFromDefault();
@@ -26,8 +27,8 @@ module.exports = {
   },
   async patch(resource) {
     const headers = {};
-    // The ServiceMonitor type is not able to handle the default StrategicMergePatch
-    if (resource.kind === 'ServiceMonitor') {
+    // The ServiceMonitor type and Polaris Custom Objects are not able to handle the default StrategicMergePatch
+    if (resource.kind === 'ServiceMonitor' || resource.apiVersion.includes('polaris')) {
       headers['content-type'] = 'application/merge-patch+json';
     }
     const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
@@ -55,19 +56,52 @@ module.exports = {
     const { body } = await k8sAppsApi.listDeploymentForAllNamespaces();
     return body;
   },
-  async getCustomResourceDefinitions() {
+  async listCustomResourceDefinitions() {
     const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
     const { body } = await k8sApiExtensionsApi.listCustomResourceDefinition();
-    return body.items;
+    return body;
   },
-  async getCustomResourceObjects(crd) {
+  async getCustomResourceObject(identifier) {
     const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
-    const { body } = await k8sCustomObjectsApi.listClusterCustomObject(
-      crd.spec.group,
-      crd.spec.versions[0].name,
-      crd.spec.names.plural
+    const { body } = await k8sCustomObjectsApi.getClusterCustomObject(
+      identifier.group,
+      identifier.version,
+      identifier.plural,
+      identifier.name
     );
     return body.items;
+  },
+  async deleteCustomResourceObject(identifier) {
+    const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
+    await k8sCustomObjectsApi.deleteClusterCustomObject(
+      identifier.group,
+      identifier.version,
+      identifier.plural,
+      identifier.name
+    );
+  },
+  async findCustomResourceMetadata(crdObject) {
+    const api = crdObject.apiVersion.includes('/') ? 'apis' : 'api';
+    const baseUrl = [api, crdObject.apiVersion].join('/');
+    const opts = {};
+    await k8sConfig.applyToRequest(opts);
+    const data = await new Promise((resolve, reject) => {
+      // TODO: Use fetch once the K8s JS Api has been migrated to fetch
+      request.get(
+        `${k8sConfig.getCurrentCluster().server}/${baseUrl}`,
+        opts,
+        (error, response, body) => {
+          if (error) {
+            reject(error);
+          }
+          if (response) {
+            console.log(`statusCode: ${response.statusCode}`);
+          }
+          resolve(JSON.parse(body));
+        }
+      );
+    });
+    return data.resources.find((x) => x.kind === crdObject.kind);
   },
   async getDeployment(namespace, name) {
     try {

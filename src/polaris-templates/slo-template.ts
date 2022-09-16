@@ -1,5 +1,5 @@
 import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
-import PolarisController from '@/workspace/PolarisComponent';
+import { PolarisController } from '@/workspace/PolarisComponent';
 
 export interface SloTemplateMetadata {
   key: string;

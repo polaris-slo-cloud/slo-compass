@@ -6,8 +6,8 @@ const path = require('path');
 const createWindow = () => {
   initialize();
   const win = new BrowserWindow({
-    width: 1000,
-    height: 600,
+    width: 1500,
+    height: 800,
     // taken from "public"
     icon: path.join(__dirname, 'icons', 'favicon.ico'),
     webPreferences: {
@@ -17,7 +17,6 @@ const createWindow = () => {
     frame: false,
     title: 'Polaris UI',
   });
-
   enable(win.webContents);
 
   // Production Environment
@@ -30,6 +29,7 @@ const createWindow = () => {
   } else {
     win.loadURL(`http://localhost:3000`);
   }
+  win.maximize();
 };
 
 app.whenReady().then(() => {

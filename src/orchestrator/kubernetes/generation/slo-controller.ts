@@ -1,6 +1,7 @@
 import { V1ClusterRole, V1ClusterRoleBinding, V1Deployment } from '@kubernetes/client-node';
-import constants from '../constants';
+import { polarisApiGroups, env } from '../constants';
 import { IDeployment } from '@/orchestrator/orchestrator-api';
+import Slo from '@/workspace/slo/Slo';
 
 export const generateSloClusterRole = (
   name: string,
@@ -24,12 +25,12 @@ export const generateSloClusterRole = (
       verbs: ['get'],
     },
     {
-      apiGroups: [constants.polarisApiGroups.elasticity],
+      apiGroups: [polarisApiGroups.elasticity],
       resources: ['*'],
       verbs: ['create', 'delete', 'get', 'list', 'patch', 'update', 'watch'],
     },
     {
-      apiGroups: [constants.polarisApiGroups.metrics],
+      apiGroups: [polarisApiGroups.metrics],
       resources: ['*'],
       verbs: ['create', 'delete', 'get', 'list', 'patch', 'update', 'watch'],
     },
@@ -123,8 +124,8 @@ export const generateSloControllerDeployment = (
               },
             },
             env: [
-              { name: 'PROMETHEUS_HOST', value: constants.env.prometheusHost },
-              { name: 'PROMETHEUS_PORT', value: constants.env.prometheusPort },
+              { name: 'PROMETHEUS_HOST', value: env.prometheusHost },
+              { name: 'PROMETHEUS_PORT', value: env.prometheusPort },
               { name: 'SLO_CONTROL_LOOP_INTERVAL_MSEC', value: '20000' },
               { name: 'KUBERNETES_SERVICE_HOST', value: 'kubernetes.default.svc' },
               { name: 'POLARIS_CONNECTION_CHECK_TIMEOUT_MS', value: '600000' },
@@ -143,18 +144,24 @@ export const generateSloMapping = (
   kind: string,
   namespace: string,
   name: string,
-  sloConfig: unknown,
+  slo: Slo,
   target: IDeployment
 ) => ({
   kind,
-  apiVersion: 'slo.polaris-slo-cloud.github.io/v1',
+  apiVersion: `${polarisApiGroups.slo}/v1`,
   metadata: {
     namespace,
     name,
   },
   spec: {
     targetRef: target.connectionMetadata,
-    sloConfig,
-    //TODO: elasticityStrategy and staticElasticityStrategyConfig
+    sloConfig: slo.config,
+    elasticityStrategy: slo.elasticityStrategy
+      ? {
+          kind: slo.elasticityStrategy.kind,
+          apiVersion: `${polarisApiGroups.elasticity}/v1`,
+        }
+      : undefined,
+    staticElasticityStrategyConfig: slo.elasticityStrategy?.config,
   },
 });

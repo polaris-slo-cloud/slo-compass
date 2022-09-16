@@ -5,17 +5,6 @@ const k8sClient = axios.create({
 });
 
 export default {
-  async getCustomResourceDefinitions() {
-    const { data } = await k8sClient.get('/apis/apiextensions.k8s.io/v1/customresourcedefinitions');
-    return data.items;
-  },
-  async getCustomResourceObjects(crd) {
-    const group = crd.spec.group;
-    const version = crd.spec.versions[0].name;
-    const plural = crd.spec.names.plural;
-    const { data } = await k8sClient.get(`/apis/${group}/${version}/${plural}`);
-    return data.items;
-  },
   async getDeployment(namespace, name) {
     try {
       const { data } = await k8sClient.get(

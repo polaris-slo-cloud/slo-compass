@@ -65,8 +65,18 @@
         </div>
       </template>
     </EditableField>
-    <div class="flex justify-end q-mt-lg">
-      <q-btn v-if="canBeDeployed" label="Deploy" color="primary" @click="deploy" />
+    <div class="flex justify-end q-mt-lg" v-if="canBeDeployed">
+      <q-btn label="Deploy" color="primary" @click="deploy" />
+    </div>
+    <div class="flex justify-end q-mt-lg q-gutter-x-md" v-else-if="item.configChanged">
+      <q-btn
+        label="Reset"
+        color="negative"
+        outline
+        @click="resetConfiguration"
+        v-if="item.sloMappings.length > 0"
+      />
+      <q-btn label="Apply" color="primary" @click="applyConfiguration" />
     </div>
   </div>
 </template>
@@ -77,14 +87,13 @@ import EditableField from '@/workspace/EditableField.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
 import { useWorkspaceStore } from '@/store';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { computed } from 'vue';
 import { getTemplate as getSloTemplate } from '@/polaris-templates/slo-template';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import componentIcon from '@/workspace/targets/component-icon';
+import _ from 'lodash';
 
 const store = useWorkspaceStore();
-const orchestratorApi = useOrchestratorApi();
 
 const props = defineProps({
   item: Object,
@@ -115,7 +124,9 @@ const configEditModel = computed({
     return props.item.config;
   },
   set(v) {
-    store.save({ ...props.item, config: v });
+    if (!_.isEqual(props.item.config, v)) {
+      save({ config: v });
+    }
   },
 });
 
@@ -127,7 +138,10 @@ const targetEditModel = computed({
     return targets.value;
   },
   set(v) {
-    store.save({ ...props.item, targets: v.map((x) => x.id) });
+    const newTargets = v.map((x) => x.id);
+    if (!_.isEqual(newTargets, props.item.targets)) {
+      save({ targets: newTargets });
+    }
   },
 });
 
@@ -140,10 +154,13 @@ const elasticityStrategy = computed({
       props.item.elasticityStrategy?.template === v.template
         ? props.item.elasticityStrategy.config
         : {};
-    store.save({
-      ...props.item,
-      elasticityStrategy: { id: v.id, config },
-    });
+    const template = getElasticityStrategyTemplate(v.template);
+
+    if (v.id !== props.item.elasticityStrategy?.id) {
+      save({
+        elasticityStrategy: { id: v.id, kind: template.kind, config },
+      });
+    }
   },
 });
 
@@ -175,12 +192,21 @@ const elasticityStrategyConfigEditModel = computed({
     return props.item.elasticityStrategy?.config;
   },
   set(v) {
-    store.save({
-      ...props.item,
-      elasticityStrategy: { ...props.item.elasticityStrategy, config: v },
-    });
+    if (!_.isEqual(v, props.item.elasticityStrategy.config)) {
+      save({
+        elasticityStrategy: { ...props.item.elasticityStrategy, config: v },
+      });
+    }
   },
 });
+
+function save(changes) {
+  store.saveSlo({
+    ...props.item,
+    ...changes,
+    configChanged: true,
+  });
+}
 const canBeDeployed = computed(
   () =>
     !store.hasRunningDeployment(props.item.id) &&
@@ -189,6 +215,14 @@ const canBeDeployed = computed(
 
 function deploy() {
   store.deploySlo(props.item);
+}
+
+function applyConfiguration() {
+  store.applySloMapping(props.item);
+}
+
+function resetConfiguration() {
+  store.resetSloMapping(props.item);
 }
 </script>
 

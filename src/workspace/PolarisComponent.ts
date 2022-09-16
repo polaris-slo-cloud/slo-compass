@@ -1,4 +1,4 @@
-import { IDeployment } from '@/orchestrator/orchestrator-api';
+import { DeploymentConnectionMetadata } from '@/orchestrator/orchestrator-api';
 
 export interface PolarisComponent {
   id: string;
@@ -12,5 +12,5 @@ export interface PolarisComponent {
 export interface PolarisController {
   type: 'SLO Controller' | 'Metrics Controller' | 'Elasticity Strategy Controller';
   name: string;
-  deployment: IDeployment;
+  deployment: DeploymentConnectionMetadata;
 }

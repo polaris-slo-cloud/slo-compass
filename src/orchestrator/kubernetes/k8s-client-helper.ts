@@ -38,7 +38,7 @@ export default class K8sClientHelper {
    * @param kind Kubernetes resource kind, e.g., 'Pod' or 'Namespace'.
    * @return Promise of the resource metadata or `undefined` if the resource is not found.
    */
-  private async resource(apiVersion: string, kind: string): Promise<V1APIResource | undefined> {
+  public async resource(apiVersion: string, kind: string): Promise<V1APIResource | undefined> {
     // verify required parameter 'apiVersion' is not null or undefined
     if (apiVersion === null || apiVersion === undefined) {
       throw new Error('Required parameter apiVersion was null or undefined when calling resource');

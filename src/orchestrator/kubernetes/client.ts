@@ -1,5 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
-import { KubernetesObject, V1DeploymentList } from '@kubernetes/client-node';
+import {
+  KubernetesObject, V1APIResource, V1CustomResourceDefinition,
+  V1CustomResourceDefinitionList,
+  V1DeploymentList,
+} from '@kubernetes/client-node';
 import K8sClientHelper, {
   KubernetesPatchStrategies,
 } from '@/orchestrator/kubernetes/k8s-client-helper';
@@ -10,6 +14,9 @@ export interface K8sClient {
   create<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   patch<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   test(): Promise<boolean>;
+  getCustomResourceObject(identifier): Promise<any>;
+  deleteCustomResourceObject(identifier): Promise<void>;
+  findCustomResourceMetadata<TResource extends KubernetesObject>(crdObject: TResource): Promise<V1APIResource>;
 }
 interface K8sNativeClient extends K8sClient {
   connectToContext(context);
@@ -55,8 +62,8 @@ class K8sHttpClient implements K8sClient {
   public async patch<TResource extends KubernetesObject>(resource: TResource): Promise<TResource> {
     const url = await this.helper.createSpecUri(resource, 'patch');
     const headers = this.helper.generateHeaders({}, 'PATCH');
-    // The ServiceMonitor type is not able to handle the default StrategicMergePatch
-    if (resource.kind === 'ServiceMonitor') {
+    // The ServiceMonitor type and Polaris Custom Objects are not able to handle the default StrategicMergePatch
+    if (resource.kind === 'ServiceMonitor' || resource.apiVersion.includes('polaris')) {
       headers['content-type'] = KubernetesPatchStrategies.MergePatch;
     }
     const { data } = await this.http.patch(url, resource, { headers });
@@ -70,6 +77,30 @@ class K8sHttpClient implements K8sClient {
     } catch (e) {
       return false;
     }
+  }
+
+  async listCustomResourceDefinitions(): Promise<V1CustomResourceDefinitionList> {
+    const { data } = await this.http.get<V1CustomResourceDefinitionList>(
+      '/apis/apiextensions.k8s.io/v1/customresourcedefinitions'
+    );
+    return data;
+  }
+  async getCustomResourceObject(identifier): Promise<any> {
+    const { data } = await this.http.get(
+      `/apis/${identifier.group}/${identifier.version}/${identifier.plural}/${identifier.name}`
+    );
+    return data.items;
+  }
+
+  async deleteCustomResourceObject(identifier): Promise<void> {
+    await this.http.delete(
+      `/apis/${identifier.group}/${identifier.version}/${identifier.plural}/${identifier.name}`
+    );
+  }
+  async findCustomResourceMetadata<TResource extends KubernetesObject>(
+    crdObject: TResource
+  ): Promise<V1APIResource> {
+    return await this.helper.resource(crdObject.apiVersion, crdObject.kind);
   }
 }
 

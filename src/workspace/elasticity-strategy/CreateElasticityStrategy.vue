@@ -63,6 +63,7 @@ function save() {
       ...model.value,
       type: 'ElasticityStrategy',
       template: props.template.key,
+      kind: props.template.kind,
       polarisControllers: getPolarisControllers(props.template),
     };
     store.saveElasticityStrategy(strategy);

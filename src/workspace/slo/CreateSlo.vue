@@ -122,11 +122,13 @@ function save() {
       type: 'SLO',
       template: props.template.key,
       polarisControllers: getPolarisControllers(props.template),
+      configChanged: false,
     };
     slo.targets = slo.targets?.map((x) => x.id) || [];
     if (elasticityStrategy.value) {
       slo.elasticityStrategy = {
         id: elasticityStrategy.value.id,
+        kind: elasticityStrategyTemplate.value.kind,
         config: elasticityStrategyConfig.value,
       };
     }

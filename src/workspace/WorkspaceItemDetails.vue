@@ -31,6 +31,13 @@
         <q-btn flat label="retry" @click="retryDeployment" />
       </template>
     </q-banner>
+    <q-banner v-if="item.configChanged" class="bg-info text-white">
+      <template #avatar>
+        <q-icon name="mdi-information" />
+      </template>
+      The configuration for this {{ displayType }} has been changed! Please apply the configuration
+      in order for the changes to become visible.
+    </q-banner>
     <MissingDeploymentDetailsDialog :item="item" v-model:show="showMissingDeploymentDetails" />
     <EditableField label="Description" class="q-mt-lg" v-model="description">
       {{ formatIfEmpty(description) }}

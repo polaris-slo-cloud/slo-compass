@@ -1,10 +1,11 @@
 import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
-import PolarisController from '@/workspace/PolarisComponent';
+import { PolarisController } from '@/workspace/PolarisComponent';
 
 export interface ElasticityStrategyTemplateMetadata {
   key: string;
   name: string;
   description?: string;
+  kind: string;
   controllerName: string;
   containerImage: string;
   strategyTypeApiGroup: string;
@@ -18,6 +19,7 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     name: 'Horizontal Elasticity Strategy',
     description:
       'Provides a simple elasticity strategy to scale resources out and in depending on the SLO compliance',
+    kind: 'HorizontalElasticityStrategy',
     controllerName: 'horizontal-elasticity-strategy-controller',
     containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
     strategyTypeApiGroup: 'elasticity.polaris-slo-cloud.github.io',
@@ -42,6 +44,7 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     name: 'Vertical Elasticity Strategy',
     description:
       'Provides a simple elasticity strategy to scale resources up and down depending on the SLO compliance',
+    kind: 'VerticalElasticityStrategy',
     controllerName: 'vertical-elasticity-strategy-controller',
     containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
     strategyTypeApiGroup: 'elasticity.polaris-slo-cloud.github.io',

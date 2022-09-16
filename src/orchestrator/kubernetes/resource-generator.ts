@@ -1,4 +1,8 @@
-import { getTemplate as getSloTemplate, SloMetricSource } from '@/polaris-templates/slo-template';
+import {
+  getTemplate as getSloTemplate,
+  SloMetricSource,
+  SloTemplateMetadata,
+} from '@/polaris-templates/slo-template';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import {
   generateNamespaceSpec,
@@ -20,12 +24,17 @@ import {
 import loadCrdsForTemplate from '@/orchestrator/kubernetes/crds/template-crds-mapping';
 import { KubernetesObject } from '@kubernetes/client-node';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
-import Slo from '@/workspace/slo/Slo';
+import Slo, {SloTarget} from '@/workspace/slo/Slo';
 import {
   generateElasticityStrategyClusterRole,
   generateElasticityStrategyClusterRoleBinding,
   generateElasticityStrategyControllerDeployment,
 } from '@/orchestrator/kubernetes/generation/elasticity-strategy-controller';
+
+interface SloResources {
+  staticResources: KubernetesObject[];
+  sloMappings: KubernetesObject[];
+}
 
 function generateMetricsResources(
   metrics: SloMetricSource[],
@@ -56,28 +65,35 @@ function generateMetricsResources(
 }
 
 export default {
-  async generateSloResources(slo: Slo, namespace: string): Promise<KubernetesObject[]> {
+  generateSloMappings(slo: Slo, targets: SloTarget[], namespace: string) {
     const template = getSloTemplate(slo.template);
-    const resources = [];
-    resources.push(...generateMetricsResources(template.metrics, namespace));
-
     const normalizedSloName = slo.name.replaceAll(' ', '-').toLowerCase();
-    const sloMappings = slo.targets
+    return targets
       .filter((x) => x.deployment)
       .map((target) => {
-        const mappingName = `${normalizedSloName}-${target.deployment.name}`;
+        const mappingName = `${normalizedSloName}-${target.deployment.id}`;
         return generateSloMapping(
           template.sloMappingKind,
           namespace,
           mappingName,
-          slo.config,
+          slo,
           target.deployment
         );
       });
+  },
+  async generateSloResources(
+    slo: Slo,
+    targets: SloTarget[],
+    namespace: string,
+    template: SloTemplateMetadata
+  ): Promise<SloResources> {
+    const resources = [];
+    resources.push(...generateMetricsResources(template.metrics, namespace));
 
-    resources.push(...sloMappings);
     const crds = await loadCrdsForTemplate(template.key);
     resources.push(...crds);
+
+    const sloMappings = this.generateSloMappings(slo, targets, namespace);
     resources.push(
       ...[
         generateNamespaceSpec(namespace),
@@ -100,7 +116,10 @@ export default {
       ]
     );
 
-    return resources;
+    return {
+      staticResources: resources,
+      sloMappings,
+    };
   },
   generateElasticityStrategyResources: async function (
     elasticityStrategy: ElasticityStrategy,

@@ -1,5 +1,13 @@
 <template>
-  <q-input v-model="model" :type="inputType" :label="label" :rules="validationRules" ref="input" />
+  <q-input
+    v-if="isNumberInput"
+    v-model.number="model"
+    type="number"
+    :label="label"
+    :rules="validationRules"
+    ref="input"
+  />
+  <q-input v-else v-model="model" type="text" :label="label" :rules="validationRules" ref="input" />
 </template>
 
 <script setup>
@@ -26,14 +34,14 @@ const model = computed({
     emit('update:modelValue', v);
   },
 });
-const inputType = computed(() => {
+const isNumberInput = computed(() => {
   switch (props.template.type) {
     case ParameterType.Integer:
     case ParameterType.Decimal:
     case ParameterType.Percentage:
-      return 'number';
+      return true;
   }
-  return 'text';
+  return false;
 });
 const label = computed(() => {
   let label = props.template.displayName;
