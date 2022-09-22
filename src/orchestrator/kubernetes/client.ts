@@ -87,14 +87,14 @@ class K8sHttpClient implements K8sClient {
   }
   async getCustomResourceObject(identifier): Promise<any> {
     const { data } = await this.http.get(
-      `/apis/${identifier.group}/${identifier.version}/${identifier.plural}/${identifier.name}`
+      `/apis/${identifier.group}/${identifier.version}/namespaces/${identifier.namespace}/${identifier.plural}/${identifier.name}`
     );
-    return data.items;
+    return data;
   }
 
   async deleteCustomResourceObject(identifier): Promise<void> {
     await this.http.delete(
-      `/apis/${identifier.group}/${identifier.version}/${identifier.plural}/${identifier.name}`
+      `/apis/${identifier.group}/${identifier.version}/namespaces/${identifier.namespace}/${identifier.plural}/${identifier.name}`
     );
   }
   async findCustomResourceMetadata<TResource extends KubernetesObject>(

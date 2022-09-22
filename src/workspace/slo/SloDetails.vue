@@ -1,11 +1,11 @@
 <template>
   <div>
-    <EditableField label="Targets" class="q-mt-lg" v-model="targetEditModel">
-      <q-chip v-for="target in targets" :key="target.id" :icon="componentIcon(target)">
+    <EditableField label="Target" class="q-mt-lg" v-model="targetEditModel">
+      <q-chip v-if="target" :icon="targetComponentIcon">
         {{ target.name }}
       </q-chip>
       <template #edit="scope">
-        <TargetSelection v-model="scope.value" multiple />
+        <TargetSelection v-model="scope.value" />
       </template>
     </EditableField>
     <EditableField v-if="item.config" label="Config" class="q-mt-lg" v-model="configEditModel">
@@ -74,7 +74,7 @@
         color="negative"
         outline
         @click="resetConfiguration"
-        v-if="item.sloMappings.length > 0"
+        v-if="item.sloMapping"
       />
       <q-btn label="Apply" color="primary" @click="applyConfiguration" />
     </div>
@@ -130,17 +130,15 @@ const configEditModel = computed({
   },
 });
 
-const targets = computed(() =>
-  props.item.targets ? props.item.targets.map((x) => store.getItem(x)) : null
-);
+const target = computed(() => (props.item.target ? store.getItem(props.item.target) : null));
+const targetComponentIcon = computed(() => (target.value ? componentIcon(target.value) : null));
 const targetEditModel = computed({
   get() {
-    return targets.value;
+    return target.value;
   },
   set(v) {
-    const newTargets = v.map((x) => x.id);
-    if (!_.isEqual(newTargets, props.item.targets)) {
-      save({ targets: newTargets });
+    if (v.id !== props.item.target) {
+      save({ target: v.id });
     }
   },
 });

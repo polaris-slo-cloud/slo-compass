@@ -24,7 +24,7 @@ import {
 import loadCrdsForTemplate from '@/orchestrator/kubernetes/crds/template-crds-mapping';
 import { KubernetesObject } from '@kubernetes/client-node';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
-import Slo, {SloTarget} from '@/workspace/slo/Slo';
+import Slo, { SloTarget } from '@/workspace/slo/Slo';
 import {
   generateElasticityStrategyClusterRole,
   generateElasticityStrategyClusterRoleBinding,
@@ -33,7 +33,7 @@ import {
 
 interface SloResources {
   staticResources: KubernetesObject[];
-  sloMappings: KubernetesObject[];
+  sloMapping: KubernetesObject;
 }
 
 function generateMetricsResources(
@@ -65,25 +65,24 @@ function generateMetricsResources(
 }
 
 export default {
-  generateSloMappings(slo: Slo, targets: SloTarget[], namespace: string) {
+  generateSloMapping(slo: Slo, target: SloTarget, namespace: string) {
     const template = getSloTemplate(slo.template);
     const normalizedSloName = slo.name.replaceAll(' ', '-').toLowerCase();
-    return targets
-      .filter((x) => x.deployment)
-      .map((target) => {
-        const mappingName = `${normalizedSloName}-${target.deployment.id}`;
-        return generateSloMapping(
-          template.sloMappingKind,
-          namespace,
-          mappingName,
-          slo,
-          target.deployment
-        );
-      });
+    if (target.deployment) {
+      const mappingName = `${normalizedSloName}-${target.deployment.id}`;
+      return generateSloMapping(
+        template.sloMappingKind,
+        namespace,
+        mappingName,
+        slo,
+        target.deployment
+      );
+    }
+    return null;
   },
   async generateSloResources(
     slo: Slo,
-    targets: SloTarget[],
+    target: SloTarget,
     namespace: string,
     template: SloTemplateMetadata
   ): Promise<SloResources> {
@@ -93,7 +92,7 @@ export default {
     const crds = await loadCrdsForTemplate(template.key);
     resources.push(...crds);
 
-    const sloMappings = this.generateSloMappings(slo, targets, namespace);
+    const sloMapping = this.generateSloMapping(slo, target, namespace);
     resources.push(
       ...[
         generateNamespaceSpec(namespace),
@@ -118,7 +117,7 @@ export default {
 
     return {
       staticResources: resources,
-      sloMappings,
+      sloMapping,
     };
   },
   generateElasticityStrategyResources: async function (

@@ -37,12 +37,12 @@ export interface PolarisSloMapping {
 export default interface Slo extends PolarisComponent {
   name: string;
   description: string;
-  targets: string[];
+  target?: string;
   config: SloConfig;
   configChanged: boolean;
   template: string;
   elasticityStrategy?: SloElasticityStrategy;
   polarisControllers: PolarisController[];
-  sloMappings: PolarisSloMappingMetadata[];
+  sloMapping: PolarisSloMappingMetadata;
   failedSloMappings?: PolarisSloMappingObject[];
 }

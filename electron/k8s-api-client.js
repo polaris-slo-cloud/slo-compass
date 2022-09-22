@@ -63,19 +63,21 @@ module.exports = {
   },
   async getCustomResourceObject(identifier) {
     const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
-    const { body } = await k8sCustomObjectsApi.getClusterCustomObject(
+    const { body } = await k8sCustomObjectsApi.getNamespacedCustomObject(
       identifier.group,
       identifier.version,
+      identifier.namespace,
       identifier.plural,
       identifier.name
     );
-    return body.items;
+    return body;
   },
   async deleteCustomResourceObject(identifier) {
     const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
-    await k8sCustomObjectsApi.deleteClusterCustomObject(
+    await k8sCustomObjectsApi.deleteNamespacedCustomObject(
       identifier.group,
       identifier.version,
+      identifier.namespace,
       identifier.plural,
       identifier.name
     );

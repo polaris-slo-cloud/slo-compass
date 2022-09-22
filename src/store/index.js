@@ -123,12 +123,11 @@ export const useWorkspaceStore = defineStore('workspace', {
         name: slo.name,
         dismissed: false,
       };
-      const targets = slo.targets.map((x) => this.getItem(x));
-      const result = await orchestratorApi.deploySlo(slo, targets);
+      const target = slo.target ? this.getItem(slo.target) : null;
+      const result = await orchestratorApi.deploySlo(slo, target);
       applyDeploymentResult(slo, result);
-      slo.sloMappings = result.deployedSloMappings;
-      slo.failedSloMappings = result.failedSloMappings;
-      slo.configChanged = result.failedSloMappings.length > 0;
+      slo.sloMapping = result.deployedSloMapping;
+      slo.configChanged = !result.deployedSloMapping;
       delete this.runningDeploymentActions[slo.id];
     },
     async deployElasticityStrategy(elasticityStrategy) {
@@ -157,40 +156,35 @@ export const useWorkspaceStore = defineStore('workspace', {
         name: slo.name,
         dismissed: false,
       };
-      const targets = slo.targets.map((x) => this.getItem(x));
-      const response = await orchestratorApi.applySloMapping(slo, targets);
-      slo.configChanged = !(response.failedSloMappings.length === 0 || !slo.configChanged);
+      const target = slo.target ? this.getItem(slo.target) : null;
+      const appliedSloMapping = await orchestratorApi.applySloMapping(slo, target);
+      if (appliedSloMapping) {
+        slo.sloMapping = appliedSloMapping;
+      }
+      slo.configChanged = !appliedSloMapping && slo.configChanged;
       delete this.runningDeploymentActions[slo.id];
     },
     async resetSloMapping(slo) {
-      const polarisSloMappings = await orchestratorApi.findSloMappings(slo);
-      if (polarisSloMappings.length > 0) {
-        // This is a naive approach where all SLO Mappings are equal except for their target
-        // TODO: Find logic to map different mappings to one or more SLOs
-        const polarisSloMapping = polarisSloMappings[0];
-        const elasticityStrategy = this.workspace.elasticityStrategies.find(
-          (x) => x.kind === polarisSloMapping.elasticityStrategy
-        );
-        const targets = polarisSloMappings
-          .map((x) => {
-            return this.workspace.targets.find(
-              (t) =>
-                t.connectionMetadata.name === x.target.name &&
-                t.connectionMetadata.namespace === x.target.namespace
-            )?.id;
-          })
-          .filter((x) => !!x);
-        slo = {
-          ...slo,
-          config: polarisSloMapping.config,
-          targets,
-          elasticityStrategy: {
-            id: elasticityStrategy?.id,
-            kind: polarisSloMapping.elasticityStrategy,
-            config: polarisSloMapping.elasticityStrategyConfig,
-          },
-        };
-      }
+      const polarisSloMapping = await orchestratorApi.findSloMapping(slo);
+      const elasticityStrategy = this.workspace.elasticityStrategies.find(
+        (x) => x.kind === polarisSloMapping.elasticityStrategy
+      );
+      const target = this.workspace.targets.find(
+        (t) => t.deployment.connectionMetadata.name === polarisSloMapping.target.name
+        // TODO: Add the next line if the namespace is added to the SloMapping CRD spec
+        //&& t.deployment.connectionMetadata.namespace === polarisSloMapping.target.namespace
+      )?.id;
+      this.saveSlo({
+        ...slo,
+        config: polarisSloMapping.config,
+        target,
+        elasticityStrategy: {
+          id: elasticityStrategy?.id,
+          kind: polarisSloMapping.elasticityStrategy,
+          config: polarisSloMapping.elasticityStrategyConfig,
+        },
+        configChanged: false,
+      });
     },
     dismissRunningDeploymentActions() {
       Object.values(this.runningDeploymentActions).forEach((val) => (val.dismissed = true));

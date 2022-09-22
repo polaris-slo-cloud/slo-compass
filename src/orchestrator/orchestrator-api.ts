@@ -1,7 +1,7 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import { IOrchestratorConnection } from '@/connections/storage';
-import Slo, {PolarisSloMapping, SloTarget} from '@/workspace/slo/Slo';
+import Slo, { PolarisSloMapping, SloTarget } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
@@ -29,25 +29,21 @@ export interface PolarisDeploymentResult {
   failedResources: PolarisResource[];
   deployedControllers: PolarisController[];
 }
-export interface PolarisSloMappingDeploymentResult {
-  deployedSloMappings: PolarisSloMappingMetadata[];
-  failedSloMappings: PolarisSloMappingObject[];
+export interface PolarisSloDeploymentResult extends PolarisDeploymentResult {
+  deployedSloMapping?: PolarisSloMappingMetadata;
 }
-export interface PolarisSloDeploymentResult
-  extends PolarisDeploymentResult,
-    PolarisSloMappingDeploymentResult {}
 
 export interface IOrchestratorApi {
   name: string;
   test(): Promise<boolean>;
   findDeployments(query?: string): Promise<IDeployment[]>;
-  deploySlo(slo: Slo, targets: SloTarget[]): Promise<PolarisSloDeploymentResult>;
+  deploySlo(slo: Slo, target: SloTarget): Promise<PolarisSloDeploymentResult>;
   deployElasticityStrategy(
     elasticityStrategy: ElasticityStrategy
   ): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
-  applySloMapping(slo: Slo, targets: SloTarget[]): Promise<PolarisSloMappingDeploymentResult>;
-  findSloMappings(slo: Slo): Promise<PolarisSloMapping[]>;
+  applySloMapping(slo: Slo, target: SloTarget): Promise<PolarisSloMappingMetadata>;
+  findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
 }
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
@@ -92,11 +88,11 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  applySloMapping(): Promise<PolarisSloMappingDeploymentResult> {
+  applySloMapping(): Promise<PolarisSloMappingMetadata> {
     throw new OrchestratorNotConnectedError();
   }
 
-  findSloMappings(): Promise<PolarisSloMapping[]> {
+  findSloMapping(): Promise<PolarisSloMapping> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -131,11 +127,11 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     orchestratorName: computed(() => api.value.name),
     findDeployments: (query?) => api.value.findDeployments(query),
     test: () => api.value.test(),
-    deploySlo: (slo, targets) => api.value.deploySlo(clone(slo), clone(targets)),
+    deploySlo: (slo, target) => api.value.deploySlo(clone(slo), clone(target)),
     deployElasticityStrategy: (elasticityStrategy) =>
       api.value.deployElasticityStrategy(clone(elasticityStrategy)),
     retryDeployment: (item) => api.value.retryDeployment(clone(item)),
-    applySloMapping: (slo, targets) => api.value.applySloMapping(clone(slo), clone(targets)),
-    findSloMappings: (slo) => api.value.findSloMappings(clone(slo)),
+    applySloMapping: (slo, target) => api.value.applySloMapping(clone(slo), clone(target)),
+    findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),
   };
 }

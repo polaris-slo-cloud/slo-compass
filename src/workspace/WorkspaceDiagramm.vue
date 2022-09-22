@@ -254,13 +254,11 @@ const data = computed(() => {
         };
       }
 
-      if (slo.targets) {
-        for (const target of slo.targets) {
-          edges[`edge_${target}_${slo.id}`] = {
-            source: target,
-            target: slo.id,
-          };
-        }
+      if (slo.target) {
+        edges[`edge_${slo.target}_${slo.id}`] = {
+          source: slo.target,
+          target: slo.id,
+        };
       }
     }
   }

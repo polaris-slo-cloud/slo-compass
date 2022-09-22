@@ -10,7 +10,7 @@
           label="Name *"
           :rules="[(val) => (!!val && val.trim().length > 0) || 'You need to provide a name']"
         />
-        <TargetSelection label="Targets" v-model="model.targets" multiple />
+        <TargetSelection label="Target" v-model="model.target" />
         <q-input v-model="model.description" label="Description" autogrow />
         <div class="text-h6 q-mt-lg q-mb-sm" v-if="template.config.length > 0">Config</div>
         <ConfigTemplateInput
@@ -75,6 +75,7 @@ const showDialog = computed({
 const model = ref({
   name: props.template?.name,
   description: props.template?.description,
+  target: null,
   config: {},
 });
 const elasticityStrategy = ref(null);
@@ -94,6 +95,7 @@ function resetModel() {
   model.value = {
     name: props.template?.name,
     description: props.template?.description,
+    target: null,
     config: {},
   };
 }
@@ -124,7 +126,7 @@ function save() {
       polarisControllers: getPolarisControllers(props.template),
       configChanged: false,
     };
-    slo.targets = slo.targets?.map((x) => x.id) || [];
+    slo.target = slo.target?.id;
     if (elasticityStrategy.value) {
       slo.elasticityStrategy = {
         id: elasticityStrategy.value.id,
