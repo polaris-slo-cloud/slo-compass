@@ -2,9 +2,11 @@ import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import workspaceFileService from '../workspace/workspace-file-service';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { useMetricsProvider } from '@/metrics-provider/api';
 import { getWorkspace, markWorkspaceAsUsed } from '@/workspace/store-helper';
 //import polarisConnector from "../polaris-connector";
 const orchestratorApi = useOrchestratorApi();
+const metricsProvider = useMetricsProvider();
 
 function applyDeploymentResult(item, result) {
   item.failedDeployments = result.failedResources;
@@ -27,6 +29,7 @@ export const useWorkspaceStore = defineStore('workspace', {
     name: null,
     location: null,
     orchestrator: null,
+    metricsProvider: null,
     workspace: {
       targets: [],
       slos: [],
@@ -46,8 +49,12 @@ export const useWorkspaceStore = defineStore('workspace', {
         name: config.name,
         location,
         orchestrator: config.orchestrator,
+        metricsProvider: config.metricsProvider,
       });
       orchestratorApi.connect(config.orchestrator.connection, config.orchestrator.polarisOptions);
+      if (config.metricsProvider) {
+        metricsProvider.connect(config.metricsProvider);
+      }
       markWorkspaceAsUsed(this.$state);
     },
     async loadWorkspace(workspaceId) {
@@ -62,6 +69,9 @@ export const useWorkspaceStore = defineStore('workspace', {
           workspace.orchestrator.connection,
           workspace.orchestrator.polarisOptions
         );
+      }
+      if (workspace.metricsProvider) {
+        metricsProvider.connect(workspace.metricsProvider);
       }
     },
     async openWorkspace() {
@@ -156,7 +166,7 @@ export const useWorkspaceStore = defineStore('workspace', {
         name: slo.name,
         dismissed: false,
       };
-      const target = slo.target ? this.getItem(slo.target) : null;
+      const target = this.getSloTarget(slo.target);
       const appliedSloMapping = await orchestratorApi.applySloMapping(slo, target);
       if (appliedSloMapping) {
         slo.sloMapping = appliedSloMapping;
@@ -186,6 +196,25 @@ export const useWorkspaceStore = defineStore('workspace', {
         configChanged: false,
       });
     },
+    async pollMetrics(sloId) {
+      const slo = this.getSlo(sloId);
+      const metrics = await metricsProvider.pollSloMetrics(slo, this.getSloTarget(slo.target));
+      const lastUpdated = Date();
+      for (const prometheusMetric of metrics) {
+        const sloMetric = slo.metrics.find((x) => x.source.displayName === prometheusMetric.metric);
+        sloMetric.value = prometheusMetric.value;
+        sloMetric.lastUpdated = lastUpdated;
+      }
+    },
+    updateSloMetrics(sloMetricMappings) {
+      const lastUpdated = Date();
+      for (const mapping of sloMetricMappings) {
+        const slo = this.workspace.slos.find((x) => x.id === mapping.slo);
+        const metric = slo.metrics.find((x) => x.source.displayName === mapping.metric);
+        metric.value = mapping.value;
+        metric.lastUpdated = lastUpdated;
+      }
+    },
     dismissRunningDeploymentActions() {
       Object.values(this.runningDeploymentActions).forEach((val) => (val.dismissed = true));
     },
@@ -201,6 +230,14 @@ export const useWorkspaceStore = defineStore('workspace', {
           state.workspace.targets.find((x) => x.id === componentId)?.components || [];
         return components.map((x) => componentMap.get(x)).filter((x) => !!x);
       };
+    },
+    getSloTarget: (state) => {
+      const targetMap = new Map(state.workspace.targets.map((x) => [x.id, x]));
+      return (id) => targetMap.get(id);
+    },
+    getSlo: (state) => {
+      const sloMap = new Map(state.workspace.slos.map((x) => [x.id, x]));
+      return (id) => sloMap.get(id);
     },
     getItem: (state) => {
       const mapItemById = (map, item) => {

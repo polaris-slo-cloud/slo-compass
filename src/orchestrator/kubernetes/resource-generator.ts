@@ -1,6 +1,6 @@
 import {
+  ComposedMetricSource,
   getTemplate as getSloTemplate,
-  SloMetricSource,
   SloTemplateMetadata,
 } from '@/polaris-templates/slo-template';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
@@ -37,7 +37,7 @@ interface SloResources {
 }
 
 function generateMetricsResources(
-  metrics: SloMetricSource[],
+  metrics: ComposedMetricSource[],
   namespace: string
 ): KubernetesObject[] {
   if (!metrics) {
@@ -87,7 +87,12 @@ export default {
     template: SloTemplateMetadata
   ): Promise<SloResources> {
     const resources = [];
-    resources.push(...generateMetricsResources(template.metrics, namespace));
+    resources.push(
+      ...generateMetricsResources(
+        template.metrics.filter((x) => !!x.metricsController).map((x) => x.metricsController),
+        namespace
+      )
+    );
 
     const crds = await loadCrdsForTemplate(template.key);
     resources.push(...crds);

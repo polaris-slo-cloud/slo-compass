@@ -57,13 +57,3 @@ function startEdit() {
   isEditing.value = true;
 }
 </script>
-
-<style lang="scss" scoped>
-.field-label {
-  font-weight: 600;
-  font-size: 1rem;
-  color: $text-label-color;
-  display: flex;
-  align-items: center;
-}
-</style>

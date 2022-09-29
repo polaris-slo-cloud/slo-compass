@@ -11,10 +11,22 @@ export interface SloTemplateMetadata {
   sloMappingResources: string;
   sloMappingKind: string;
   config: ConfigParameter[];
-  metrics?: SloMetricSource[];
+  metrics: SloMetricSource[];
+}
+
+export interface PrometheusQueryData {
+  appName: string;
+  metricName: string;
+  labelFilters: Record<string, string>;
 }
 
 export interface SloMetricSource {
+  displayName: string;
+  metricsController?: ComposedMetricSource;
+  prometheusQuery: PrometheusQueryData;
+}
+
+export interface ComposedMetricSource {
   controllerName: string;
   containerImage: string;
   composedMetricResources: string;
@@ -53,9 +65,21 @@ export const templates: SloTemplateMetadata[] = [
     ],
     metrics: [
       {
-        controllerName: 'metrics-rest-api-cost-efficiency-controller',
-        containerImage: 'polarissloc/metrics-rest-api-cost-efficiency-controller:latest',
-        composedMetricResources: 'costefficiencymetricmappings',
+        displayName: 'Cost Efficiency',
+        metricsController: {
+          controllerName: 'metrics-rest-api-cost-efficiency-controller',
+          containerImage: 'polarissloc/metrics-rest-api-cost-efficiency-controller:latest',
+          composedMetricResources: 'costefficiencymetricmappings',
+        },
+        prometheusQuery: {
+          appName: 'polaris_composed',
+          metricName: 'metrics_polaris_slo_cloud_github_io_v1_cost_efficiency',
+          labelFilters: {
+            target_gvk: '${targetGvk}',
+            target_namespace: '${targetNamespace}',
+            target_name: '${targetName}',
+          },
+        },
       },
     ],
   },
@@ -76,6 +100,16 @@ export const templates: SloTemplateMetadata[] = [
         optional: false,
       },
     ],
+    metrics: [
+      {
+        displayName: 'CPU Load Avg 10s',
+        prometheusQuery: {
+          appName: 'container',
+          metricName: 'cpu_load_average_10s',
+          labelFilters: { pod: '${targetName}' },
+        },
+      },
+    ],
   },
 ];
 
@@ -85,13 +119,15 @@ export function getTemplate(key: string): SloTemplateMetadata {
 
 export function getPolarisControllers(template: SloTemplateMetadata): PolarisController[] {
   const metricsControllers =
-    template.metrics?.map(
-      (x): PolarisController => ({
-        type: 'Metrics Controller',
-        name: x.controllerName,
-        deployment: null,
-      })
-    ) ?? [];
+    template.metrics
+      .filter((x) => !!x.metricsController)
+      .map(
+        (x): PolarisController => ({
+          type: 'Metrics Controller',
+          name: x.metricsController.controllerName,
+          deployment: null,
+        })
+      ) ?? [];
 
   return [
     {

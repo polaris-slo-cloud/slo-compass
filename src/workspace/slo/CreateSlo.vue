@@ -123,6 +123,9 @@ function save() {
       ...model.value,
       type: 'SLO',
       template: props.template.key,
+      metrics: props.template.metrics.map((x) => ({
+        source: x,
+      })),
       polarisControllers: getPolarisControllers(props.template),
       configChanged: false,
     };

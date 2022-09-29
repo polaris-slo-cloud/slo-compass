@@ -1,6 +1,6 @@
 import { Component } from 'vue';
 import kubernetes from './kubernetes/metadata';
-import { IOrchestratorConnection } from '@/connections/storage';
+import { OrchestratorConnection } from '@/connections/storage';
 import { IPolarisOrchestratorApi } from '@/orchestrator/orchestrator-api';
 
 export interface ConnectionSettingsComponent {
@@ -12,7 +12,7 @@ export interface IConfigureOrchestrator {
   name: string;
   connectionSettingsComponent?: ConnectionSettingsComponent;
   polarisSettingsComponent?: Component;
-  createOrchestratorApi(connection: IOrchestratorConnection): IPolarisOrchestratorApi;
+  createOrchestratorApi(connection: OrchestratorConnection): IPolarisOrchestratorApi;
 }
 
 const orchestrators: IConfigureOrchestrator[] = [kubernetes];

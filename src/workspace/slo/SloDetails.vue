@@ -8,17 +8,18 @@
         <TargetSelection v-model="scope.value" />
       </template>
     </EditableField>
+    <MetricsOverview :slo="item" class="q-mt-lg" />
     <EditableField v-if="item.config" label="Config" class="q-mt-lg" v-model="configEditModel">
       <div class="row q-col-gutter-md q-mt-none">
         <div v-for="configKey of configKeys" :key="configKey" class="col-12 col-lg-6">
-          <div class="config-label">{{ configKey }}</div>
+          <div class="field-item-label">{{ configKey }}</div>
           <div>{{ formatIfEmpty(item.config[configKey]) }}</div>
         </div>
       </div>
       <template #edit="scope">
         <div class="row q-col-gutter-md q-mt-none">
           <div v-for="configKey of configKeys" :key="'edit-' + configKey" class="col-12 col-lg-6">
-            <div class="config-label">{{ configKey }}</div>
+            <div class="field-item-label">{{ configKey }}</div>
             <ConfigTemplateInput
               v-model="scope.value[configKey]"
               :template="configTemplate[configKey]"
@@ -45,7 +46,7 @@
           :key="configKey"
           class="col-12 col-lg-6"
         >
-          <div class="config-label">{{ configKey }}</div>
+          <div class="field-item-label">{{ configKey }}</div>
           <div>{{ formatIfEmpty(item.elasticityStrategy.config[configKey]) }}</div>
         </div>
       </div>
@@ -56,7 +57,7 @@
             :key="'edit-' + configKey"
             class="col-12 col-lg-6"
           >
-            <div class="config-label">{{ configKey }}</div>
+            <div class="field-item-label">{{ configKey }}</div>
             <ConfigTemplateInput
               v-model="scope.value[configKey]"
               :template="elasticityStrategyConfigTemplate[configKey]"
@@ -86,6 +87,7 @@ import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import EditableField from '@/workspace/EditableField.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
+import MetricsOverview from '@/workspace/slo/MetricsOverview.vue';
 import { useWorkspaceStore } from '@/store';
 import { computed } from 'vue';
 import { getTemplate as getSloTemplate } from '@/polaris-templates/slo-template';

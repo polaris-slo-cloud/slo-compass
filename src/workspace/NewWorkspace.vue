@@ -13,6 +13,8 @@
     />
     <h2>Orchestrator</h2>
     <OrchestratorSelection v-model="model.orchestrator" />
+    <h2>Metrics Provider</h2>
+    <MetricsProviderSelection v-model="model.metricsProvider" />
     <div class="flex justify-end q-mt-xl q-gutter-md">
       <q-btn flat label="Cancel" @click="cancel" />
       <q-btn type="submit" color="primary" label="Create" icon="mdi-plus" />
@@ -24,6 +26,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import OrchestratorSelection from '@/orchestrator/OrchestratorSelection.vue';
+import MetricsProviderSelection from '@/metrics-provider/MetricsProviderSelection.vue';
 import DirectoryChooser from '@/crosscutting/components/DirectoryChooser.vue';
 import { useWorkspaceStore } from '@/store';
 

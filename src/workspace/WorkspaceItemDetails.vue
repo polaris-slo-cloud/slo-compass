@@ -116,13 +116,3 @@ async function retryDeployment() {
   await store.retryDeployment(item.value);
 }
 </script>
-
-<style lang="scss" scoped>
-.config-label {
-  font-weight: 600;
-  font-size: 1em;
-  color: $text-label-color;
-  display: flex;
-  align-items: center;
-}
-</style>

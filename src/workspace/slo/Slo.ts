@@ -2,9 +2,9 @@ import {
   DeploymentConnectionMetadata,
   IDeployment,
   PolarisSloMappingMetadata,
-  PolarisSloMappingObject,
 } from '@/orchestrator/orchestrator-api';
-import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
+import { PolarisComponent } from '@/workspace/PolarisComponent';
+import { SloMetricSource } from '@/polaris-templates/slo-template';
 
 export interface SloTarget {
   id: string;
@@ -34,15 +34,17 @@ export interface PolarisSloMapping {
   elasticityStrategyConfig: SloElasticityStrategyConfig;
 }
 
+export interface SloMetric {
+  source: SloMetricSource;
+  value: any;
+  lastUpdated: Date;
+}
+
 export default interface Slo extends PolarisComponent {
-  name: string;
-  description: string;
   target?: string;
+  metrics: SloMetric[];
   config: SloConfig;
   configChanged: boolean;
-  template: string;
   elasticityStrategy?: SloElasticityStrategy;
-  polarisControllers: PolarisController[];
   sloMapping: PolarisSloMappingMetadata;
-  failedSloMappings?: PolarisSloMappingObject[];
 }

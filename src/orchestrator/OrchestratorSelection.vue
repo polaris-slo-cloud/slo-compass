@@ -27,7 +27,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import connectionsStorage from '@/connections/storage';
+import { orchestratorStorage } from '@/connections/storage';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import AddOrchestratorConnectionDialog from '@/connections/AddOrchestratorConnectionDialog.vue';
 
@@ -61,12 +61,12 @@ const connections = ref([]);
 
 const showAddConnectionDialog = ref(false);
 function connectionAdded(conn) {
-  connections.value = connectionsStorage.getConnectionSettings();
+  connections.value = orchestratorStorage.getConnectionSettings();
   connection.value = conn;
 }
 
 onMounted(() => {
-  connections.value = connectionsStorage.getConnectionSettings();
+  connections.value = orchestratorStorage.getConnectionSettings();
 });
 </script>
 

@@ -1,6 +1,6 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
-import { IOrchestratorConnection } from '@/connections/storage';
+import { OrchestratorConnection } from '@/connections/storage';
 import Slo, { PolarisSloMapping, SloTarget } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
@@ -52,8 +52,8 @@ export interface IPolarisOrchestratorApi extends IOrchestratorApi {
 
 export interface IOrchestratorApiConnection extends IOrchestratorApi {
   orchestratorName: ComputedRef<string>;
-  connect(connection: IOrchestratorConnection, polarisOptions: unknown): void;
-  testConnection(connection: IOrchestratorConnection): Promise<boolean>;
+  connect(connection: OrchestratorConnection, polarisOptions: unknown): void;
+  testConnection(connection: OrchestratorConnection): Promise<boolean>;
 }
 
 class OrchestratorNotConnectedError extends Error {
@@ -98,18 +98,18 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
 }
 const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
 
-function createOrchestratorApi(connection: IOrchestratorConnection): IPolarisOrchestratorApi {
+function createOrchestratorApi(connection: OrchestratorConnection): IPolarisOrchestratorApi {
   const orchestratorConfig = getOrchestrator(connection.orchestrator);
   return orchestratorConfig
     ? orchestratorConfig.createOrchestratorApi(connection)
     : new OrchestratorNotConnected();
 }
 
-function connect(connection: IOrchestratorConnection, polarisOptions: unknown): void {
+function connect(connection: OrchestratorConnection, polarisOptions: unknown): void {
   api.value = createOrchestratorApi(connection);
   api.value.configure(polarisOptions);
 }
-async function testConnection(connection: IOrchestratorConnection): Promise<boolean> {
+async function testConnection(connection: OrchestratorConnection): Promise<boolean> {
   const apiConnection = createOrchestratorApi(connection);
   return await apiConnection.test();
 }

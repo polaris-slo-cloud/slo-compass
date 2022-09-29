@@ -2,17 +2,13 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card style="min-width: 350px">
       <q-card-section>
-        <div class="text-h6">New Orchestrator Connection</div>
+        <div class="text-h6">New Metrics Provider</div>
         <q-input autofocus label="Name" v-model="model.name" />
-        <q-select
-          label="Orchestrator"
-          v-model="model.orchestrator"
-          :options="availableOrchestrators"
-        />
-        <component :is="orchestratorSettingsComponent" v-model="model.connectionSettings" />
+        <q-select label="Provider" v-model="model.metricsProvider" :options="availableProviders" />
+        <component :is="providerSettingsComponent" v-model="model.connectionSettings" />
         <div class="q-mt-md flex items-center">
           <q-btn flat label="Test Connection" no-caps @click="testConnection" />
-          <span class="q-mx-sm">{{ model.orchestrator }} </span>
+          <span class="q-mx-sm">{{ model.metricsProvider }} </span>
           <q-icon v-if="statusIcon" v-bind="statusIcon" size="sm" />
           <q-spinner v-if="showStatusLoading" size="sm" />
         </div>
@@ -28,24 +24,23 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useQuasar } from 'quasar';
 import { v4 as uuidv4 } from 'uuid';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import { availableOrchestrators, getOrchestrator } from '@/orchestrator/orchestrators';
-import { orchestratorStorage } from '@/connections/storage';
+import { useMetricsProvider } from '@/metrics-provider/api';
+import { availableProviders, getProvider } from '@/metrics-provider/providers';
+import { metricsProviderStorage } from '@/connections/storage';
+
+const metricsProvider = useMetricsProvider();
 
 const props = defineProps({
   show: Boolean,
 });
 const emit = defineEmits(['update:show', 'added']);
-const orchestratorApi = useOrchestratorApi();
+
 const model = ref({});
-const $q = useQuasar();
-const isElectron = computed(() => $q.platform.is.electron);
 
 function resetModel() {
   model.value = {
-    orchestrator: availableOrchestrators[0],
+    metricsProvider: availableProviders[0],
   };
 }
 
@@ -58,12 +53,9 @@ const showDialog = computed({
   },
 });
 
-const orchestratorSettingsComponent = computed(() => {
-  const config = getOrchestrator(model.value.orchestrator);
-  const component = isElectron.value
-    ? config?.connectionSettingsComponent?.native
-    : config?.connectionSettingsComponent?.web;
-  return component || 'div';
+const providerSettingsComponent = computed(() => {
+  const config = getProvider(model.value.metricsProvider);
+  return config?.connectionSettingsComponent || 'div';
 });
 
 const connectionStatus = ref('not-checked');
@@ -91,10 +83,10 @@ function closeDialog() {
 async function testConnection() {
   connectionStatus.value = 'checking';
   const settings = {
-    orchestrator: model.value.orchestrator,
+    metricsProvider: model.value.metricsProvider,
     connectionSettings: model.value.connectionSettings,
   };
-  const success = await orchestratorApi.testConnection(settings);
+  const success = await metricsProvider.testConnection(settings);
   connectionStatus.value = success ? 'success' : 'error';
   return success;
 }
@@ -103,7 +95,7 @@ async function add() {
     id: uuidv4(),
     ...model.value,
   };
-  orchestratorStorage.addConnectionSetting(settings);
+  metricsProviderStorage.addConnectionSetting(settings);
   emit('added', settings);
   closeDialog();
 }

@@ -4,10 +4,12 @@ import { computed, ref } from 'vue';
 import AppIcon from '@/icons/AppIcon.vue';
 import { useQuasar } from 'quasar';
 import { loadCurrentWorkspace, setupAutosave } from '@/workspace/store-helper';
+import { setupBackgroundTasks } from '@/background';
 const $q = useQuasar();
 
 setupAutosave();
 loadCurrentWorkspace();
+setupBackgroundTasks();
 
 const isMini = ref(true);
 const menuList = ref([

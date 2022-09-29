@@ -5,6 +5,13 @@ import iconSet from 'quasar/icon-set/mdi-v6';
 import '@quasar/extras/mdi-v6/mdi-v6.css';
 import App from './App.vue';
 
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import minMax from 'dayjs/plugin/minMax';
+
+dayjs.extend(relativeTime);
+dayjs.extend(minMax);
+
 import router from './router';
 import VNetworkGraph from 'v-network-graph';
 
