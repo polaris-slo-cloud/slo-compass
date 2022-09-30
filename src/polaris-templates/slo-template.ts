@@ -7,7 +7,6 @@ export interface SloTemplateMetadata {
   description?: string;
   controllerName: string;
   containerImage: string;
-  sloMappingTypeApiGroup: string;
   sloMappingResources: string;
   sloMappingKind: string;
   config: ConfigParameter[];
@@ -40,7 +39,6 @@ export const templates: SloTemplateMetadata[] = [
       'This SLO calculates a cost efficiency using the response time and cost of the target',
     controllerName: 'cost-efficiency-slo-controller',
     containerImage: 'polarissloc/slo-cost-efficiency:latest',
-    sloMappingTypeApiGroup: 'slo.polaris-slo-cloud.github.io',
     sloMappingResources: 'costefficiencyslomappings',
     sloMappingKind: 'CostEfficiencySloMapping',
     config: [
@@ -89,7 +87,6 @@ export const templates: SloTemplateMetadata[] = [
     description: 'This SLO utilizes the CPU usage metrics to calculate its compliance',
     controllerName: 'cpu-usage-slo-controller',
     containerImage: 'polarissloc/slo-cpu-usage:latest',
-    sloMappingTypeApiGroup: 'slo.polaris-slo-cloud.github.io',
     sloMappingResources: 'cpuusageslomappings',
     sloMappingKind: 'CpuUsageSloMapping',
     config: [

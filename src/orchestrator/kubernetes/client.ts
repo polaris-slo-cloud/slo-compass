@@ -1,12 +1,15 @@
 import axios, { AxiosInstance } from 'axios';
 import {
-  KubernetesObject, V1APIResource, V1CustomResourceDefinition,
+  KubernetesObject,
+  V1APIResource,
   V1CustomResourceDefinitionList,
   V1DeploymentList,
 } from '@kubernetes/client-node';
 import K8sClientHelper, {
   KubernetesPatchStrategies,
 } from '@/orchestrator/kubernetes/k8s-client-helper';
+import { CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
+import { ApiObject, SloMappingSpec } from '@polaris-sloc/core';
 
 export interface K8sClient {
   listAllDeployments(): Promise<V1DeploymentList>;
@@ -14,9 +17,12 @@ export interface K8sClient {
   create<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   patch<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   test(): Promise<boolean>;
-  getCustomResourceObject(identifier): Promise<any>;
-  deleteCustomResourceObject(identifier): Promise<void>;
-  findCustomResourceMetadata<TResource extends KubernetesObject>(crdObject: TResource): Promise<V1APIResource>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getCustomResourceObject(identifier: CustomResourceObjectReference): Promise<ApiObject<SloMappingSpec<any, any>>>;
+  deleteCustomResourceObject(identifier: CustomResourceObjectReference): Promise<void>;
+  findCustomResourceMetadata<TResource extends KubernetesObject>(
+    crdObject: TResource
+  ): Promise<V1APIResource>;
 }
 interface K8sNativeClient extends K8sClient {
   connectToContext(context);
@@ -85,14 +91,14 @@ class K8sHttpClient implements K8sClient {
     );
     return data;
   }
-  async getCustomResourceObject(identifier): Promise<any> {
+  async getCustomResourceObject(identifier: CustomResourceObjectReference): Promise<any> {
     const { data } = await this.http.get(
       `/apis/${identifier.group}/${identifier.version}/namespaces/${identifier.namespace}/${identifier.plural}/${identifier.name}`
     );
     return data;
   }
 
-  async deleteCustomResourceObject(identifier): Promise<void> {
+  async deleteCustomResourceObject(identifier: CustomResourceObjectReference): Promise<void> {
     await this.http.delete(
       `/apis/${identifier.group}/${identifier.version}/namespaces/${identifier.namespace}/${identifier.plural}/${identifier.name}`
     );

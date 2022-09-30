@@ -5,32 +5,27 @@ import Slo, { PolarisSloMapping, SloTarget } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
+import { NamespacedObjectReference } from '@polaris-sloc/core';
 
-export interface DeploymentConnectionMetadata {
-  [key: string]: any;
-}
 export interface PolarisResource {
   [key: string]: any;
 }
-export interface PolarisSloMappingMetadata {
-  [key: string]: any;
-}
-export interface PolarisSloMappingObject {
-  [key: string]: any;
+export interface CustomResourceObjectReference extends NamespacedObjectReference {
+  plural: string;
 }
 
 export interface IDeployment {
   id: string;
   name: string;
   status: string;
-  connectionMetadata: DeploymentConnectionMetadata;
+  connectionMetadata: NamespacedObjectReference;
 }
 export interface PolarisDeploymentResult {
   failedResources: PolarisResource[];
   deployedControllers: PolarisController[];
 }
 export interface PolarisSloDeploymentResult extends PolarisDeploymentResult {
-  deployedSloMapping?: PolarisSloMappingMetadata;
+  deployedSloMapping?: CustomResourceObjectReference;
 }
 
 export interface IOrchestratorApi {
@@ -42,7 +37,7 @@ export interface IOrchestratorApi {
     elasticityStrategy: ElasticityStrategy
   ): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
-  applySloMapping(slo: Slo, target: SloTarget): Promise<PolarisSloMappingMetadata>;
+  applySloMapping(slo: Slo, target: SloTarget): Promise<CustomResourceObjectReference>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
 }
 
@@ -88,7 +83,7 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  applySloMapping(): Promise<PolarisSloMappingMetadata> {
+  applySloMapping(): Promise<CustomResourceObjectReference> {
     throw new OrchestratorNotConnectedError();
   }
 

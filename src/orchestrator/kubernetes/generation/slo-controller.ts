@@ -1,13 +1,10 @@
 import { V1ClusterRole, V1ClusterRoleBinding, V1Deployment } from '@kubernetes/client-node';
-import { polarisApiGroups, env } from '../constants';
+import { env } from '../constants';
 import { IDeployment } from '@/orchestrator/orchestrator-api';
 import Slo from '@/workspace/slo/Slo';
+import { POLARIS_API } from '@polaris-sloc/core';
 
-export const generateSloClusterRole = (
-  name: string,
-  mappingTypeApiGroup: string,
-  mappingResources: string
-): V1ClusterRole => ({
+export const generateSloClusterRole = (name: string, mappingResources: string): V1ClusterRole => ({
   apiVersion: 'rbac.authorization.k8s.io/v1',
   kind: 'ClusterRole',
   metadata: {
@@ -15,22 +12,22 @@ export const generateSloClusterRole = (
   },
   rules: [
     {
-      apiGroups: [mappingTypeApiGroup],
+      apiGroups: [POLARIS_API.SLO_GROUP],
       resources: [mappingResources],
       verbs: ['get', 'watch', 'list'],
     },
     {
-      apiGroups: [mappingTypeApiGroup],
+      apiGroups: [POLARIS_API.SLO_GROUP],
       resources: [`${mappingResources}/status`],
       verbs: ['get'],
     },
     {
-      apiGroups: [polarisApiGroups.elasticity],
+      apiGroups: [POLARIS_API.ELASTICITY_GROUP],
       resources: ['*'],
       verbs: ['create', 'delete', 'get', 'list', 'patch', 'update', 'watch'],
     },
     {
-      apiGroups: [polarisApiGroups.metrics],
+      apiGroups: [POLARIS_API.METRICS_GROUP],
       resources: ['*'],
       verbs: ['create', 'delete', 'get', 'list', 'patch', 'update', 'watch'],
     },
@@ -140,17 +137,11 @@ export const generateSloControllerDeployment = (
   },
 });
 
-export const generateSloMapping = (
-  kind: string,
-  namespace: string,
-  name: string,
-  slo: Slo,
-  target: IDeployment
-) => ({
+export const generateSloMapping = (kind: string, name: string, slo: Slo, target: IDeployment) => ({
   kind,
-  apiVersion: `${polarisApiGroups.slo}/v1`,
+  apiVersion: `${POLARIS_API.SLO_GROUP}/v1`,
   metadata: {
-    namespace,
+    namespace: target.connectionMetadata.namespace,
     name,
   },
   spec: {
@@ -159,7 +150,7 @@ export const generateSloMapping = (
     elasticityStrategy: slo.elasticityStrategy
       ? {
           kind: slo.elasticityStrategy.kind,
-          apiVersion: `${polarisApiGroups.elasticity}/v1`,
+          apiVersion: `${POLARIS_API.ELASTICITY_GROUP}/v1`,
         }
       : undefined,
     staticElasticityStrategyConfig: slo.elasticityStrategy?.config,

@@ -3,6 +3,7 @@ import { InstantVector, PrometheusConnectionOptions, PrometheusDriver } from 'pr
 import Slo, { SloTarget } from '@/workspace/slo/Slo';
 import * as _ from 'lodash';
 import { MetricQueryResult, MetricsProvider } from '@/metrics-provider/api';
+import { ObjectKind } from '@polaris-sloc/core';
 
 interface PrometheusConfig {
   endpoint: string;
@@ -13,7 +14,7 @@ function getSloParameter(paramName: string, target: SloTarget): string {
   const sanitizedName = paramName.replace(/^\${/, '').replace(/}$/, '');
   switch (sanitizedName) {
     case 'targetGvk':
-      return `${target.deployment.connectionMetadata.apiVersion}/${target.deployment.connectionMetadata.kind}`;
+      return `${ObjectKind.stringify(target.deployment.connectionMetadata)}`;
     case 'targetNamespace':
       return target.deployment.connectionMetadata.namespace;
     case 'targetName':

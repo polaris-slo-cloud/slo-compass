@@ -1,9 +1,9 @@
 import {
+  CustomResourceObjectReference,
   IDeployment,
   IPolarisOrchestratorApi,
   PolarisDeploymentResult,
   PolarisSloDeploymentResult,
-  PolarisSloMappingMetadata,
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
 import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
@@ -46,8 +46,8 @@ export default class Api implements IPolarisOrchestratorApi {
         status: x.status.conditions[x.status.conditions.length - 1].type,
         connectionMetadata: {
           kind: 'Deployment',
-          apiVersion: data.apiVersion,
-          //TODO: Where do i get the group from?
+          // Remove group from apiVersion
+          version: data.apiVersion.replace('apps/', ''),
           group: 'apps',
           name: x.metadata.name,
           namespace: x.metadata.namespace,
@@ -92,6 +92,7 @@ export default class Api implements IPolarisOrchestratorApi {
         ? {
             group: mappingCrd.spec.group,
             version: mappingCrd.spec.versions[0].name,
+            kind: resources.sloMapping.kind,
             plural: mappingCrd.spec.names.plural,
             name: resources.sloMapping.metadata.name,
             namespace: resources.sloMapping.metadata.namespace,
@@ -121,12 +122,8 @@ export default class Api implements IPolarisOrchestratorApi {
     };
   }
 
-  async applySloMapping(slo: Slo, target: SloTarget): Promise<PolarisSloMappingMetadata> {
-    const mapping = resourceGenerator.generateSloMapping(
-      slo,
-      target,
-      this.connectionOptions.polarisNamespace
-    );
+  async applySloMapping(slo: Slo, target: SloTarget): Promise<CustomResourceObjectReference> {
+    const mapping = resourceGenerator.generateSloMapping(slo, target);
     const mappingToDelete = slo.sloMapping && slo.sloMapping.name !== mapping.metadata.name;
     const mappingMetadata = await this.client.findCustomResourceMetadata(mapping);
     [mappingMetadata.group, mappingMetadata.version] = mapping.apiVersion.split('/');
@@ -144,6 +141,7 @@ export default class Api implements IPolarisOrchestratorApi {
       ? {
           group: mappingMetadata.group,
           version: mappingMetadata.version,
+          kind: mapping.kind,
           plural: mappingMetadata.name,
           name: mapping.metadata.name,
           namespace: mapping.metadata.namespace,
@@ -161,7 +159,10 @@ export default class Api implements IPolarisOrchestratorApi {
       config: crdObject.spec.sloConfig,
       elasticityStrategy: crdObject.spec.elasticityStrategy?.kind,
       elasticityStrategyConfig: crdObject.spec.staticElasticityStrategyConfig || {},
-      target: crdObject.spec.targetRef,
+      target: {
+        ...crdObject.spec.targetRef,
+        namespace: crdObject.metadata.namespace,
+      },
     };
   }
 
@@ -212,11 +213,13 @@ export default class Api implements IPolarisOrchestratorApi {
           (x) => x.name === resource.metadata.name && resource.kind === 'Deployment'
         );
         if (controller) {
+          const [group, version] = resource.apiVersion.split('/');
           return {
             ...controller,
             deployment: {
               kind: resource.kind,
-              apiVersion: resource.apiVersion,
+              version,
+              group,
               name: resource.metadata.name,
               namespace: resource.metadata.namespace,
             },

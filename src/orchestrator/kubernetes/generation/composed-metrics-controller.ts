@@ -4,7 +4,8 @@ import {
   V1Deployment,
   V1Service,
 } from '@kubernetes/client-node';
-import { polarisApiGroups, env } from '../constants';
+import { env } from '../constants';
+import { POLARIS_API } from '@polaris-sloc/core';
 
 export const generateMetricSourceClusterRole = (
   name: string,
@@ -17,12 +18,12 @@ export const generateMetricSourceClusterRole = (
   },
   rules: [
     {
-      apiGroups: [polarisApiGroups.metrics],
+      apiGroups: [POLARIS_API.METRICS_GROUP],
       resources: [composedMetricResources],
       verbs: ['get', 'watch', 'list'],
     },
     {
-      apiGroups: [polarisApiGroups.metrics],
+      apiGroups: [POLARIS_API.METRICS_GROUP],
       resources: [`${composedMetricResources}/status`],
       verbs: ['get'],
     },

@@ -8,7 +8,6 @@ export interface ElasticityStrategyTemplateMetadata {
   kind: string;
   controllerName: string;
   containerImage: string;
-  strategyTypeApiGroup: string;
   strategyResources: string;
   sloSpecificConfig: ConfigParameter[];
 }
@@ -22,7 +21,6 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     kind: 'HorizontalElasticityStrategy',
     controllerName: 'horizontal-elasticity-strategy-controller',
     containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
-    strategyTypeApiGroup: 'elasticity.polaris-slo-cloud.github.io',
     strategyResources: 'horizontalelasticitystrategies',
     sloSpecificConfig: [
       {
@@ -47,7 +45,6 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     kind: 'VerticalElasticityStrategy',
     controllerName: 'vertical-elasticity-strategy-controller',
     containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
-    strategyTypeApiGroup: 'elasticity.polaris-slo-cloud.github.io',
     strategyResources: 'verticalelasticitystrategies',
     sloSpecificConfig: [
       {

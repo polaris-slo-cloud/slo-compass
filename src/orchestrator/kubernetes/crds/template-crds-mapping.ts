@@ -1,3 +1,5 @@
+import { V1CustomResourceDefinition } from '@kubernetes/client-node';
+
 const crdsMap = {
   costEfficiencySlo: ['costefficiencymetricmappings.metrics', 'costefficiencyslomappings.slo'],
   cpuUsageSlo: ['cpuusageslomappings.slo'],
@@ -5,7 +7,7 @@ const crdsMap = {
   verticalElasticityStrategy: ['verticalelasticitystrategies.elasticity'],
 };
 
-export default async function loadCrdsForTemplate(templateName: string) {
+export default async function loadCrdsForTemplate(templateName: string): Promise<V1CustomResourceDefinition[]> {
   const crdNames = crdsMap[templateName];
   if (!crdNames) {
     return [];

@@ -4,7 +4,6 @@ import workspaceFileService from '../workspace/workspace-file-service';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useMetricsProvider } from '@/metrics-provider/api';
 import { getWorkspace, markWorkspaceAsUsed } from '@/workspace/store-helper';
-//import polarisConnector from "../polaris-connector";
 const orchestratorApi = useOrchestratorApi();
 const metricsProvider = useMetricsProvider();
 

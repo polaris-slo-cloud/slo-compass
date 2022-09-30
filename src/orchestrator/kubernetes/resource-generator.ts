@@ -65,18 +65,12 @@ function generateMetricsResources(
 }
 
 export default {
-  generateSloMapping(slo: Slo, target: SloTarget, namespace: string) {
+  generateSloMapping(slo: Slo, target: SloTarget) {
     const template = getSloTemplate(slo.template);
     const normalizedSloName = slo.name.replaceAll(' ', '-').toLowerCase();
     if (target.deployment) {
       const mappingName = `${normalizedSloName}-${target.deployment.id}`;
-      return generateSloMapping(
-        template.sloMappingKind,
-        namespace,
-        mappingName,
-        slo,
-        target.deployment
-      );
+      return generateSloMapping(template.sloMappingKind, mappingName, slo, target.deployment);
     }
     return null;
   },
@@ -97,16 +91,12 @@ export default {
     const crds = await loadCrdsForTemplate(template.key);
     resources.push(...crds);
 
-    const sloMapping = this.generateSloMapping(slo, target, namespace);
+    const sloMapping = this.generateSloMapping(slo, target);
     resources.push(
       ...[
         generateNamespaceSpec(namespace),
         generateServiceAccount(template.controllerName, namespace),
-        generateSloClusterRole(
-          template.controllerName,
-          template.sloMappingTypeApiGroup,
-          template.sloMappingResources
-        ),
+        generateSloClusterRole(template.controllerName, template.sloMappingResources),
         generateSloClusterRoleBinding(
           template.controllerName,
           namespace,
@@ -139,11 +129,7 @@ export default {
       ...[
         generateNamespaceSpec(namespace),
         generateServiceAccount(template.controllerName, namespace),
-        generateElasticityStrategyClusterRole(
-          template.controllerName,
-          template.strategyTypeApiGroup,
-          template.strategyResources
-        ),
+        generateElasticityStrategyClusterRole(template.controllerName, template.strategyResources),
         generateElasticityStrategyClusterRoleBinding(
           template.controllerName,
           namespace,

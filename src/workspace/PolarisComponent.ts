@@ -1,4 +1,5 @@
-import { DeploymentConnectionMetadata } from '@/orchestrator/orchestrator-api';
+import { NamespacedObjectReference } from '@polaris-sloc/core';
+import { PolarisResource } from '@/orchestrator/orchestrator-api';
 
 export interface PolarisComponent {
   id: string;
@@ -6,11 +7,11 @@ export interface PolarisComponent {
   description: string;
   template: string;
   polarisControllers: PolarisController[];
-  failedDeployments?: unknown[];
+  failedDeployments?: PolarisResource[];
 }
 
 export interface PolarisController {
   type: 'SLO Controller' | 'Metrics Controller' | 'Elasticity Strategy Controller';
   name: string;
-  deployment: DeploymentConnectionMetadata;
+  deployment: NamespacedObjectReference;
 }

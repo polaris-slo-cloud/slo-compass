@@ -1,10 +1,7 @@
-import {
-  DeploymentConnectionMetadata,
-  IDeployment,
-  PolarisSloMappingMetadata,
-} from '@/orchestrator/orchestrator-api';
+import { CustomResourceObjectReference, IDeployment } from '@/orchestrator/orchestrator-api';
 import { PolarisComponent } from '@/workspace/PolarisComponent';
 import { SloMetricSource } from '@/polaris-templates/slo-template';
+import { NamespacedObjectReference } from '@polaris-sloc/core';
 
 export interface SloTarget {
   id: string;
@@ -13,38 +10,30 @@ export interface SloTarget {
   deployment: IDeployment;
 }
 
-interface SloElasticityStrategyConfig {
-  [key: string]: any;
-}
-
 interface SloElasticityStrategy {
   id: string;
   kind: string;
-  config: SloElasticityStrategyConfig;
-}
-
-interface SloConfig {
-  [key: string]: any;
+  config: Record<string, unknown>;
 }
 
 export interface PolarisSloMapping {
-  target: DeploymentConnectionMetadata;
-  config: SloConfig;
+  target: NamespacedObjectReference;
+  config: Record<string, unknown>;
   elasticityStrategy?: string;
-  elasticityStrategyConfig: SloElasticityStrategyConfig;
+  elasticityStrategyConfig: Record<string, unknown>;
 }
 
 export interface SloMetric {
   source: SloMetricSource;
-  value: any;
+  value: unknown;
   lastUpdated: Date;
 }
 
 export default interface Slo extends PolarisComponent {
   target?: string;
   metrics: SloMetric[];
-  config: SloConfig;
+  config: Record<string, unknown>;
   configChanged: boolean;
   elasticityStrategy?: SloElasticityStrategy;
-  sloMapping: PolarisSloMappingMetadata;
+  sloMapping: CustomResourceObjectReference;
 }
