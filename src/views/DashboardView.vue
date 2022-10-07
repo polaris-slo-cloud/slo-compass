@@ -3,11 +3,12 @@ import WorkspaceDiagramm from '@/workspace/WorkspaceDiagramm.vue';
 import NewWorkspaceItemSelector from '@/workspace/NewWorkspaceItemSelector.vue';
 import WorkspaceItemDetails from '@/workspace/WorkspaceItemDetails.vue';
 import { computed, ref, watch } from 'vue';
-import { useWorkspaceStore } from '@/store';
 import useWindowSize from '@/crosscutting/composables/window-size';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+
+const orchestratorApi = useOrchestratorApi();
 
 const windowSize = useWindowSize();
-const store = useWorkspaceStore();
 const selection = ref(null);
 const showNewItemSelection = ref(false);
 const showDrawer = computed(() => {
@@ -19,10 +20,14 @@ const drawerWidth = computed(() => {
   return Math.min(width, maxDrawerWidth);
 });
 
-const hasUndismissedDeploymentAction = computed(() => store.hasUndismissedDeploymentActions);
-const deploymentNames = computed(() => store.runningDeploymentNames);
+const hasUndismissedDeploymentAction = computed(
+  () => orchestratorApi.undismissiedRunningDeployments.value.length > 0
+);
+const deploymentNames = computed(() =>
+  orchestratorApi.undismissiedRunningDeployments.value.map((x) => x.name).join(', ')
+);
 function dismissDeploymentNotification() {
-  store.dismissRunningDeploymentActions();
+  orchestratorApi.dismissRunningDeploymentActions();
 }
 
 watch(selection, (value) => {

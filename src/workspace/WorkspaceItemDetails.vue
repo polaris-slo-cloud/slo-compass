@@ -51,9 +51,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useWorkspaceStore } from '@/store';
+import { useWorkspaceStore } from '@/store/workspace';
 import { workspaceItemTypes } from '@/workspace/constants';
-import EditableField from '@/workspace/EditableField.vue';
+import EditableField from '@/crosscutting/components/EditableField.vue';
 import TargetDetails from '@/workspace/targets/TargetDetails.vue';
 import SloDetails from '@/workspace/slo/SloDetails.vue';
 import ElasticityStrategyDetails from '@/workspace/elasticity-strategy/ElasticityStrategyDetails.vue';

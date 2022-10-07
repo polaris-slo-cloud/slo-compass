@@ -3,7 +3,7 @@ import { Platform } from 'quasar';
 import DashboardView from '@/views/DashboardView.vue';
 import WelcomeView from '@/views/WelcomeView.vue';
 import ConnectionsView from '@/views/ConnectionsView.vue';
-import { useWorkspaceStore } from '@/store';
+import { useWorkspaceStore } from '@/store/workspace';
 
 const router = createRouter({
   history: Platform.is.electron

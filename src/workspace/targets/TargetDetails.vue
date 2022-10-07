@@ -32,15 +32,15 @@
 
 <script setup>
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';
-import EditableField from '@/workspace/EditableField.vue';
-import DeploymentSelection from '@/workspace/DeploymentSelection.vue';
+import EditableField from '@/crosscutting/components/EditableField.vue';
+import DeploymentSelection from '@/orchestrator/DeploymentSelection.vue';
 import { computed } from 'vue';
 import orchestratorIconMap from '@/orchestrator/orchestrator-icon-map';
-import { useWorkspaceStore } from '@/store';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import componentIcon from '@/workspace/targets/component-icon';
+import { useTargetStore } from '@/store/target';
 
-const store = useWorkspaceStore();
+const store = useTargetStore();
 const orchestratorApi = useOrchestratorApi();
 
 const props = defineProps({
@@ -52,7 +52,7 @@ const deployment = computed({
     return props.item.deployment;
   },
   set(v) {
-    store.save({ ...props.item, deployment: v });
+    store.saveTarget({ ...props.item, deployment: v });
   },
 });
 const orchestratorIcon = computed(
@@ -75,7 +75,7 @@ const componentsEditModel = computed({
     return components.value;
   },
   set(v) {
-    store.save({ ...props.item, components: v.map((x) => x.id) });
+    store.saveTarget({ ...props.item, components: v.map((x) => x.id) });
   },
 });
 </script>

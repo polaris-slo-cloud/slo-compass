@@ -14,7 +14,7 @@
   </q-page>
 </template>
 <script setup>
-import { computed } from '@vue/runtime-core';
+import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 const $q = useQuasar();
 const theme = computed({

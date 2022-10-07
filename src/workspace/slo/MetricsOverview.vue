@@ -24,10 +24,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useWorkspaceStore } from '@/store';
 import dayjs from 'dayjs';
+import { useSloStore } from '@/store/slo';
 
-const store = useWorkspaceStore();
+const store = useSloStore();
 
 const props = defineProps({
   slo: Object,

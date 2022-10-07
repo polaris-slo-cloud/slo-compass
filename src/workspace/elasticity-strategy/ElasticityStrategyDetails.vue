@@ -6,13 +6,13 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useWorkspaceStore } from '@/store';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 const props = defineProps({
   item: Object,
 });
 
-const store = useWorkspaceStore();
+const store = useElasticityStrategyStore();
 const canBeDeployed = computed(
   () =>
     !store.hasRunningDeployment(props.item.id) &&

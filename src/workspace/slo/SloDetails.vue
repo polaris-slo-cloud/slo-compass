@@ -84,18 +84,24 @@
 
 <script setup>
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';
-import EditableField from '@/workspace/EditableField.vue';
+import EditableField from '@/crosscutting/components/EditableField.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
 import MetricsOverview from '@/workspace/slo/MetricsOverview.vue';
-import { useWorkspaceStore } from '@/store';
+import { useSloStore } from '@/store/slo';
 import { computed } from 'vue';
 import { getTemplate as getSloTemplate } from '@/polaris-templates/slo-template';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import componentIcon from '@/workspace/targets/component-icon';
 import _ from 'lodash';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
+import { useTargetStore } from '@/store/target';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 
-const store = useWorkspaceStore();
+const orchestratorApi = useOrchestratorApi();
+const sloStore = useSloStore();
+const elasticityStrategyStore = useElasticityStrategyStore();
+const targetStore = useTargetStore();
 
 const props = defineProps({
   item: Object,
@@ -132,7 +138,9 @@ const configEditModel = computed({
   },
 });
 
-const target = computed(() => (props.item.target ? store.getItem(props.item.target) : null));
+const target = computed(() =>
+  props.item.target ? targetStore.getSloTarget(props.item.target) : null
+);
 const targetComponentIcon = computed(() => (target.value ? componentIcon(target.value) : null));
 const targetEditModel = computed({
   get() {
@@ -147,7 +155,9 @@ const targetEditModel = computed({
 
 const elasticityStrategy = computed({
   get() {
-    return props.item.elasticityStrategy ? store.getItem(props.item.elasticityStrategy.id) : null;
+    return props.item.elasticityStrategy
+      ? elasticityStrategyStore.getElasticityStrategy(props.item.elasticityStrategy.id)
+      : null;
   },
   set(v) {
     const config =
@@ -201,7 +211,7 @@ const elasticityStrategyConfigEditModel = computed({
 });
 
 function save(changes) {
-  store.saveSlo({
+  sloStore.saveSlo({
     ...props.item,
     ...changes,
     configChanged: true,
@@ -209,20 +219,20 @@ function save(changes) {
 }
 const canBeDeployed = computed(
   () =>
-    !store.hasRunningDeployment(props.item.id) &&
+    !orchestratorApi.hasRunningDeployment.value(props.item.id) &&
     props.item.polarisControllers.some((x) => !x.deployment)
 );
 
 function deploy() {
-  store.deploySlo(props.item);
+  sloStore.deploySlo(props.item.id);
 }
 
 function applyConfiguration() {
-  store.applySloMapping(props.item);
+  sloStore.applySloMapping(props.item.id);
 }
 
 function resetConfiguration() {
-  store.resetSloMapping(props.item);
+  sloStore.resetSloMapping(props.item.id);
 }
 </script>
 

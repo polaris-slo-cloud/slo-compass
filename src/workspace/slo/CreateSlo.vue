@@ -49,14 +49,14 @@
 
 <script setup>
 import { ref, computed, nextTick, onBeforeUpdate, watch } from 'vue';
-import { useWorkspaceStore } from '@/store';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import { getPolarisControllers } from '@/polaris-templates/slo-template';
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
+import { useSloStore } from '@/store/slo';
 
-const store = useWorkspaceStore();
+const store = useSloStore();
 const props = defineProps({
   show: Boolean,
   template: Object,

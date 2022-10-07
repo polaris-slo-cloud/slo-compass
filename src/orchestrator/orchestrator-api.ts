@@ -1,11 +1,12 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import { OrchestratorConnection } from '@/connections/storage';
-import Slo, { PolarisSloMapping, SloTarget } from '@/workspace/slo/Slo';
+import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
 import { NamespacedObjectReference } from '@polaris-sloc/core';
+import {SloTarget} from "@/workspace/targets/SloTarget";
 
 export interface PolarisResource {
   [key: string]: any;
@@ -49,6 +50,9 @@ export interface IOrchestratorApiConnection extends IOrchestratorApi {
   orchestratorName: ComputedRef<string>;
   connect(connection: OrchestratorConnection, polarisOptions: unknown): void;
   testConnection(connection: OrchestratorConnection): Promise<boolean>;
+  hasRunningDeployment: ComputedRef<(componentId: string) => boolean>;
+  undismissiedRunningDeployments: ComputedRef;
+  dismissRunningDeploymentActions(): void;
 }
 
 class OrchestratorNotConnectedError extends Error {
@@ -92,6 +96,10 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   }
 }
 const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
+const runningDeployments = ref({});
+const hasRunningDeployment = computed(
+  () => (componentId: string) => !!runningDeployments.value[componentId]
+);
 
 function createOrchestratorApi(connection: OrchestratorConnection): IPolarisOrchestratorApi {
   const orchestratorConfig = getOrchestrator(connection.orchestrator);
@@ -103,6 +111,7 @@ function createOrchestratorApi(connection: OrchestratorConnection): IPolarisOrch
 function connect(connection: OrchestratorConnection, polarisOptions: unknown): void {
   api.value = createOrchestratorApi(connection);
   api.value.configure(polarisOptions);
+  runningDeployments.value = {};
 }
 async function testConnection(connection: OrchestratorConnection): Promise<boolean> {
   const apiConnection = createOrchestratorApi(connection);
@@ -114,6 +123,16 @@ function clone<T>(object: T): T {
   return JSON.parse(JSON.stringify(object));
 }
 
+async function deploy(
+  component: PolarisComponent,
+  deploymentAction: () => Promise<PolarisDeploymentResult>
+): Promise<PolarisDeploymentResult> {
+  runningDeployments.value[component.id] = { id: component.id, name: component.name, dismissed: false };
+  const result = await deploymentAction();
+  delete runningDeployments.value[component.id];
+  return result;
+}
+
 export function useOrchestratorApi(): IOrchestratorApiConnection {
   return {
     connect,
@@ -122,11 +141,20 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     orchestratorName: computed(() => api.value.name),
     findDeployments: (query?) => api.value.findDeployments(query),
     test: () => api.value.test(),
-    deploySlo: (slo, target) => api.value.deploySlo(clone(slo), clone(target)),
+    deploySlo: (slo, target) => deploy(slo, () => api.value.deploySlo(clone(slo), clone(target))),
     deployElasticityStrategy: (elasticityStrategy) =>
-      api.value.deployElasticityStrategy(clone(elasticityStrategy)),
-    retryDeployment: (item) => api.value.retryDeployment(clone(item)),
+      deploy(elasticityStrategy, () =>
+        api.value.deployElasticityStrategy(clone(elasticityStrategy))
+      ),
+    retryDeployment: (item) => deploy(item, () => api.value.retryDeployment(clone(item))),
     applySloMapping: (slo, target) => api.value.applySloMapping(clone(slo), clone(target)),
     findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),
+    hasRunningDeployment,
+    undismissiedRunningDeployments: computed(() =>
+      Object.values(runningDeployments.value).filter((x: any) => !x.dismissed)
+    ),
+    dismissRunningDeploymentActions() {
+      Object.values(runningDeployments.value).forEach((x: any) => (x.dismissed = true));
+    },
   };
 }

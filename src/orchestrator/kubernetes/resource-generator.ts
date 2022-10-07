@@ -24,12 +24,13 @@ import {
 import loadCrdsForTemplate from '@/orchestrator/kubernetes/crds/template-crds-mapping';
 import { KubernetesObject } from '@kubernetes/client-node';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
-import Slo, { SloTarget } from '@/workspace/slo/Slo';
+import Slo from '@/workspace/slo/Slo';
 import {
   generateElasticityStrategyClusterRole,
   generateElasticityStrategyClusterRoleBinding,
   generateElasticityStrategyControllerDeployment,
 } from '@/orchestrator/kubernetes/generation/elasticity-strategy-controller';
+import {SloTarget} from "@/workspace/targets/SloTarget";
 
 interface SloResources {
   staticResources: KubernetesObject[];

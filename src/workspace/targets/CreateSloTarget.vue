@@ -30,11 +30,11 @@
 
 <script setup>
 import { ref, watch, computed, nextTick } from 'vue';
-import { useWorkspaceStore } from '@/store';
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';
-import DeploymentSelection from '@/workspace/DeploymentSelection.vue';
+import DeploymentSelection from '@/orchestrator/DeploymentSelection.vue';
+import { useTargetStore } from '@/store/target';
 
-const store = useWorkspaceStore();
+const store = useTargetStore();
 
 const props = defineProps({
   show: Boolean,

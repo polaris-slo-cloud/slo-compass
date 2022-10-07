@@ -12,9 +12,9 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { useWorkspaceStore } from '@/store';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
-const store = useWorkspaceStore();
+const store = useElasticityStrategyStore();
 
 const props = defineProps({
   label: String,
@@ -31,7 +31,7 @@ const selectedElasticityStrategy = computed({
   },
 });
 
-const options = computed(() => store.workspace.elasticityStrategies);
+const options = computed(() => store.elasticityStrategies);
 const optionsFilter = ref('');
 const filteredOptions = computed(() =>
   options.value.filter((x) => x.name.toLowerCase().includes(optionsFilter.value))

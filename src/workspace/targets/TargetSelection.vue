@@ -33,10 +33,10 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { useWorkspaceStore } from '@/store';
 import componentIcon from '@/workspace/targets/component-icon';
+import { useTargetStore } from '@/store/target';
 
-const store = useWorkspaceStore();
+const store = useTargetStore();
 const props = defineProps({
   modelValue: Object,
   label: String,
@@ -55,8 +55,8 @@ const model = computed({
 });
 
 const options = computed(() => {
-  if (store.workspace.targets) {
-    return store.workspace.targets
+  if (store.targets) {
+    return store.targets
       .filter((x) => x.id !== props.hideId)
       .filter((x) => x.name.toLowerCase().indexOf(optionsFilter.value) >= 0);
   }

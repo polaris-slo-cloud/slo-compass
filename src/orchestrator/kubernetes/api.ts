@@ -7,11 +7,12 @@ import {
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
 import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
-import Slo, { PolarisSloMapping, SloTarget } from '@/workspace/slo/Slo';
+import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { KubernetesObject, V1CustomResourceDefinition } from '@kubernetes/client-node';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
 import { getTemplate as getSloTemplate } from '@/polaris-templates/slo-template';
+import {SloTarget} from "@/workspace/targets/SloTarget";
 
 export interface K8sConnectionOptions {
   connectionString: string;

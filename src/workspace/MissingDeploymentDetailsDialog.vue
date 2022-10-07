@@ -36,9 +36,11 @@
 <script setup>
 import { computed } from 'vue';
 import { workspaceItemTypes } from '@/workspace/constants';
-import { useWorkspaceStore } from '@/store';
+import { useSloStore } from '@/store/slo';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
-const store = useWorkspaceStore();
+const sloStore = useSloStore();
+const elasticityStrategyStore = useElasticityStrategyStore();
 
 const props = defineProps({
   show: Boolean,
@@ -65,10 +67,10 @@ const deploymentStatusText = (controller) => (controller.deployment ? 'Running' 
 function deploy() {
   switch (props.item.type) {
     case workspaceItemTypes.slo:
-      store.deploySlo(props.item);
+      sloStore.deploySlo(props.item);
       break;
     case workspaceItemTypes.elasticityStrategy:
-      store.deployElasticityStrategy(props.item);
+      elasticityStrategyStore.deployElasticityStrategy(props.item);
       break;
   }
 }

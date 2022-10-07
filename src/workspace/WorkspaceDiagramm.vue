@@ -75,7 +75,7 @@
 import { computed, ref, reactive, watch } from 'vue';
 import { colors } from 'quasar';
 import * as vNG from 'v-network-graph';
-import { useWorkspaceStore } from '@/store';
+import { useWorkspaceStore } from '@/store/workspace';
 import { ForceLayout } from 'v-network-graph/lib/force-layout';
 
 const store = useWorkspaceStore();
@@ -217,8 +217,8 @@ const data = computed(() => {
   const edges = {};
   const nodes = {};
 
-  if (store.workspace.targets) {
-    for (const target of store.workspace.targets) {
+  if (store.targets) {
+    for (const target of store.targets) {
       nodes[target.id] = {
         name: target.name,
         type: target.type,
@@ -239,8 +239,8 @@ const data = computed(() => {
     }
   }
 
-  if (store.workspace.slos) {
-    for (const slo of store.workspace.slos) {
+  if (store.slos) {
+    for (const slo of store.slos) {
       nodes[slo.id] = {
         name: slo.name,
         color: colors.getPaletteColor('blue'),
@@ -263,8 +263,8 @@ const data = computed(() => {
     }
   }
 
-  if (store.workspace.elasticityStrategies) {
-    for (const strategy of store.workspace.elasticityStrategies) {
+  if (store.elasticityStrategies) {
+    for (const strategy of store.elasticityStrategies) {
       nodes[strategy.id] = {
         name: strategy.name,
         color: colors.getPaletteColor('amber'),

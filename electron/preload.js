@@ -33,8 +33,8 @@ contextBridge.exposeInMainWorld('workspaceApi', {
     if (!files) {
       return null;
     }
-    const workspaceConfig = await fs.readFile(files[0]);
-    return workspaceConfig.toJSON();
+    const workspaceConfig = await fs.readFile(files[0], 'utf8');
+    return JSON.parse(workspaceConfig);
   },
   async save(workspace) {
     const workspaceJson = JSON.stringify(workspace);

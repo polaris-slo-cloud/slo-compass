@@ -28,10 +28,16 @@ import { useRouter } from 'vue-router';
 import OrchestratorSelection from '@/orchestrator/OrchestratorSelection.vue';
 import MetricsProviderSelection from '@/metrics-provider/MetricsProviderSelection.vue';
 import DirectoryChooser from '@/crosscutting/components/DirectoryChooser.vue';
-import { useWorkspaceStore } from '@/store';
+import { useWorkspaceStore } from '@/store/workspace';
+import { markWorkspaceAsUsed } from '@/workspace/store-helper';
+import { workspaceConnectionStorage } from '@/connections/storage';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { useMetricsProvider } from '@/metrics-provider/api';
 
 const store = useWorkspaceStore();
 const router = useRouter();
+const orchestratorApi = useOrchestratorApi();
+const metricsApi = useMetricsProvider();
 
 const emit = defineEmits(['cancel']);
 
@@ -43,8 +49,24 @@ function cancel() {
   emit('cancel');
 }
 
+function connect(workspaceConnections) {
+  if (workspaceConnections.orchestrator) {
+    orchestratorApi.connect(workspaceConnections.orchestrator, model.value.orchestrator.polarisOptions);
+  }
+  if (workspaceConnections.metrics) {
+    metricsApi.connect(workspaceConnections.metrics);
+  }
+}
+
 function createWorkspace() {
   store.createWorkspace(model.value);
+  markWorkspaceAsUsed(store.$state);
+  const workspaceConnections = {
+    orchestrator: model.value.orchestrator.connection,
+    metrics: model.value.metricsProvider,
+  };
+  workspaceConnectionStorage.setConnectionsForWorkspace(store.workspaceId, workspaceConnections);
+  connect(workspaceConnections);
   router.replace({ name: 'workspace' });
 }
 </script>

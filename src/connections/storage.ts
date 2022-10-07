@@ -1,5 +1,6 @@
 const orchestratorConnectionsLocalStorageKey = 'orchestrator-connections';
 const metricsProvidersLocalStorageKey = 'metrics-providers';
+const workspaceConnectionsLocalStorageKey = 'workspace-connections';
 
 export interface OrchestratorConnection {
   id: string;
@@ -42,5 +43,27 @@ export const metricsProviderStorage = {
   },
   saveConnectionSettings(connections: MetricsConnection[]) {
     localStorage.setItem(metricsProvidersLocalStorageKey, JSON.stringify(connections));
+  },
+};
+
+export interface WorkspaceConnections {
+  orchestrator: OrchestratorConnection;
+  metrics: MetricsConnection;
+}
+
+function getAllConnectionsByWorkspace(): Record<string, WorkspaceConnections> {
+  const connections = localStorage.getItem(workspaceConnectionsLocalStorageKey);
+  return connections ? JSON.parse(connections) : {};
+}
+
+export const workspaceConnectionStorage = {
+  getConnectionsForWorkspace(workspaceId: string): WorkspaceConnections {
+    const byWorkspace = getAllConnectionsByWorkspace();
+    return byWorkspace[workspaceId];
+  },
+  setConnectionsForWorkspace(workspaceId: string, connections: WorkspaceConnections) {
+    const byWorkspace = getAllConnectionsByWorkspace();
+    byWorkspace[workspaceId] = connections;
+    localStorage.setItem(workspaceConnectionsLocalStorageKey, JSON.stringify(byWorkspace));
   },
 };

@@ -1,4 +1,5 @@
-import { useWorkspaceStore } from '@/store';
+import { useWorkspaceStore } from '@/store/workspace';
+import { watch } from 'vue';
 
 function saveWorkspacesInLocalStorage(workspaces) {
   if (workspaces) {
@@ -50,22 +51,50 @@ export function getRecentWorkspaces() {
   return recents ? JSON.parse(recents) : [];
 }
 
+async function saveWorkspaceState(state, store) {
+  if (state.workspaceId) {
+    const workspace = JSON.parse(
+      JSON.stringify({
+        ...state,
+        slos: store.slos,
+        targets: store.targets,
+        elasticityStrategies: store.elasticityStrategies,
+      })
+    );
+    delete workspace.isOpened;
+    await saveWorkspace(workspace);
+  }
+}
+
 export function setupAutosave() {
   const store = useWorkspaceStore();
   store.$subscribe(async (mutation, state) => {
-    if (state.workspaceId) {
-      const workspace = JSON.parse(JSON.stringify(state));
-      delete workspace.isOpened;
-      delete workspace.runningDeploymentActions;
-      await saveWorkspace(workspace);
-    }
+    await saveWorkspaceState(state, store);
   });
+  watch(
+    () => store.slos,
+    () => saveWorkspaceState(store.$state, store),
+    { deep: true }
+  );
+  watch(
+    () => store.targets,
+    () => saveWorkspaceState(store.$state, store),
+    { deep: true }
+  );
+  watch(
+    () => store.elasticityStrategies,
+    () => saveWorkspaceState(store.$state, store),
+    { deep: true }
+  );
 }
 
 export async function loadCurrentWorkspace() {
   const store = useWorkspaceStore();
   const currentWorkspaceId = window.sessionStorage.getItem('currentWorkspace');
   if (currentWorkspaceId) {
-    await store.loadWorkspace(currentWorkspaceId);
+    const workspace = await getWorkspace(currentWorkspaceId);
+    await store.loadWorkspace(workspace);
+    markWorkspaceAsUsed(workspace);
+    return workspace;
   }
 }

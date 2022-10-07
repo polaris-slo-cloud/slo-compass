@@ -21,11 +21,11 @@
 </template>
 
 <script setup>
-import { useWorkspaceStore } from '@/store';
 import { computed, nextTick, ref, watch } from 'vue';
 import { getPolarisControllers } from '@/polaris-templates/strategy-template';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
-const store = useWorkspaceStore();
+const store = useElasticityStrategyStore();
 const props = defineProps({
   show: Boolean,
   template: Object,

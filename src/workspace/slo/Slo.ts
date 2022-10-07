@@ -1,14 +1,7 @@
-import { CustomResourceObjectReference, IDeployment } from '@/orchestrator/orchestrator-api';
+import { CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
 import { PolarisComponent } from '@/workspace/PolarisComponent';
 import { SloMetricSource } from '@/polaris-templates/slo-template';
 import { NamespacedObjectReference } from '@polaris-sloc/core';
-
-export interface SloTarget {
-  id: string;
-  name: string;
-  type: string;
-  deployment: IDeployment;
-}
 
 interface SloElasticityStrategy {
   id: string;

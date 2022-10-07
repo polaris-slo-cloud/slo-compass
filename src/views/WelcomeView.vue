@@ -15,7 +15,7 @@
         label="Open Workspace"
         icon="mdi-folder-open"
         no-caps
-        @click="openWorkspace"
+        @click="openWorkspaceFile"
       ></q-btn>
       <div class="q-mt-lg" v-if="recentWorkspaces.length > 0">
         <q-separator />
@@ -42,12 +42,18 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useWorkspaceStore } from '@/store';
+import { useWorkspaceStore } from '@/store/workspace';
 import { useRouter } from 'vue-router';
 import NewWorkspace from '@/workspace/NewWorkspace.vue';
-import { getRecentWorkspaces } from '@/workspace/store-helper';
+import { getRecentWorkspaces, getWorkspace, markWorkspaceAsUsed } from '@/workspace/store-helper';
+import workspaceFileService from '@/workspace/workspace-file-service';
 import dayjs from 'dayjs';
+import { workspaceConnectionStorage } from '@/connections/storage';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { useMetricsProvider } from '@/metrics-provider/api';
 
+const orchestratorApi = useOrchestratorApi();
+const metricsProvider = useMetricsProvider();
 const store = useWorkspaceStore();
 const router = useRouter();
 
@@ -56,11 +62,25 @@ const recentWorkspaces = getRecentWorkspaces();
 
 const formatDate = (date) => dayjs(date).format('DD.MM.YYYY HH:mm');
 
-async function openWorkspace() {
-  await store.openWorkspace();
+async function openWorkspaceFile() {
+  const workspace = await workspaceFileService.openWorkspaceFile();
+  await openWorkspace(workspace);
 }
 async function loadWorkspace(id) {
-  await store.loadWorkspace(id);
+  const workspace = await getWorkspace(id);
+  await openWorkspace(workspace);
+}
+
+async function openWorkspace(workspace) {
+  store.loadWorkspace(workspace);
+  markWorkspaceAsUsed(workspace);
+  const connections = workspaceConnectionStorage.getConnectionsForWorkspace(workspace.workspaceId);
+  if (connections?.orchestrator) {
+    orchestratorApi.connect(connections.orchestrator, workspace.polarisOptions);
+  }
+  if (connections?.metrics) {
+    metricsProvider.connect(connections.metrics);
+  }
   await router.replace({ name: 'workspace' });
 }
 </script>

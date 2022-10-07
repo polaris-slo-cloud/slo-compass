@@ -145,7 +145,12 @@ export const generateSloMapping = (kind: string, name: string, slo: Slo, target:
     name,
   },
   spec: {
-    targetRef: target.connectionMetadata,
+    targetRef: {
+      kind: target.connectionMetadata.kind,
+      name: target.connectionMetadata.name,
+      namespace: target.connectionMetadata.namespace,
+      apiVersion: `${target.connectionMetadata.group}/${target.connectionMetadata.version}`,
+    },
     sloConfig: slo.config,
     elasticityStrategy: slo.elasticityStrategy
       ? {
