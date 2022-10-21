@@ -55,6 +55,7 @@ import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
 import { useSloStore } from '@/store/slo';
+import { workspaceItemTypes } from '@/workspace/constants';
 
 const store = useSloStore();
 const props = defineProps({
@@ -121,7 +122,7 @@ function save() {
   if (isValid.value) {
     const slo = {
       ...model.value,
-      type: 'SLO',
+      type: workspaceItemTypes.slo,
       template: props.template.key,
       metrics: props.template.metrics.map((x) => ({
         source: x,

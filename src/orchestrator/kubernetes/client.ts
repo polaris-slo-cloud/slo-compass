@@ -1,31 +1,43 @@
 import axios, { AxiosInstance } from 'axios';
 import {
+  KubernetesListObject,
   KubernetesObject,
   V1APIResource,
   V1CustomResourceDefinitionList,
   V1DeploymentList,
 } from '@kubernetes/client-node';
-import K8sClientHelper, {
-  KubernetesPatchStrategies,
-} from '@/orchestrator/kubernetes/k8s-client-helper';
-import { CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
-import { ApiObject, SloMappingSpec } from '@polaris-sloc/core';
+import K8sClientHelper, { KubernetesPatchStrategies } from '@/orchestrator/kubernetes/k8s-client-helper';
+import { ApiObjectList, CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
+import { ApiObject, ObjectKind, SloMappingSpec } from '@polaris-sloc/core';
+import { WatchEventType } from '@/orchestrator/kubernetes/kubernetes-watcher';
+import { PolarisSloMapping } from '@/workspace/slo/Slo';
+
+export interface KubernetesSpecObject extends KubernetesObject {
+  spec: any;
+}
 
 export interface K8sClient {
+  listNamespacedDeployments(namespace: string): Promise<V1DeploymentList>;
   listAllDeployments(): Promise<V1DeploymentList>;
   read<TResource extends KubernetesObject>(spec: TResource): Promise<TResource>;
   create<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   patch<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   test(): Promise<boolean>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getCustomResourceObject(identifier: CustomResourceObjectReference): Promise<ApiObject<SloMappingSpec<any, any>>>;
+  getCustomResourceObject(identifier: CustomResourceObjectReference): Promise<ApiObject<any>>;
   deleteCustomResourceObject(identifier: CustomResourceObjectReference): Promise<void>;
-  findCustomResourceMetadata<TResource extends KubernetesObject>(
-    crdObject: TResource
-  ): Promise<V1APIResource>;
+  listCustomResourceObjects(objectKind: ObjectKind, plural: string): Promise<KubernetesListObject<any>>;
+  findCustomResourceMetadata(apiVersion: string, kind: string): Promise<V1APIResource>;
+  watch(
+    path: string,
+    resourceVersion: string,
+    watchCallback: (type: WatchEventType, k8sObj: KubernetesSpecObject) => Promise<void>,
+    errorCallback: (error: any) => void
+  ): Promise<any>;
 }
 interface K8sNativeClient extends K8sClient {
   connectToContext(context);
+  abortWatch(requestKey);
 }
 
 declare global {
@@ -42,6 +54,10 @@ class K8sHttpClient implements K8sClient {
     this.helper = new K8sClientHelper(this.http);
   }
 
+  public async listNamespacedDeployments(namespace: string): Promise<V1DeploymentList> {
+    const { data } = await this.http.get<V1DeploymentList>(`/apis/apps/v1/namespaces/${namespace}/deployments`);
+    return data;
+  }
   public async listAllDeployments(): Promise<V1DeploymentList> {
     const { data } = await this.http.get<V1DeploymentList>('/apis/apps/v1/deployments');
     return data;
@@ -103,17 +119,77 @@ class K8sHttpClient implements K8sClient {
       `/apis/${identifier.group}/${identifier.version}/namespaces/${identifier.namespace}/${identifier.plural}/${identifier.name}`
     );
   }
-  async findCustomResourceMetadata<TResource extends KubernetesObject>(
-    crdObject: TResource
-  ): Promise<V1APIResource> {
-    return await this.helper.resource(crdObject.apiVersion, crdObject.kind);
+
+  async listCustomResourceObjects(objectKind: ObjectKind, plural: string): Promise<ApiObjectList<any>> {
+    const { data } = await this.http.get(`/apis/${objectKind.group}/${objectKind.version}/${plural}`);
+    return data;
+  }
+
+  async findCustomResourceMetadata(apiVersion: string, kind: string): Promise<V1APIResource> {
+    return await this.helper.resource(apiVersion, kind);
+  }
+
+  public async watch(
+    path: string,
+    resourceVersion: string,
+    watchCallback: (type: WatchEventType, k8sObj: KubernetesSpecObject) => Promise<void>,
+    errorCallback: (error: any) => void
+  ): Promise<any> {
+    const params: Record<string, any> = { watch: true, allowWatchBookmarks: true };
+    if (resourceVersion) {
+      params.resourceVersion = resourceVersion;
+    }
+
+    const watch = new HttpClientWatch(this.http, watchCallback, errorCallback);
+    return watch.watch(path, { params });
   }
 }
 
 export default function createClient(connectionSettings: string): K8sClient {
   if (window.k8sApi) {
     window.k8sApi.connectToContext(connectionSettings);
-    return window.k8sApi;
+    return {
+      ...window.k8sApi,
+      watch: async (...options) => {
+        const requestKey = await window.k8sApi.watch(...options);
+        return {
+          abort: () => window.k8sApi.abortWatch(requestKey),
+        };
+      },
+    };
   }
   return new K8sHttpClient(connectionSettings);
+}
+
+class HttpClientWatch {
+  private watchIndex = 0;
+
+  constructor(
+    private http: AxiosInstance,
+    private watchCallback: (type: WatchEventType, k8sObj: KubernetesSpecObject) => Promise<void>,
+    private errorCallback: (error: any) => void
+  ) {}
+
+  public watch(url, options): Promise<void> {
+    try {
+      return this.http.get(url, {
+        onDownloadProgress: this.processWatchEvent.bind(this),
+        ...options,
+      });
+    } catch (e) {
+      this.errorCallback(e);
+    }
+  }
+
+  private async processWatchEvent(event: any): Promise<void> {
+    const lines = event.currentTarget.response.split('\n');
+    const data = lines
+      .filter((x) => !!x)
+      .map(JSON.parse)
+      .slice(this.watchIndex);
+    for (const watchEvent of data) {
+      await this.watchCallback(watchEvent.type, watchEvent.object);
+      this.watchIndex++;
+    }
+  }
 }

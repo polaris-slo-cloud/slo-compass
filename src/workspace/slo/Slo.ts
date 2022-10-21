@@ -1,7 +1,6 @@
-import { CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
 import { PolarisComponent } from '@/workspace/PolarisComponent';
 import { SloMetricSource } from '@/polaris-templates/slo-template';
-import { NamespacedObjectReference } from '@polaris-sloc/core';
+import {ApiObject, NamespacedObjectReference} from '@polaris-sloc/core';
 
 interface SloElasticityStrategy {
   id: string;
@@ -9,17 +8,27 @@ interface SloElasticityStrategy {
   config: Record<string, unknown>;
 }
 
+export interface PolarisElasticityStrategyKind {
+  kind: string;
+  apiVersion: string;
+}
+
 export interface PolarisSloMapping {
   target: NamespacedObjectReference;
   config: Record<string, unknown>;
-  elasticityStrategy?: string;
+  elasticityStrategy?: PolarisElasticityStrategyKind;
   elasticityStrategyConfig: Record<string, unknown>;
 }
 
 export interface SloMetric {
   source: SloMetricSource;
-  value: unknown;
-  lastUpdated: Date;
+  value?: unknown;
+  lastUpdated?: Date;
+}
+
+export interface PolarisSloConflict {
+  type: 'DELETED' | 'MODIFIED';
+  polarisSloMapping?: PolarisSloMapping;
 }
 
 export default interface Slo extends PolarisComponent {
@@ -28,5 +37,6 @@ export default interface Slo extends PolarisComponent {
   config: Record<string, unknown>;
   configChanged: boolean;
   elasticityStrategy?: SloElasticityStrategy;
-  sloMapping: CustomResourceObjectReference;
+  sloMapping: NamespacedObjectReference;
+  polarisConflict?: PolarisSloConflict;
 }

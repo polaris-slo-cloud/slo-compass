@@ -1,8 +1,11 @@
 const k8s = require('@kubernetes/client-node');
 const request = require('request');
+const { Watch } = require('@kubernetes/client-node');
+const { v4: uuidv4 } = require('uuid');
 
 const k8sConfig = new k8s.KubeConfig();
 k8sConfig.loadFromDefault();
+const watchRequests = new Map();
 
 module.exports = {
   connectToContext(ctx) {
@@ -32,14 +35,7 @@ module.exports = {
       headers['content-type'] = 'application/merge-patch+json';
     }
     const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
-    const { body } = await k8sObjectApi.patch(
-      resource,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      { headers }
-    );
+    const { body } = await k8sObjectApi.patch(resource, undefined, undefined, undefined, undefined, { headers });
     return body;
   },
   async test() {
@@ -54,6 +50,11 @@ module.exports = {
   async listAllDeployments() {
     const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
     const { body } = await k8sAppsApi.listDeploymentForAllNamespaces();
+    return body;
+  },
+  async listNamespacedDeployments(namespace) {
+    const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
+    const { body } = await k8sAppsApi.listNamespacedDeployment(namespace);
     return body;
   },
   async listCustomResourceDefinitions() {
@@ -72,6 +73,11 @@ module.exports = {
     );
     return body;
   },
+  async listCustomResourceObjects(objectKind, plural) {
+    const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
+    const { body } = await k8sCustomObjectsApi.listClusterCustomObject(objectKind.group, objectKind.version, plural);
+    return body;
+  },
   async deleteCustomResourceObject(identifier) {
     const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
     await k8sCustomObjectsApi.deleteNamespacedCustomObject(
@@ -82,28 +88,41 @@ module.exports = {
       identifier.name
     );
   },
-  async findCustomResourceMetadata(crdObject) {
-    const api = crdObject.apiVersion.includes('/') ? 'apis' : 'api';
-    const baseUrl = [api, crdObject.apiVersion].join('/');
+  async findCustomResourceMetadata(apiVersion, kind) {
+    const api = apiVersion.includes('/') ? 'apis' : 'api';
+    const baseUrl = [api, apiVersion].join('/');
     const opts = {};
     await k8sConfig.applyToRequest(opts);
     const data = await new Promise((resolve, reject) => {
       // TODO: Use fetch once the K8s JS Api has been migrated to fetch
-      request.get(
-        `${k8sConfig.getCurrentCluster().server}/${baseUrl}`,
-        opts,
-        (error, response, body) => {
-          if (error) {
-            reject(error);
-          }
-          if (response) {
-            console.log(`statusCode: ${response.statusCode}`);
-          }
-          resolve(JSON.parse(body));
+      request.get(`${k8sConfig.getCurrentCluster().server}/${baseUrl}`, opts, (error, response, body) => {
+        if (error) {
+          reject(error);
         }
-      );
+        if (response) {
+          console.log(`statusCode: ${response.statusCode}`);
+        }
+        resolve(JSON.parse(body));
+      });
     });
-    return data.resources.find((x) => x.kind === crdObject.kind);
+    return data.resources.find((x) => x.kind === kind);
+  },
+  async watch(path, resourceVersion, watchCallback, errorCallback) {
+    const watch = new Watch(k8sConfig);
+    const options = { allowWatchBookmarks: true };
+    if (resourceVersion) {
+      options.resourceVersion = resourceVersion;
+    }
+    const watchRequest = await watch.watch(path, options, watchCallback, errorCallback);
+    const key = uuidv4();
+    watchRequests.set(key, watchRequest);
+    return key;
+  },
+  abortWatch(key) {
+    if (watchRequests.has(key)) {
+      watchRequests.get(key).abort();
+      watchRequests.delete(key);
+    }
   },
   async getDeployment(namespace, name) {
     try {

@@ -5,14 +5,29 @@ import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
-import { NamespacedObjectReference } from '@polaris-sloc/core';
-import {SloTarget} from "@/workspace/targets/SloTarget";
+import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
+import { SloTarget } from '@/workspace/targets/SloTarget';
+import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
+import { ISubscribable, ISubscribableCallback, IUnsubscribe } from '@/crosscutting/subscibable';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface PolarisResource {
   [key: string]: any;
 }
 export interface CustomResourceObjectReference extends NamespacedObjectReference {
   plural: string;
+}
+
+export interface ApiObjectListMetadata {
+  resourceVersion: string;
+  [key: string]: any;
+}
+
+export interface ApiObjectList<T> {
+  apiVersion: string;
+  items: ApiObject<T>[];
+  kind: string;
+  metadata: ApiObjectListMetadata;
 }
 
 export interface IDeployment {
@@ -26,27 +41,30 @@ export interface PolarisDeploymentResult {
   deployedControllers: PolarisController[];
 }
 export interface PolarisSloDeploymentResult extends PolarisDeploymentResult {
-  deployedSloMapping?: CustomResourceObjectReference;
+  deployedSloMapping?: NamespacedObjectReference;
 }
 
 export interface IOrchestratorApi {
   name: string;
   test(): Promise<boolean>;
-  findDeployments(query?: string): Promise<IDeployment[]>;
+  findPolarisDeployments(): Promise<IDeployment[]>;
+  findDeployments(namespace?: string): Promise<IDeployment[]>;
   deploySlo(slo: Slo, target: SloTarget): Promise<PolarisSloDeploymentResult>;
-  deployElasticityStrategy(
-    elasticityStrategy: ElasticityStrategy
-  ): Promise<PolarisDeploymentResult>;
+  deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
-  applySloMapping(slo: Slo, target: SloTarget): Promise<CustomResourceObjectReference>;
+  applySloMapping(slo: Slo, target: SloTarget): Promise<NamespacedObjectReference>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
+  findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>>;
+  createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher;
 }
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
   configure(polarisOptions: unknown): void;
 }
 
-export interface IOrchestratorApiConnection extends IOrchestratorApi {
+export const CONNECTED_EVENT = 'connected';
+
+export interface IOrchestratorApiConnection extends IOrchestratorApi, ISubscribable {
   orchestratorName: ComputedRef<string>;
   connect(connection: OrchestratorConnection, polarisOptions: unknown): void;
   testConnection(connection: OrchestratorConnection): Promise<boolean>;
@@ -71,6 +89,10 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
+  findPolarisDeployments(): Promise<IDeployment[]> {
+    throw new OrchestratorNotConnectedError();
+  }
+
   findDeployments(): Promise<IDeployment[]> {
     throw new OrchestratorNotConnectedError();
   }
@@ -87,31 +109,41 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  applySloMapping(): Promise<CustomResourceObjectReference> {
+  applySloMapping(): Promise<NamespacedObjectReference> {
     throw new OrchestratorNotConnectedError();
   }
 
   findSloMapping(): Promise<PolarisSloMapping> {
     throw new OrchestratorNotConnectedError();
   }
+  findSloMappings(): Promise<ApiObjectList<PolarisSloMapping>> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  createWatcher(): ObjectKindWatcher {
+    throw new OrchestratorNotConnectedError();
+  }
 }
 const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
+const subscribers: Ref<Map<string, Map<string, ISubscribableCallback>>> = ref(new Map());
 const runningDeployments = ref({});
-const hasRunningDeployment = computed(
-  () => (componentId: string) => !!runningDeployments.value[componentId]
-);
+const hasRunningDeployment = computed(() => (componentId: string) => !!runningDeployments.value[componentId]);
 
 function createOrchestratorApi(connection: OrchestratorConnection): IPolarisOrchestratorApi {
   const orchestratorConfig = getOrchestrator(connection.orchestrator);
-  return orchestratorConfig
-    ? orchestratorConfig.createOrchestratorApi(connection)
-    : new OrchestratorNotConnected();
+  return orchestratorConfig ? orchestratorConfig.createOrchestratorApi(connection) : new OrchestratorNotConnected();
 }
 
 function connect(connection: OrchestratorConnection, polarisOptions: unknown): void {
   api.value = createOrchestratorApi(connection);
   api.value.configure(polarisOptions);
   runningDeployments.value = {};
+  const connectedSubscribers = subscribers.value.get(CONNECTED_EVENT);
+  if (connectedSubscribers) {
+    connectedSubscribers.forEach((callback) => {
+      callback();
+    });
+  }
 }
 async function testConnection(connection: OrchestratorConnection): Promise<boolean> {
   const apiConnection = createOrchestratorApi(connection);
@@ -127,7 +159,11 @@ async function deploy(
   component: PolarisComponent,
   deploymentAction: () => Promise<PolarisDeploymentResult>
 ): Promise<PolarisDeploymentResult> {
-  runningDeployments.value[component.id] = { id: component.id, name: component.name, dismissed: false };
+  runningDeployments.value[component.id] = {
+    id: component.id,
+    name: component.name,
+    dismissed: false,
+  };
   const result = await deploymentAction();
   delete runningDeployments.value[component.id];
   return result;
@@ -139,22 +175,33 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     testConnection,
     name: api.value.name,
     orchestratorName: computed(() => api.value.name),
-    findDeployments: (query?) => api.value.findDeployments(query),
+    findPolarisDeployments: () => api.value.findPolarisDeployments(),
+    findDeployments: (namespace?) => api.value.findDeployments(namespace),
     test: () => api.value.test(),
     deploySlo: (slo, target) => deploy(slo, () => api.value.deploySlo(clone(slo), clone(target))),
     deployElasticityStrategy: (elasticityStrategy) =>
-      deploy(elasticityStrategy, () =>
-        api.value.deployElasticityStrategy(clone(elasticityStrategy))
-      ),
+      deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy))),
     retryDeployment: (item) => deploy(item, () => api.value.retryDeployment(clone(item))),
     applySloMapping: (slo, target) => api.value.applySloMapping(clone(slo), clone(target)),
     findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),
+    findSloMappings: (objectKind) => api.value.findSloMappings(objectKind),
+    createWatcher: (bookmarkManager) => api.value.createWatcher(bookmarkManager),
     hasRunningDeployment,
     undismissiedRunningDeployments: computed(() =>
       Object.values(runningDeployments.value).filter((x: any) => !x.dismissed)
     ),
     dismissRunningDeploymentActions() {
       Object.values(runningDeployments.value).forEach((x: any) => (x.dismissed = true));
+    },
+    on(event: string, callback: ISubscribableCallback) {
+      const subscriberId = uuidv4();
+      if (subscribers.value.has(event)) {
+        subscribers.value.get(event).set(subscriberId, callback);
+      } else {
+        subscribers.value.set(event, new Map([[subscriberId, callback]]));
+      }
+
+      return () => subscribers.value.get(event).delete(subscriberId);
     },
   };
 }

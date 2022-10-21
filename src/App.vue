@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router';
 import { computed, ref } from 'vue';
 import AppIcon from '@/icons/AppIcon.vue';
 import { useQuasar } from 'quasar';
-import { initialize } from '@/initializer';
+import { initialize } from '@/initialization/initializer';
 const $q = useQuasar();
 
 initialize();
@@ -68,13 +68,7 @@ function drawerClick() {
         <q-btn dense flat icon="close" @click="close" />
       </q-bar>
     </q-header>
-    <q-drawer
-      :modelValue="true"
-      behavior="desktop"
-      bordered
-      :mini="isMini"
-      @click.capture="drawerClick"
-    >
+    <q-drawer :modelValue="true" behavior="desktop" bordered :mini="isMini" @click.capture="drawerClick">
       <q-scroll-area class="fit">
         <q-list>
           <q-item clickable v-ripple :to="item.to" v-for="(item, idx) in menuList" :key="idx">
@@ -84,13 +78,7 @@ function drawerClick() {
             <q-item-section>
               {{ item.label }}
             </q-item-section>
-            <ArrowTooltip
-              v-if="isElectron"
-              anchor="center end"
-              self="center start"
-              direction="left"
-              :offset="[10, 14]"
-            >
+            <ArrowTooltip v-if="isElectron" anchor="center end" self="center start" direction="left" :offset="[10, 14]">
               {{ item.label }}
             </ArrowTooltip>
           </q-item>

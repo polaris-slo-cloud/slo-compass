@@ -70,7 +70,7 @@ export default {
     const template = getSloTemplate(slo.template);
     const normalizedSloName = slo.name.replaceAll(' ', '-').toLowerCase();
     if (target.deployment) {
-      const mappingName = `${normalizedSloName}-${target.deployment.id}`;
+      const mappingName = `${normalizedSloName}-${slo.id}`;
       return generateSloMapping(template.sloMappingKind, mappingName, slo, target.deployment);
     }
     return null;

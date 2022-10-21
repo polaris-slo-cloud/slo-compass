@@ -143,6 +143,9 @@ export const generateSloMapping = (kind: string, name: string, slo: Slo, target:
   metadata: {
     namespace: target.connectionMetadata.namespace,
     name,
+    labels: {
+      polarisId: slo.id,
+    },
   },
   spec: {
     targetRef: {

@@ -1,9 +1,13 @@
 import { loadCurrentWorkspace, setupAutosave } from '@/workspace/store-helper';
-import { setupBackgroundTasks } from '@/background';
+import { setupBackgroundTasks } from '@/initialization/background';
 import { useWorkspaceStore } from '@/store/workspace';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useMetricsProvider } from '@/metrics-provider/api';
 import { workspaceConnectionStorage } from '@/connections/storage';
+import { updateWorkspaceFromOrchestrator } from '@/initialization/polaris-workspace-loader';
+import { watch } from 'vue';
+
+let stopBackgroundTasks;
 
 function setupConnections() {
   const store = useWorkspaceStore();
@@ -19,9 +23,29 @@ function setupConnections() {
   }
 }
 
+async function initializeWorkspace(isOpen) {
+  if (isOpen) {
+    await updateWorkspaceFromOrchestrator();
+    stopBackgroundTasks = await setupBackgroundTasks();
+  } else if (stopBackgroundTasks) {
+    stopBackgroundTasks();
+    stopBackgroundTasks = null;
+  }
+}
+
 export async function initialize() {
   setupAutosave();
   await loadCurrentWorkspace();
   setupConnections();
-  setupBackgroundTasks();
+
+  const store = useWorkspaceStore();
+  await initializeWorkspace(store.isOpened);
+  watch(
+    () => store.isOpened,
+    async (isOpen, wasOpen) => {
+      if (isOpen !== wasOpen) {
+        await initializeWorkspace(isOpen);
+      }
+    }
+  );
 }

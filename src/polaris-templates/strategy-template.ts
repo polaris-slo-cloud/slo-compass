@@ -79,6 +79,10 @@ export function getTemplate(key: string): ElasticityStrategyTemplateMetadata {
   return templates.find((x) => x.key === key);
 }
 
+export function findTemplateForKind(kind: string): ElasticityStrategyTemplateMetadata {
+  return templates.find((x) => x.kind === kind);
+}
+
 export function getPolarisControllers(
   template: ElasticityStrategyTemplateMetadata
 ): PolarisController[] {

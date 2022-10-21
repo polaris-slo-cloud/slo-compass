@@ -1,4 +1,5 @@
 import {
+  ApiObjectList,
   CustomResourceObjectReference,
   IDeployment,
   IPolarisOrchestratorApi,
@@ -12,7 +13,10 @@ import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrate
 import { KubernetesObject, V1CustomResourceDefinition } from '@kubernetes/client-node';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
 import { getTemplate as getSloTemplate } from '@/polaris-templates/slo-template';
-import {SloTarget} from "@/workspace/targets/SloTarget";
+import { SloTarget } from '@/workspace/targets/SloTarget';
+import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
+import { KubernetesObjectKindWatcher } from '@/orchestrator/kubernetes/kubernetes-watcher';
+import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -24,10 +28,16 @@ interface KubernetesDeploymentResult {
   failed: KubernetesObject[];
 }
 
+interface CustomResourceMetadata {
+  kind: ObjectKind;
+  plural: string;
+}
+
 export default class Api implements IPolarisOrchestratorApi {
   public name = 'Kubernetes';
-  private client: K8sClient;
+  private readonly client: K8sClient;
   private connectionOptions: K8sConnectionOptions;
+  private customResourceMetadata: Record<string, Record<string, CustomResourceMetadata>> = {};
 
   constructor(connectionSettings: string) {
     this.client = createClient(connectionSettings);
@@ -38,9 +48,19 @@ export default class Api implements IPolarisOrchestratorApi {
     this.connectionOptions.polarisNamespace = polarisOptions;
   }
 
-  async findDeployments(query?: string): Promise<IDeployment[]> {
+  public createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher {
+    return new KubernetesObjectKindWatcher(this.client, bookmarkManager);
+  }
+
+  async findPolarisDeployments(): Promise<IDeployment[]> {
+    return await this.findDeployments(this.connectionOptions.polarisNamespace);
+  }
+
+  async findDeployments(namespace?: string): Promise<IDeployment[]> {
     try {
-      const data = await this.client.listAllDeployments();
+      const data = namespace
+        ? await this.client.listNamespacedDeployments(namespace)
+        : await this.client.listAllDeployments();
       const items = data.items.map((x) => ({
         id: x.metadata.uid,
         name: x.metadata.name,
@@ -54,10 +74,6 @@ export default class Api implements IPolarisOrchestratorApi {
           namespace: x.metadata.namespace,
         },
       }));
-      if (query) {
-        const lowerQuery = query.toLowerCase();
-        return items.filter((x) => x.name.toLowerCase().includes(lowerQuery));
-      }
       return items;
     } catch (e) {
       return [];
@@ -75,16 +91,22 @@ export default class Api implements IPolarisOrchestratorApi {
       template
     );
 
-    const result = await this.deployControllerResources(
-      resources.staticResources,
-      slo.polarisControllers
-    );
+    const result = await this.deployControllerResources(resources.staticResources, slo.polarisControllers);
     const sloMappingSuccessful = await this.deployResource(resources.sloMapping);
     const mappingCrd = resources.staticResources.find(
       (x) =>
         x.kind === 'CustomResourceDefinition' &&
-        (x as V1CustomResourceDefinition).spec.names.kind === template.sloMappingKind
+        (x as V1CustomResourceDefinition).spec.names.kind === resources.sloMapping.kind
     ) as V1CustomResourceDefinition;
+
+    this.cacheCustomResourceMetadata({
+      kind: {
+        group: mappingCrd.spec.group,
+        version: mappingCrd.spec.versions[0].name,
+        kind: resources.sloMapping.kind,
+      },
+      plural: mappingCrd.spec.names.plural,
+    });
 
     return {
       deployedControllers: result.deployedControllers,
@@ -94,7 +116,6 @@ export default class Api implements IPolarisOrchestratorApi {
             group: mappingCrd.spec.group,
             version: mappingCrd.spec.versions[0].name,
             kind: resources.sloMapping.kind,
-            plural: mappingCrd.spec.names.plural,
             name: resources.sloMapping.metadata.name,
             namespace: resources.sloMapping.metadata.namespace,
           }
@@ -102,9 +123,7 @@ export default class Api implements IPolarisOrchestratorApi {
     };
   }
 
-  async deployElasticityStrategy(
-    elasticityStrategy: ElasticityStrategy
-  ): Promise<PolarisDeploymentResult> {
+  async deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult> {
     const resources = await resourceGenerator.generateElasticityStrategyResources(
       elasticityStrategy,
       this.connectionOptions.polarisNamespace
@@ -123,27 +142,28 @@ export default class Api implements IPolarisOrchestratorApi {
     };
   }
 
-  async applySloMapping(slo: Slo, target: SloTarget): Promise<CustomResourceObjectReference> {
+  async applySloMapping(slo: Slo, target: SloTarget): Promise<NamespacedObjectReference> {
     const mapping = resourceGenerator.generateSloMapping(slo, target);
-    const mappingToDelete = slo.sloMapping && slo.sloMapping.name !== mapping.metadata.name;
-    const mappingMetadata = await this.client.findCustomResourceMetadata(mapping);
-    [mappingMetadata.group, mappingMetadata.version] = mapping.apiVersion.split('/');
-
-    const successfulDeployment = await this.deployResource(mapping);
-    if (mappingToDelete) {
-      try {
-        await this.client.deleteCustomResourceObject(slo.sloMapping);
-      } catch (e) {
-        console.error(e);
-        // TODO: How should we handle this case? In the worst case this mapping will get synced again later on when the UI loads the active Polaris config (In this case the user could manually try to delete it)
+    if (slo.sloMapping) {
+      mapping.metadata.name = slo.sloMapping.name;
+      if (mapping.metadata.namespace !== slo.sloMapping.namespace) {
+        try {
+          const identifier = await this.getCustomResourceIdentifier(slo.sloMapping);
+          await this.client.deleteCustomResourceObject(identifier);
+        } catch (e) {
+          console.error(e);
+          // TODO: How should we handle this case? In the worst case this mapping will get synced again later on when the UI loads the active Polaris config (In this case the user could manually try to delete it)
+        }
       }
     }
+
+    const [group, version] = mapping.apiVersion.split('/');
+    const successfulDeployment = await this.deployResource(mapping);
     return successfulDeployment
       ? {
-          group: mappingMetadata.group,
-          version: mappingMetadata.version,
+          group,
+          version,
           kind: mapping.kind,
-          plural: mappingMetadata.name,
           name: mapping.metadata.name,
           namespace: mapping.metadata.namespace,
         }
@@ -155,10 +175,14 @@ export default class Api implements IPolarisOrchestratorApi {
       throw new Error('There is no mapping deployed for this SLO');
     }
 
-    const crdObject = await this.client.getCustomResourceObject(slo.sloMapping);
+    const identifier = await this.getCustomResourceIdentifier(slo.sloMapping);
+    const crdObject = await this.client.getCustomResourceObject(identifier);
     return {
       config: crdObject.spec.sloConfig,
-      elasticityStrategy: crdObject.spec.elasticityStrategy?.kind,
+      elasticityStrategy: {
+        apiVersion: crdObject.spec.elasticityStrategy.apiVersion,
+        kind: crdObject.spec.elasticityStrategy.kind,
+      },
       elasticityStrategyConfig: crdObject.spec.staticElasticityStrategyConfig || {},
       target: {
         ...crdObject.spec.targetRef,
@@ -167,9 +191,85 @@ export default class Api implements IPolarisOrchestratorApi {
     };
   }
 
-  private async deployResources(
-    resources: KubernetesObject[]
-  ): Promise<KubernetesDeploymentResult> {
+  async findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>> {
+    const metadata = await this.findCustomResourceMetadata(
+      `${objectKind.group}/${objectKind.version}`,
+      objectKind.kind
+    );
+    const mappingsList = await this.client.listCustomResourceObjects(objectKind, metadata.plural);
+    return {
+      metadata: {
+        resourceVersion: mappingsList.metadata.resourceVersion,
+        ...mappingsList.metadata,
+      },
+      apiVersion: mappingsList.apiVersion,
+      kind: mappingsList.kind,
+      items: mappingsList.items.map<ApiObject<PolarisSloMapping>>((obj) => {
+        const [group, version] = obj.apiVersion.split('/');
+        return {
+          ...obj,
+          objectKind: {
+            kind: obj.kind,
+            group,
+            version,
+          },
+          spec: {
+            config: obj.spec.sloConfig,
+            elasticityStrategy: {
+              apiVersion: obj.spec.elasticityStrategy.apiVersion,
+              kind: obj.spec.elasticityStrategy.kind,
+            },
+            elasticityStrategyConfig: obj.spec.staticElasticityStrategyConfig || {},
+            target: {
+              ...obj.spec.targetRef,
+              namespace: obj.metadata.namespace,
+            },
+          },
+        };
+      }),
+    };
+  }
+
+  private async findCustomResourceMetadata(apiVersion: string, kind: string): Promise<CustomResourceMetadata> {
+    const existing = this.customResourceMetadata[kind] ? this.customResourceMetadata[kind][apiVersion] : null;
+
+    if (existing) {
+      return existing;
+    }
+
+    const result = await this.client.findCustomResourceMetadata(apiVersion, kind);
+    const [group, version] = apiVersion.split('/');
+    return this.cacheCustomResourceMetadata({
+      kind: {
+        group,
+        version,
+        kind,
+      },
+      plural: result.name,
+    });
+  }
+
+  private async getCustomResourceIdentifier(
+    reference: NamespacedObjectReference
+  ): Promise<CustomResourceObjectReference> {
+    const metadata = await this.findCustomResourceMetadata(`${reference.group}/${reference.version}`, reference.kind);
+    return {
+      ...reference,
+      plural: metadata.plural,
+    };
+  }
+
+  private cacheCustomResourceMetadata(metadata: CustomResourceMetadata): CustomResourceMetadata {
+    const existingResourceMetadata = this.customResourceMetadata[metadata.kind.kind];
+    const apiVersion = `${metadata.kind.group}/${metadata.kind.version}`;
+    if (!existingResourceMetadata) {
+      this.customResourceMetadata[metadata.kind.kind] = {};
+    }
+    this.customResourceMetadata[metadata.kind.kind][apiVersion] = metadata;
+    return metadata;
+  }
+
+  private async deployResources(resources: KubernetesObject[]): Promise<KubernetesDeploymentResult> {
     const result: KubernetesDeploymentResult = {
       successful: [],
       failed: [],

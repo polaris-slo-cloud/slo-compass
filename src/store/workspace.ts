@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import {computed, reactive, ref} from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useSloStore } from '@/store/slo';
 import { WorkspaceComponent } from '@/workspace/PolarisComponent';
@@ -31,6 +31,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const name = ref<string>(null);
   const location = ref<string>(null);
   const polarisOptions = ref(null);
+  const watchBookmarks = ref({});
 
   const slos = computed<Slo[]>(() => sloStore.slos);
   const targets = computed<SloTarget[]>(() => targetStore.targets);
@@ -87,6 +88,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  function updateWatchBookmark(kind: string, bookmark: string) {
+    watchBookmarks.value[kind] = bookmark;
+  }
+
   return {
     isOpened,
     workspaceId,
@@ -97,9 +102,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     targets,
     elasticityStrategies,
     getItem,
+    watchBookmarks,
     createWorkspace,
     loadWorkspace,
     retryDeployment,
     save,
+    updateWatchBookmark,
   };
 });

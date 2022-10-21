@@ -88,7 +88,7 @@ export const templates: SloTemplateMetadata[] = [
     controllerName: 'cpu-usage-slo-controller',
     containerImage: 'polarissloc/slo-cpu-usage:latest',
     sloMappingResources: 'cpuusageslomappings',
-    sloMappingKind: 'CpuUsageSloMapping',
+    sloMappingKind: 'CPUUsageSloMapping',
     config: [
       {
         parameter: 'targetAvgCPUUtilizationPercentage',
@@ -112,6 +112,10 @@ export const templates: SloTemplateMetadata[] = [
 
 export function getTemplate(key: string): SloTemplateMetadata {
   return templates.find((x) => x.key === key);
+}
+
+export function findTemplateForKind(kind: string): SloTemplateMetadata {
+  return templates.find((x) => x.sloMappingKind === kind);
 }
 
 export function getPolarisControllers(template: SloTemplateMetadata): PolarisController[] {
