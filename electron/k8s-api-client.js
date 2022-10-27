@@ -102,7 +102,11 @@ module.exports = {
         if (response) {
           console.log(`statusCode: ${response.statusCode}`);
         }
-        resolve(JSON.parse(body));
+        if (body) {
+          resolve(JSON.parse(body));
+        } else {
+          resolve(null);
+        }
       });
     });
     return data.resources.find((x) => x.kind === kind);

@@ -15,10 +15,13 @@ import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 const REQUIRED_OBJECT_KIND_PROPERTIES: (keyof ObjectKind)[] = ['version', 'kind'];
 export type WatchEventType = 'ADDED' | 'MODIFIED' | 'DELETED' | 'BOOKMARK';
 
+const DEFAULT_WATCH_TIMEOUT = 10 * 60 * 1000;
 export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
   private _handler: WatchEventsHandler;
   private _kind: ObjectKind;
   private _watchRequest;
+
+  private _watchRestartTimeout;
 
   get handler() {
     return this._handler;
@@ -67,8 +70,7 @@ export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
     const watch = await this.client.watch(
       path,
       resourceVersion,
-      async (type: WatchEventType, k8sObj: KubernetesSpecObject) =>
-        await this.onK8sWatchEvent(type, k8sObj),
+      async (type: WatchEventType, k8sObj: KubernetesSpecObject) => await this.onK8sWatchEvent(type, k8sObj),
       this.onWatchError.bind(this)
     );
     this._watchRequest = watch;
@@ -79,14 +81,30 @@ export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
       this._watchRequest.abort();
       this._watchRequest = null;
     }
+    if (this._watchRestartTimeout) {
+      clearTimeout(this._watchRestartTimeout);
+      this._watchRestartTimeout = null;
+    }
     this._kind = null;
     this._handler = null;
   }
 
-  private async onK8sWatchEvent(
-    type: WatchEventType,
-    k8sObject: KubernetesSpecObject
-  ): Promise<void> {
+  private async restartWatch() {
+    const kind = this._kind;
+    const handler = this._handler;
+    this.stopWatch();
+    await this.startWatch(kind, handler);
+  }
+
+  private resetRestartTimeout() {
+    if (this._watchRestartTimeout) {
+      clearTimeout(this._watchRestartTimeout);
+    }
+    this._watchRestartTimeout = setTimeout(this.restartWatch.bind(this), DEFAULT_WATCH_TIMEOUT);
+  }
+
+  private async onK8sWatchEvent(type: WatchEventType, k8sObject: KubernetesSpecObject): Promise<void> {
+    this.resetRestartTimeout();
     const apiObject = this.transform(k8sObject);
     switch (type) {
       case 'ADDED':

@@ -170,12 +170,15 @@ class HttpClientWatch {
     private errorCallback: (error: any) => void
   ) {}
 
-  public watch(url, options): Promise<void> {
+  public async watch(url, options): Promise<AbortController> {
     try {
-      return this.http.get(url, {
+      const controller = new AbortController();
+      await this.http.get(url, {
+        signal: controller.signal,
         onDownloadProgress: this.processWatchEvent.bind(this),
         ...options,
       });
+      return controller;
     } catch (e) {
       this.errorCallback(e);
     }

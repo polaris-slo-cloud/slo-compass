@@ -67,9 +67,7 @@ export class OrchestratorWatchManager implements WatchManager {
     });
   }
 
-  private async startWatchersInternal(
-    kindHandlerPairs: ObjectKindWatchHandlerPair[]
-  ): Promise<ObjectKindWatcher[]> {
+  private async startWatchersInternal(kindHandlerPairs: ObjectKindWatchHandlerPair[]): Promise<ObjectKindWatcher[]> {
     this.assertNoExistingWatchers(kindHandlerPairs);
 
     const watchers = kindHandlerPairs.map(async (pair) => {
@@ -83,9 +81,7 @@ export class OrchestratorWatchManager implements WatchManager {
   }
 
   private assertNoExistingWatchers(kindsAndHandlers: ObjectKindWatchHandlerPair[]): void {
-    const watchedKinds = kindsAndHandlers.filter((pair) =>
-      this.watchers.has(ObjectKind.stringify(pair.kind))
-    );
+    const watchedKinds = kindsAndHandlers.filter((pair) => this.watchers.has(ObjectKind.stringify(pair.kind)));
     if (watchedKinds.length > 0) {
       const kinds = watchedKinds.map((pair) => pair.kind);
       throw new ObjectKindsAlreadyWatchedError(this, kinds);
