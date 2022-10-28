@@ -8,7 +8,7 @@ import {
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
 import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
-import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
+import Slo, { DeployedPolarisSloMapping, PolarisSloMapping } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { KubernetesObject, V1CustomResourceDefinition } from '@kubernetes/client-node';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
@@ -17,6 +17,7 @@ import { SloTarget } from '@/workspace/targets/SloTarget';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { KubernetesObjectKindWatcher } from '@/orchestrator/kubernetes/kubernetes-watcher';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
+import { transformToPolarisSloMapping } from '@/orchestrator/utils';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -113,11 +114,17 @@ export default class Api implements IPolarisOrchestratorApi {
       failedResources: result.failedResources,
       deployedSloMapping: sloMappingSuccessful
         ? {
-            group: mappingCrd.spec.group,
-            version: mappingCrd.spec.versions[0].name,
-            kind: resources.sloMapping.kind,
-            name: resources.sloMapping.metadata.name,
-            namespace: resources.sloMapping.metadata.namespace,
+            reference: {
+              group: mappingCrd.spec.group,
+              version: mappingCrd.spec.versions[0].name,
+              kind: resources.sloMapping.kind,
+              name: resources.sloMapping.metadata.name,
+              namespace: resources.sloMapping.metadata.namespace,
+            },
+            sloMapping: transformToPolarisSloMapping(
+              resources.sloMapping.spec,
+              resources.sloMapping.metadata.namespace
+            ),
           }
         : null,
     };
@@ -142,13 +149,13 @@ export default class Api implements IPolarisOrchestratorApi {
     };
   }
 
-  async applySloMapping(slo: Slo, target: SloTarget): Promise<NamespacedObjectReference> {
+  async applySloMapping(slo: Slo, target: SloTarget): Promise<DeployedPolarisSloMapping> {
     const mapping = resourceGenerator.generateSloMapping(slo, target);
-    if (slo.sloMapping) {
-      mapping.metadata.name = slo.sloMapping.name;
-      if (mapping.metadata.namespace !== slo.sloMapping.namespace) {
+    if (slo.deployedSloMapping) {
+      mapping.metadata.name = slo.deployedSloMapping.reference.name;
+      if (mapping.metadata.namespace !== slo.deployedSloMapping.reference.namespace) {
         try {
-          const identifier = await this.getCustomResourceIdentifier(slo.sloMapping);
+          const identifier = await this.getCustomResourceIdentifier(slo.deployedSloMapping.reference);
           await this.client.deleteCustomResourceObject(identifier);
         } catch (e) {
           console.error(e);
@@ -161,34 +168,26 @@ export default class Api implements IPolarisOrchestratorApi {
     const successfulDeployment = await this.deployResource(mapping);
     return successfulDeployment
       ? {
-          group,
-          version,
-          kind: mapping.kind,
-          name: mapping.metadata.name,
-          namespace: mapping.metadata.namespace,
+          sloMapping: transformToPolarisSloMapping(mapping.spec, mapping.metadata.namespace),
+          reference: {
+            group,
+            version,
+            kind: mapping.kind,
+            name: mapping.metadata.name,
+            namespace: mapping.metadata.namespace,
+          },
         }
       : null;
   }
 
   async findSloMapping(slo: Slo): Promise<PolarisSloMapping> {
-    if (!slo.sloMapping) {
+    if (!slo.deployedSloMapping?.reference) {
       throw new Error('There is no mapping deployed for this SLO');
     }
 
-    const identifier = await this.getCustomResourceIdentifier(slo.sloMapping);
+    const identifier = await this.getCustomResourceIdentifier(slo.deployedSloMapping.reference);
     const crdObject = await this.client.getCustomResourceObject(identifier);
-    return {
-      config: crdObject.spec.sloConfig,
-      elasticityStrategy: {
-        apiVersion: crdObject.spec.elasticityStrategy.apiVersion,
-        kind: crdObject.spec.elasticityStrategy.kind,
-      },
-      elasticityStrategyConfig: crdObject.spec.staticElasticityStrategyConfig || {},
-      target: {
-        ...crdObject.spec.targetRef,
-        namespace: crdObject.metadata.namespace,
-      },
-    };
+    return transformToPolarisSloMapping(crdObject.spec, crdObject.metadata.namespace);
   }
 
   async findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>> {
@@ -213,18 +212,7 @@ export default class Api implements IPolarisOrchestratorApi {
             group,
             version,
           },
-          spec: {
-            config: obj.spec.sloConfig,
-            elasticityStrategy: {
-              apiVersion: obj.spec.elasticityStrategy.apiVersion,
-              kind: obj.spec.elasticityStrategy.kind,
-            },
-            elasticityStrategyConfig: obj.spec.staticElasticityStrategyConfig || {},
-            target: {
-              ...obj.spec.targetRef,
-              namespace: obj.metadata.namespace,
-            },
-          },
+          spec: transformToPolarisSloMapping(obj.spec, obj.metadata.namespace),
         };
       }),
     };

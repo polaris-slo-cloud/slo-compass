@@ -53,15 +53,19 @@ export const useTargetStore = defineStore('target', () => {
     }
   }
 
-  async function ensureTargetCreated(
-    objectReference: NamespacedObjectReference
-  ): Promise<WorkspaceComponentId> {
-    const unlockTargetName = await lockTargetName(`${objectReference.namespace}/${objectReference.name}`);
-    const target = targets.value.find(
-      (x) =>
-        x.deployment.connectionMetadata.name === objectReference.name &&
-        x.deployment.connectionMetadata.namespace === objectReference.namespace
+  const findTargetByReference = computed(() => {
+    const targetMap = new Map(
+      targets.value.map((x) => [
+        `${x.deployment.connectionMetadata.namespace}/${x.deployment.connectionMetadata.name}`,
+        x,
+      ])
     );
+    return (objectReference: NamespacedObjectReference) =>
+      targetMap.get(`${objectReference.namespace}/${objectReference.name}`);
+  });
+  async function ensureTargetCreated(objectReference: NamespacedObjectReference): Promise<WorkspaceComponentId> {
+    const unlockTargetName = await lockTargetName(`${objectReference.namespace}/${objectReference.name}`);
+    const target = findTargetByReference.value(objectReference);
 
     if (target) {
       unlockTargetName();
@@ -88,6 +92,7 @@ export const useTargetStore = defineStore('target', () => {
     targets,
     getSloTarget,
     getComponents,
+    findTargetByReference,
     saveTarget,
     ensureTargetCreated,
   };

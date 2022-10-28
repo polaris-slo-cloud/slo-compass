@@ -1,6 +1,13 @@
 <template>
   <div>
-    <EditableField label="Target" class="q-mt-lg" v-model="targetEditModel">
+    <EditableField label="Target" class="q-mt-lg" v-model="targetEditModel" :oldValue="oldTarget" resettable>
+      <span v-if="targetChanged" class="chip-strike-through-container">
+        <span class="chip-strike-through"></span>
+        <q-chip :icon="oldTargetComponentIcon">
+          {{ oldTarget.name }}
+        </q-chip>
+      </span>
+      <q-icon v-if="targetChanged" name="mdi-arrow-right-thin" />
       <q-chip v-if="target" :icon="targetComponentIcon">
         {{ target.name }}
       </q-chip>
@@ -11,25 +18,39 @@
     <MetricsOverview :slo="item" class="q-mt-lg" />
     <EditableField v-if="item.config" label="Config" class="q-mt-lg" v-model="configEditModel">
       <div class="row q-col-gutter-md q-mt-none">
-        <div v-for="configKey of configKeys" :key="configKey" class="col-12 col-lg-6">
-          <div class="field-item-label">{{ configKey }}</div>
-          <div>{{ formatIfEmpty(item.config[configKey]) }}</div>
-        </div>
+        <ConfigItemView
+          v-for="configKey of configKeys"
+          :key="configKey"
+          class="col-12 col-lg-6"
+          :title="configKey"
+          :value="item.config[configKey]"
+          :oldValue="item.deployedSloMapping?.sloMapping?.config[configKey]"
+          @resetValue="resetSloConfig(configKey)"
+        />
       </div>
       <template #edit="scope">
         <div class="row q-col-gutter-md q-mt-none">
           <div v-for="configKey of configKeys" :key="'edit-' + configKey" class="col-12 col-lg-6">
             <div class="field-item-label">{{ configKey }}</div>
-            <ConfigTemplateInput
-              v-model="scope.value[configKey]"
-              :template="configTemplate[configKey]"
-            />
+            <ConfigTemplateInput v-model="scope.value[configKey]" :template="configTemplate[configKey]" />
           </div>
         </div>
       </template>
     </EditableField>
-    <EditableField label="Elasticity Strategy" class="q-mt-lg" v-model="elasticityStrategy">
-      {{ elasticityStrategyName }}
+    <EditableField
+      label="Elasticity Strategy"
+      class="q-mt-lg"
+      v-model="elasticityStrategy"
+      resettable
+      :oldValue="oldElasticityStrategy"
+    >
+      <span v-if="elasticityStrategyChanged" class="old-value">
+        {{ oldElasticityStrategy.name }}
+      </span>
+      <q-icon v-if="elasticityStrategyChanged" name="mdi-arrow-right-thin" />
+      <span>
+        {{ elasticityStrategyName }}
+      </span>
       <template #edit="scope">
         <ElasticityStrategySelection v-model="scope.value" />
       </template>
@@ -41,22 +62,19 @@
       v-model="elasticityStrategyConfigEditModel"
     >
       <div class="row q-col-gutter-md q-mt-none">
-        <div
+        <ConfigItemView
           v-for="configKey of elasticityStrategyConfigKeys"
           :key="configKey"
           class="col-12 col-lg-6"
-        >
-          <div class="field-item-label">{{ configKey }}</div>
-          <div>{{ formatIfEmpty(item.elasticityStrategy.config[configKey]) }}</div>
-        </div>
+          :title="configKey"
+          :value="item.elasticityStrategy.config[configKey]"
+          :oldValue="item.deployedSloMapping?.sloMapping?.elasticityStrategyConfig[configKey]"
+          @resetValue="resetElasticityStrategyConfig(configKey)"
+        />
       </div>
       <template #edit="scope">
         <div class="row q-col-gutter-md q-mt-none">
-          <div
-            v-for="configKey of elasticityStrategyConfigKeys"
-            :key="'edit-' + configKey"
-            class="col-12 col-lg-6"
-          >
+          <div v-for="configKey of elasticityStrategyConfigKeys" :key="'edit-' + configKey" class="col-12 col-lg-6">
             <div class="field-item-label">{{ configKey }}</div>
             <ConfigTemplateInput
               v-model="scope.value[configKey]"
@@ -70,13 +88,7 @@
       <q-btn label="Deploy" color="primary" @click="deploy" />
     </div>
     <div class="flex justify-end q-mt-lg q-gutter-x-md" v-else-if="item.configChanged">
-      <q-btn
-        label="Reset"
-        color="negative"
-        outline
-        @click="resetConfiguration"
-        v-if="item.sloMapping"
-      />
+      <q-btn label="Reset" color="negative" outline @click="resetConfiguration" v-if="item.sloMapping" />
       <q-btn label="Apply" color="primary" @click="applyConfiguration" />
     </div>
   </div>
@@ -97,6 +109,7 @@ import _ from 'lodash';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { useTargetStore } from '@/store/target';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import ConfigItemView from '@/workspace/slo/ConfigItemView.vue';
 
 const orchestratorApi = useOrchestratorApi();
 const sloStore = useSloStore();
@@ -138,9 +151,26 @@ const configEditModel = computed({
   },
 });
 
-const target = computed(() =>
-  props.item.target ? targetStore.getSloTarget(props.item.target) : null
-);
+function sloMappingChanged(slo) {
+  const configChanged = !_.isEqual(slo.config, slo.deployedSloMapping?.sloMapping?.config);
+  const elasticityStrategyConfigChanged = !_.isEqual(
+    slo.elasticityStrategy.config,
+    slo.deployedSloMapping?.sloMapping?.elasticityStrategyConfig
+  );
+  const sloTarget = slo.target ? targetStore.getSloTarget(slo.target) : null;
+  const targetChanged = !_.isEqual(sloTarget.deployment.connectionMetadata, slo.deployedSloMapping?.sloMapping?.target);
+  const elasticityStrategyChanged =
+    slo.elasticityStrategy.kind !== slo.deployedSloMapping?.sloMapping?.elasticityStrategy.kind;
+
+  return configChanged || elasticityStrategyConfigChanged || targetChanged || elasticityStrategyChanged;
+}
+
+function resetSloConfig(configKey) {
+  const update = { ...props.item };
+  update.config[configKey] = props.item.deployedSloMapping?.sloMapping?.config[configKey];
+  updateSloWithResettedConfig(update);
+}
+const target = computed(() => (props.item.target ? targetStore.getSloTarget(props.item.target) : null));
 const targetComponentIcon = computed(() => (target.value ? componentIcon(target.value) : null));
 const targetEditModel = computed({
   get() {
@@ -152,7 +182,31 @@ const targetEditModel = computed({
     }
   },
 });
+const oldTarget = computed(() =>
+  props.item.deployedSloMapping?.sloMapping?.target
+    ? targetStore.findTargetByReference(props.item.deployedSloMapping.sloMapping.target)
+    : null
+);
+const oldTargetComponentIcon = computed(() => (oldTarget.value ? componentIcon(oldTarget.value) : null));
+const targetChanged = computed(() => !!oldTarget?.value && oldTarget.value.id !== target.value?.id);
 
+function resetElasticityStrategyConfig(configKey) {
+  const update = { ...props.item };
+  update.elasticityStrategy.config[configKey] =
+    props.item.deployedSloMapping?.sloMapping?.elasticityStrategyConfig[configKey];
+  updateSloWithResettedConfig(update);
+}
+
+function updateSloWithResettedConfig(update) {
+  const configChanged = sloMappingChanged(update);
+  if (!configChanged) {
+    update.polarisConflict = null;
+  }
+  sloStore.saveSlo({
+    ...update,
+    configChanged,
+  });
+}
 const elasticityStrategy = computed({
   get() {
     return props.item.elasticityStrategy
@@ -160,10 +214,10 @@ const elasticityStrategy = computed({
       : null;
   },
   set(v) {
-    const config =
-      props.item.elasticityStrategy?.template === v.template
-        ? props.item.elasticityStrategy.config
-        : {};
+    let config = props.item.elasticityStrategy?.template === v.template ? props.item.elasticityStrategy.config : {};
+    if (v.id === oldElasticityStrategy.value?.id) {
+      config = props.item.deployedSloMapping.sloMapping.elasticityStrategyConfig;
+    }
     const template = getElasticityStrategyTemplate(v.template);
 
     if (v.id !== props.item.elasticityStrategy?.id) {
@@ -174,6 +228,14 @@ const elasticityStrategy = computed({
   },
 });
 
+const oldElasticityStrategy = computed(() =>
+  props.item.deployedSloMapping?.sloMapping?.elasticityStrategy
+    ? elasticityStrategyStore.elasticityStrategies.find((x) => x.kind === props.item.deployedSloMapping.sloMapping.elasticityStrategy.kind)
+    : null
+);
+const elasticityStrategyChanged = computed(
+  () => !!oldElasticityStrategy.value && oldElasticityStrategy.value.id !== elasticityStrategy.value?.id
+);
 const elasticityStrategyName = computed(() => formatIfEmpty(elasticityStrategy.value?.name));
 const elasticityStrategyConfigKeys = computed(() => {
   const templateKeys = elasticityStrategyConfigTemplate.value
@@ -236,4 +298,27 @@ function resetConfiguration() {
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.old-value {
+  text-decoration: line-through;
+  color: $text-muted-color;
+}
+.chip-strike-through-container {
+  position: relative;
+  .chip-strike-through {
+    border-top: 1px solid $text-muted-color;
+    position: absolute;
+    top: 60%;
+    left: 10px;
+    right: 10px;
+    z-index: 1000;
+  }
+  .q-chip {
+    background: $grey-3;
+    color: $text-muted-color;
+    :deep(.q-icon) {
+      color: $text-muted-color;
+    }
+  }
+}
+</style>

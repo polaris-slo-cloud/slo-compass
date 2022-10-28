@@ -3,6 +3,7 @@
     <div class="field-label">
       <span>{{ props.label }}</span>
       <IconButton icon="mdi-pencil" class="q-ml-sm" v-if="!isEditing" @click="startEdit" />
+      <IconButton icon="mdi-undo" class="q-ml-sm" v-if="valueChanged" @click="resetValue" />
     </div>
     <div v-if="isEditing">
       <slot name="edit" v-bind="scope"></slot>
@@ -19,12 +20,17 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import _ from 'lodash';
+import IconButton from '@/crosscutting/components/IconButton.vue';
 const props = defineProps({
   label: String,
   modelValue: [String, Number, Boolean, Array, Object],
+  resettable: Boolean,
+  oldValue: [String, Number, Boolean, Array, Object],
 });
 const emit = defineEmits(['update:modelValue']);
 
+const valueChanged = computed(() => props.resettable && !_.isEqual(props.modelValue, props.oldValue));
 const isEditing = ref(false);
 const editModel = ref(null);
 const scope = computed(() => {
@@ -40,6 +46,10 @@ const scope = computed(() => {
   });
   return scope;
 });
+
+function resetValue() {
+  emit('update:modelValue', props.oldValue);
+}
 function cancel() {
   isEditing.value = false;
   editModel.value = null;

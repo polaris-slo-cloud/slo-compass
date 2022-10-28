@@ -1,7 +1,7 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import { OrchestratorConnection } from '@/connections/storage';
-import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
+import Slo, {DeployedPolarisSloMapping, PolarisSloMapping} from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
@@ -41,7 +41,7 @@ export interface PolarisDeploymentResult {
   deployedControllers: PolarisController[];
 }
 export interface PolarisSloDeploymentResult extends PolarisDeploymentResult {
-  deployedSloMapping?: NamespacedObjectReference;
+  deployedSloMapping?: DeployedPolarisSloMapping;
 }
 
 export interface IOrchestratorApi {
@@ -52,7 +52,7 @@ export interface IOrchestratorApi {
   deploySlo(slo: Slo, target: SloTarget): Promise<PolarisSloDeploymentResult>;
   deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
-  applySloMapping(slo: Slo, target: SloTarget): Promise<NamespacedObjectReference>;
+  applySloMapping(slo: Slo, target: SloTarget): Promise<DeployedPolarisSloMapping>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
   findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>>;
   createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher;
@@ -109,7 +109,7 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  applySloMapping(): Promise<NamespacedObjectReference> {
+  applySloMapping(): Promise<DeployedPolarisSloMapping> {
     throw new OrchestratorNotConnectedError();
   }
 

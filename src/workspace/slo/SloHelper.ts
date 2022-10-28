@@ -1,7 +1,7 @@
 import { ApiObject, NamespacedObjectReference } from '@polaris-sloc/core';
 import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
 import { useSloStore } from '@/store/slo';
-import {WorkspaceComponentId} from "@/workspace/PolarisComponent";
+import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
 
 export function sloMappingMatches(sloMapping: NamespacedObjectReference, obj: ApiObject<PolarisSloMapping>): boolean {
   return (
@@ -21,12 +21,9 @@ export class SloHelper {
       obj.metadata.labels && obj.metadata.labels.polarisId
         ? (slo: Slo) => slo.id === obj.metadata.labels.polarisId
         : () => false;
-    const existing = this.sloStore.slos.find((x) => labelMatcher(x) || sloMappingMatches(x.sloMapping, obj));
-    if (existing) {
-      await this.sloStore.updatePolarisMapping(existing.id, obj.spec);
-      return existing.id;
-    }
-
+    const existing = this.sloStore.slos.find(
+      (x) => labelMatcher(x) || sloMappingMatches(x.deployedSloMapping.reference, obj)
+    );
     const reference: NamespacedObjectReference = {
       name: obj.metadata.name,
       namespace: obj.metadata.namespace,
@@ -34,6 +31,11 @@ export class SloHelper {
       version: obj.objectKind.version,
       group: obj.objectKind.group,
     };
+    if (existing) {
+      await this.sloStore.updatePolarisMapping(existing.id, obj.spec, reference);
+      return existing.id;
+    }
+
     return await this.sloStore.createFromPolarisMapping(obj.metadata.labels?.polarisId, obj.spec, reference);
   }
 }

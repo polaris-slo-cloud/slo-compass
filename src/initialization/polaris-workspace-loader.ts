@@ -19,7 +19,12 @@ export async function updateWorkspaceFromOrchestrator() {
       mappedSlos.push(sloId);
     }
     const deletedSlos = sloStore.slos
-      .filter((x) => !!x.sloMapping && x.sloMapping.kind === objectKind.kind && !mappedSlos.includes(x.id))
+      .filter(
+        (x) =>
+          !!x.deployedSloMapping?.reference &&
+          x.deployedSloMapping.reference.kind === objectKind.kind &&
+          !mappedSlos.includes(x.id)
+      )
       .map((x) => x.id);
     if (deletedSlos.length > 0) {
       sloStore.polarisMappingRemoved(deletedSlos);

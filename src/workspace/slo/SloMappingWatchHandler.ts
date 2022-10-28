@@ -3,6 +3,7 @@ import { useSloStore } from '@/store/slo';
 import { PolarisSloMapping } from '@/workspace/slo/Slo';
 import { templates } from '@/polaris-templates/slo-template';
 import { SloHelper, sloMappingMatches } from '@/workspace/slo/SloHelper';
+import { transformToPolarisSloMapping } from '@/orchestrator/utils';
 
 export const supportedSloMappingObjectKinds = templates.map<ObjectKind>((x) => ({
   kind: x.sloMappingKind,
@@ -21,18 +22,7 @@ export class SloMappingWatchHandler implements WatchEventsHandler {
   private transform(obj: ApiObject<any>): ApiObject<PolarisSloMapping> {
     return {
       ...obj,
-      spec: {
-        config: obj.spec.sloConfig,
-        elasticityStrategy: {
-          apiVersion: obj.spec.elasticityStrategy.apiVersion,
-          kind: obj.spec.elasticityStrategy.kind,
-        },
-        elasticityStrategyConfig: obj.spec.staticElasticityStrategyConfig || {},
-        target: {
-          ...obj.spec.targetRef,
-          namespace: obj.metadata.namespace,
-        },
-      },
+      spec: transformToPolarisSloMapping(obj.spec, obj.metadata.namespace),
     };
   }
 
@@ -43,9 +33,9 @@ export class SloMappingWatchHandler implements WatchEventsHandler {
 
   onObjectDeleted(obj: ApiObject<any>): void {
     const sloMapping = this.transform(obj);
-    const existing = this.sloStore.slos.find((x) => sloMappingMatches(x.sloMapping, sloMapping));
+    const existing = this.sloStore.slos.find((x) => sloMappingMatches(x.deployedSloMapping?.reference, sloMapping));
     if (existing) {
-      this.sloStore.removeSlo(existing.id);
+      this.sloStore.polarisMappingRemoved([existing.id]);
     }
   }
 

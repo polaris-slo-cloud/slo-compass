@@ -4,10 +4,7 @@ import {
   SloTemplateMetadata,
 } from '@/polaris-templates/slo-template';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
-import {
-  generateNamespaceSpec,
-  generateServiceAccount,
-} from '@/orchestrator/kubernetes/generation/common-resources';
+import { generateNamespaceSpec, generateServiceAccount } from '@/orchestrator/kubernetes/generation/common-resources';
 import {
   generateSloClusterRole,
   generateSloClusterRoleBinding,
@@ -30,36 +27,27 @@ import {
   generateElasticityStrategyClusterRoleBinding,
   generateElasticityStrategyControllerDeployment,
 } from '@/orchestrator/kubernetes/generation/elasticity-strategy-controller';
-import {SloTarget} from "@/workspace/targets/SloTarget";
+import { SloTarget } from '@/workspace/targets/SloTarget';
+import { KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 
 interface SloResources {
   staticResources: KubernetesObject[];
-  sloMapping: KubernetesObject;
+  sloMapping: KubernetesSpecObject;
 }
 
-function generateMetricsResources(
-  metrics: ComposedMetricSource[],
-  namespace: string
-): KubernetesObject[] {
+function generateMetricsResources(metrics: ComposedMetricSource[], namespace: string): KubernetesObject[] {
   if (!metrics) {
     return [];
   }
   return metrics.flatMap((metricSource) => [
     generateServiceAccount(metricSource.controllerName, namespace),
-    generateMetricSourceClusterRole(
-      metricSource.controllerName,
-      metricSource.composedMetricResources
-    ),
+    generateMetricSourceClusterRole(metricSource.controllerName, metricSource.composedMetricResources),
     generateMetricSourceClusterRoleBinding(
       metricSource.controllerName,
       namespace,
       metricSource.composedMetricResources
     ),
-    generateComposedMetricsControllerDeployment(
-      metricSource.controllerName,
-      namespace,
-      metricSource.containerImage
-    ),
+    generateComposedMetricsControllerDeployment(metricSource.controllerName, namespace, metricSource.containerImage),
     generateComposedMetricsService(metricSource.controllerName, namespace),
     generateComposedMetricsServiceMonitor(metricSource.controllerName, namespace),
   ]);
@@ -98,16 +86,8 @@ export default {
         generateNamespaceSpec(namespace),
         generateServiceAccount(template.controllerName, namespace),
         generateSloClusterRole(template.controllerName, template.sloMappingResources),
-        generateSloClusterRoleBinding(
-          template.controllerName,
-          namespace,
-          template.sloMappingResources
-        ),
-        generateSloControllerDeployment(
-          template.controllerName,
-          namespace,
-          template.containerImage
-        ),
+        generateSloClusterRoleBinding(template.controllerName, namespace, template.sloMappingResources),
+        generateSloControllerDeployment(template.controllerName, namespace, template.containerImage),
       ]
     );
 
@@ -131,16 +111,8 @@ export default {
         generateNamespaceSpec(namespace),
         generateServiceAccount(template.controllerName, namespace),
         generateElasticityStrategyClusterRole(template.controllerName, template.strategyResources),
-        generateElasticityStrategyClusterRoleBinding(
-          template.controllerName,
-          namespace,
-          template.strategyResources
-        ),
-        generateElasticityStrategyControllerDeployment(
-          template.controllerName,
-          namespace,
-          template.containerImage
-        ),
+        generateElasticityStrategyClusterRoleBinding(template.controllerName, namespace, template.strategyResources),
+        generateElasticityStrategyControllerDeployment(template.controllerName, namespace, template.containerImage),
       ]
     );
 

@@ -1,6 +1,6 @@
 import { PolarisComponent } from '@/workspace/PolarisComponent';
 import { SloMetricSource } from '@/polaris-templates/slo-template';
-import {ApiObject, NamespacedObjectReference} from '@polaris-sloc/core';
+import { NamespacedObjectReference } from '@polaris-sloc/core';
 
 interface SloElasticityStrategy {
   id: string;
@@ -26,9 +26,10 @@ export interface SloMetric {
   lastUpdated?: Date;
 }
 
-export interface PolarisSloConflict {
-  type: 'DELETED' | 'MODIFIED';
-  polarisSloMapping?: PolarisSloMapping;
+export interface DeployedPolarisSloMapping {
+  sloMapping?: PolarisSloMapping;
+  reference?: NamespacedObjectReference;
+  deleted?: boolean;
 }
 
 export default interface Slo extends PolarisComponent {
@@ -37,6 +38,5 @@ export default interface Slo extends PolarisComponent {
   config: Record<string, unknown>;
   configChanged: boolean;
   elasticityStrategy?: SloElasticityStrategy;
-  sloMapping: NamespacedObjectReference;
-  polarisConflict?: PolarisSloConflict;
+  deployedSloMapping: DeployedPolarisSloMapping;
 }
