@@ -130,6 +130,13 @@ export default class Api implements IPolarisOrchestratorApi {
     };
   }
 
+  async deleteSlo(slo: Slo): Promise<void> {
+    if (slo.deployedSloMapping?.reference) {
+      const identifier = await this.getCustomResourceIdentifier(slo.deployedSloMapping.reference);
+      await this.client.deleteCustomResourceObject(identifier);
+    }
+  }
+
   async deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult> {
     const resources = await resourceGenerator.generateElasticityStrategyResources(
       elasticityStrategy,
@@ -151,7 +158,7 @@ export default class Api implements IPolarisOrchestratorApi {
 
   async applySloMapping(slo: Slo, target: SloTarget): Promise<DeployedPolarisSloMapping> {
     const mapping = resourceGenerator.generateSloMapping(slo, target);
-    if (slo.deployedSloMapping) {
+    if (slo.deployedSloMapping?.reference) {
       mapping.metadata.name = slo.deployedSloMapping.reference.name;
       if (mapping.metadata.namespace !== slo.deployedSloMapping.reference.namespace) {
         try {

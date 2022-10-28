@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import {computed, reactive, ref} from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useSloStore } from '@/store/slo';
-import { WorkspaceComponent } from '@/workspace/PolarisComponent';
+import { WorkspaceComponent, WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import { useTargetStore } from '@/store/target';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
@@ -35,14 +35,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const slos = computed<Slo[]>(() => sloStore.slos);
   const targets = computed<SloTarget[]>(() => targetStore.targets);
-  const elasticityStrategies = computed<ElasticityStrategy[]>(
-    () => elasticityStrategyStore.elasticityStrategies
-  );
+  const elasticityStrategies = computed<ElasticityStrategy[]>(() => elasticityStrategyStore.elasticityStrategies);
 
   const getItem = computed<(id: string) => WorkspaceComponent>(() => {
     const allItems = [...targets.value, ...slos.value, ...elasticityStrategies.value];
     const byId = new Map(allItems.map((x: WorkspaceComponent) => [x.id, x]));
     return (id: string) => byId.get(id);
+  });
+
+  const deleteItemAction = computed(() => {
+    const sloActions = new Map(slos.value.map((x) => [x.id, async () => await sloStore.deleteSlo(x.id)]));
+    return (id: WorkspaceComponentId) => sloActions.get(id);
   });
 
   function createWorkspace(config) {
@@ -88,6 +91,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  async function deleteItem(itemId: WorkspaceComponentId) {
+    const deleteAction = deleteItemAction.value(itemId);
+    if (deleteAction) {
+      await deleteAction();
+    }
+  }
+
   function updateWatchBookmark(kind: string, bookmark: string) {
     watchBookmarks.value[kind] = bookmark;
   }
@@ -108,5 +118,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     retryDeployment,
     save,
     updateWatchBookmark,
+    deleteItem,
   };
 });

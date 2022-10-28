@@ -8,7 +8,7 @@ import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponen
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
-import { ISubscribable, ISubscribableCallback, IUnsubscribe } from '@/crosscutting/subscibable';
+import { ISubscribable, ISubscribableCallback } from '@/crosscutting/subscibable';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface PolarisResource {
@@ -50,6 +50,7 @@ export interface IOrchestratorApi {
   findPolarisDeployments(): Promise<IDeployment[]>;
   findDeployments(namespace?: string): Promise<IDeployment[]>;
   deploySlo(slo: Slo, target: SloTarget): Promise<PolarisSloDeploymentResult>;
+  deleteSlo(slo: Slo): Promise<void>;
   deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
   applySloMapping(slo: Slo, target: SloTarget): Promise<DeployedPolarisSloMapping>;
@@ -123,6 +124,10 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   createWatcher(): ObjectKindWatcher {
     throw new OrchestratorNotConnectedError();
   }
+
+  deleteSlo(): Promise<void> {
+    throw new OrchestratorNotConnectedError();
+  }
 }
 const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
 const subscribers: Ref<Map<string, Map<string, ISubscribableCallback>>> = ref(new Map());
@@ -179,6 +184,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     findDeployments: (namespace?) => api.value.findDeployments(namespace),
     test: () => api.value.test(),
     deploySlo: (slo, target) => deploy(slo, () => api.value.deploySlo(clone(slo), clone(target))),
+    deleteSlo: (slo) => api.value.deleteSlo(clone(slo)),
     deployElasticityStrategy: (elasticityStrategy) =>
       deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy))),
     retryDeployment: (item) => deploy(item, () => api.value.retryDeployment(clone(item))),

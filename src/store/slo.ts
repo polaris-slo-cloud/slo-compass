@@ -40,6 +40,14 @@ export const useSloStore = defineStore('slo', () => {
     slos.value = slos.value.filter((x) => x.id !== id);
   }
 
+  async function deleteSlo(id: WorkspaceComponentId): Promise<void> {
+    const slo = getSlo.value(id);
+    if (slo) {
+      await orchestratorApi.deleteSlo(slo);
+    }
+    removeSlo(id);
+  }
+
   async function deploySlo(id: WorkspaceComponentId): Promise<void> {
     const slo = getSlo.value(id);
     const target = slo.target ? targetStore.getSloTarget(slo.target) : null;
@@ -202,6 +210,8 @@ export const useSloStore = defineStore('slo', () => {
     slos.value = slos.value.filter((x) => !idsMarkedForDeletion.includes(x.id));
     for (const slo of changedSlos) {
       slo.deployedSloMapping.deleted = true;
+      slo.deployedSloMapping.reference = null;
+      slo.deployedSloMapping.sloMapping = null;
     }
   }
 
@@ -216,7 +226,7 @@ export const useSloStore = defineStore('slo', () => {
     updateSloMetrics,
     updatePolarisMapping,
     createFromPolarisMapping,
-    removeSlo,
+    deleteSlo,
     polarisMappingRemoved,
   };
 });

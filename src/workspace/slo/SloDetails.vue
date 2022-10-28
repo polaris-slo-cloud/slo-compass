@@ -1,6 +1,6 @@
 <template>
   <div>
-    <EditableField label="Target" class="q-mt-lg" v-model="targetEditModel" :oldValue="oldTarget" resettable>
+    <EditableField label="Target" class="q-mt-lg" v-model="targetEditModel" :oldValue="oldTarget" :resettable="sloExistsInPolaris">
       <span v-if="targetChanged" class="chip-strike-through-container">
         <span class="chip-strike-through"></span>
         <q-chip :icon="oldTargetComponentIcon">
@@ -25,6 +25,7 @@
           :title="configKey"
           :value="item.config[configKey]"
           :oldValue="item.deployedSloMapping?.sloMapping?.config[configKey]"
+          :showConfigChange="sloExistsInPolaris"
           @resetValue="resetSloConfig(configKey)"
         />
       </div>
@@ -41,7 +42,7 @@
       label="Elasticity Strategy"
       class="q-mt-lg"
       v-model="elasticityStrategy"
-      resettable
+      :resettable="sloExistsInPolaris"
       :oldValue="oldElasticityStrategy"
     >
       <span v-if="elasticityStrategyChanged" class="old-value">
@@ -69,6 +70,7 @@
           :title="configKey"
           :value="item.elasticityStrategy.config[configKey]"
           :oldValue="item.deployedSloMapping?.sloMapping?.elasticityStrategyConfig[configKey]"
+          :showConfigChange="sloExistsInPolaris"
           @resetValue="resetElasticityStrategyConfig(configKey)"
         />
       </div>
@@ -119,6 +121,8 @@ const targetStore = useTargetStore();
 const props = defineProps({
   item: Object,
 });
+
+const sloExistsInPolaris = computed(() => props.item.deployedSloMapping && !props.item.deployedSloMapping.deleted);
 
 const formatIfEmpty = (value) => value || '-';
 function mergeDistinct(...lists) {

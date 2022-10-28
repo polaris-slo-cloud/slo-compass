@@ -19,12 +19,13 @@ const props = defineProps({
   title: String,
   value: [Number, String],
   oldValue: [Number, String],
+  showConfigChange: Boolean,
 });
 const emit = defineEmits(['resetValue']);
 
 const formattedValue = computed(() => props.value || '-');
 const formattedOldValue = computed(() => props.oldValue || '-');
-const valueChanged = computed(() => props.value !== props.oldValue);
+const valueChanged = computed(() => props.showConfigChange && props.value !== props.oldValue);
 
 function resetValue() {
   emit('resetValue');
