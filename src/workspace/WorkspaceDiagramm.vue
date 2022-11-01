@@ -1,5 +1,5 @@
 <template>
-  <div class="column">
+  <div class="column graph-wrapper">
     <v-network-graph
       :nodes="data.nodes"
       :edges="data.edges"
@@ -38,10 +38,7 @@
           :height="shape.height * scale"
           style="pointer-events: none"
         >
-          <div
-            xmlns="http://www.w3.org/1999/xhtml"
-            class="row items-center justify-center full-height"
-          >
+          <div xmlns="http://www.w3.org/1999/xhtml" class="row items-center justify-center full-height">
             <span
               xmlns="http://www.w3.org/1999/xhtml"
               v-text="text"
@@ -52,16 +49,11 @@
         </foreignObject>
       </template>
       <template #edge-label="{ edge, ...slotProps }">
-        <v-edge-label
-          :text="edge.label"
-          align="center"
-          vertical-align="above"
-          v-bind="slotProps"
-          v-if="edge.label"
-        />
+        <v-edge-label :text="edge.label" align="center" vertical-align="above" v-bind="slotProps" v-if="edge.label" />
       </template>
     </v-network-graph>
-    <q-card style="position: absolute; bottom: 10px; right: 10px">
+    <WorkspaceFilter class="filter-bar" v-model="filter" />
+    <q-card class="zoom-bar">
       <q-card-actions>
         <span class="q-pr-sm">Zoom</span>
         <q-btn flat @click="zoomOut"><q-icon name="zoom_out" /></q-btn>
@@ -77,12 +69,19 @@ import { colors } from 'quasar';
 import * as vNG from 'v-network-graph';
 import { useWorkspaceStore } from '@/store/workspace';
 import { ForceLayout } from 'v-network-graph/lib/force-layout';
+import WorkspaceFilter from '@/workspace/WorkspaceFilter.vue';
+import { workspaceItemTypes } from '@/workspace/constants';
 
 const store = useWorkspaceStore();
 const props = defineProps({
   selectedComponent: Object,
 });
 const emit = defineEmits(['update:selectedComponent']);
+
+const filter = ref({
+  targetTypes: Object.values(workspaceItemTypes.targets),
+  targets: [],
+});
 
 const selectedNodes = computed({
   get() {
@@ -213,65 +212,70 @@ const configs = reactive(
     },
   })
 );
+
+const filteredTargets = computed(() =>
+  store.targets.filter(
+    (x) =>
+      filter.value.targetTypes.includes(x.type) &&
+      (filter.value.targets.length === 0 || filter.value.targets.includes(x.id))
+  )
+);
+const filteredTargetIds = computed(() => filteredTargets.value.map((x) => x.id));
+const filteredSlos = computed(() => store.slos.filter((x) => !x.target || filteredTargetIds.value.includes(x.target)));
+
 const data = computed(() => {
   const edges = {};
   const nodes = {};
 
-  if (store.targets) {
-    for (const target of store.targets) {
-      nodes[target.id] = {
-        name: target.name,
-        type: target.type,
-        color: colors.getPaletteColor('white'),
-        textColor: colors.getPaletteColor('black'),
-        statusColor: getStatusColor(target.deployment?.status),
-        polarisComponent: target,
-      };
-      if (target.components) {
-        for (const child of target.components) {
-          edges[`edge_${target.id}_${child}`] = {
-            source: target.id,
-            target: child,
-            dashed: true,
-          };
-        }
-      }
-    }
-  }
-
-  if (store.slos) {
-    for (const slo of store.slos) {
-      nodes[slo.id] = {
-        name: slo.name,
-        color: colors.getPaletteColor('blue'),
-        polarisComponent: slo,
-      };
-      if (slo.elasticityStrategy) {
-        edges[`edge_${slo.id}_${slo.elasticityStrategy.id}`] = {
-          source: slo.id,
-          target: slo.elasticityStrategy.id,
-          label: 'Scales target with',
-        };
-      }
-
-      if (slo.target) {
-        edges[`edge_${slo.target}_${slo.id}`] = {
-          source: slo.target,
-          target: slo.id,
+  for (const target of filteredTargets.value) {
+    nodes[target.id] = {
+      name: target.name,
+      type: target.type,
+      color: colors.getPaletteColor('white'),
+      textColor: colors.getPaletteColor('black'),
+      statusColor: getStatusColor(target.deployment?.status),
+      polarisComponent: target,
+    };
+    if (target.components) {
+      for (const child of target.components) {
+        edges[`edge_${target.id}_${child}`] = {
+          source: target.id,
+          target: child,
+          dashed: true,
         };
       }
     }
   }
 
-  if (store.elasticityStrategies) {
-    for (const strategy of store.elasticityStrategies) {
-      nodes[strategy.id] = {
-        name: strategy.name,
-        color: colors.getPaletteColor('amber'),
-        textColor: colors.getPaletteColor('black'),
-        polarisComponent: strategy,
+  for (const slo of filteredSlos.value) {
+    nodes[slo.id] = {
+      name: slo.name,
+      color: colors.getPaletteColor('blue'),
+      polarisComponent: slo,
+    };
+    if (slo.elasticityStrategy) {
+      edges[`edge_${slo.id}_${slo.elasticityStrategy.id}`] = {
+        source: slo.id,
+        target: slo.elasticityStrategy.id,
+        label: 'Scales target with',
       };
     }
+
+    if (slo.target) {
+      edges[`edge_${slo.target}_${slo.id}`] = {
+        source: slo.target,
+        target: slo.id,
+      };
+    }
+  }
+
+  for (const strategy of store.elasticityStrategies) {
+    nodes[strategy.id] = {
+      name: strategy.name,
+      color: colors.getPaletteColor('amber'),
+      textColor: colors.getPaletteColor('black'),
+      polarisComponent: strategy,
+    };
   }
 
   return { edges, nodes };
@@ -300,7 +304,21 @@ watch(nodeCount, (value, oldValue) => {
   width: 100%;
 }
 .node-rect {
-  transition: fill 0.1s linear, stroke 0.1s linear, stroke-width 0.1s linear, x 0.1s linear,
-    y 0.1s linear, width 0.1s linear, height 0.1s linear;
+  transition: fill 0.1s linear, stroke 0.1s linear, stroke-width 0.1s linear, x 0.1s linear, y 0.1s linear,
+    width 0.1s linear, height 0.1s linear;
+}
+.graph-wrapper {
+  position: relative;
+  .filter-bar {
+    position: absolute !important;
+    top: 10px;
+    left: 10px;
+  }
+
+  .zoom-bar {
+    position: absolute !important;
+    bottom: 10px;
+    right: 10px;
+  }
 }
 </style>
