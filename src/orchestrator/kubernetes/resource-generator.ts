@@ -1,8 +1,4 @@
-import {
-  ComposedMetricSource,
-  getTemplate as getSloTemplate,
-  SloTemplateMetadata,
-} from '@/polaris-templates/slo-template';
+import { ComposedMetricSource, SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import { generateNamespaceSpec, generateServiceAccount } from '@/orchestrator/kubernetes/generation/common-resources';
 import {
@@ -10,6 +6,7 @@ import {
   generateSloClusterRoleBinding,
   generateSloControllerDeployment,
   generateSloMapping,
+  generateSloMappingCrd,
 } from '@/orchestrator/kubernetes/generation/slo-controller';
 import {
   generateComposedMetricsControllerDeployment,
@@ -54,12 +51,11 @@ function generateMetricsResources(metrics: ComposedMetricSource[], namespace: st
 }
 
 export default {
-  generateSloMapping(slo: Slo, target: SloTarget) {
-    const template = getSloTemplate(slo.template);
+  generateSloMapping(slo: Slo, target: SloTarget, sloMappingKind: string) {
     const normalizedSloName = slo.name.replaceAll(' ', '-').toLowerCase();
     if (target.deployment) {
       const mappingName = `${normalizedSloName}-${slo.id}`;
-      return generateSloMapping(template.sloMappingKind, mappingName, slo, target.deployment);
+      return generateSloMapping(sloMappingKind, mappingName, slo, target.deployment);
     }
     return null;
   },
@@ -80,7 +76,7 @@ export default {
     const crds = await loadCrdsForTemplate(template.key);
     resources.push(...crds);
 
-    const sloMapping = this.generateSloMapping(slo, target);
+    const sloMapping = this.generateSloMapping(slo, target, template.sloMappingKind);
     resources.push(
       ...[
         generateNamespaceSpec(namespace),
@@ -118,4 +114,6 @@ export default {
 
     return resources;
   },
+  generateCrdFromSloTemplate: (template: SloTemplateMetadata) =>
+    generateSloMappingCrd(template.sloMappingKind, template.sloMappingResources, template.config, template.description),
 };

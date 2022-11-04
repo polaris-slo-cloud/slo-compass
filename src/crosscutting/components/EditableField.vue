@@ -61,9 +61,7 @@ function save() {
 
 function startEdit() {
   editModel.value =
-    typeof props.modelValue === 'object'
-      ? JSON.parse(JSON.stringify(props.modelValue))
-      : props.modelValue;
+    typeof props.modelValue === 'object' ? JSON.parse(JSON.stringify(props.modelValue)) : props.modelValue;
   isEditing.value = true;
 }
 </script>

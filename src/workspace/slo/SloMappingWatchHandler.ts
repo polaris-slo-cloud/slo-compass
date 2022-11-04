@@ -1,15 +1,18 @@
 import { ApiObject, ObjectKind, POLARIS_API, WatchEventsHandler } from '@polaris-sloc/core';
 import { useSloStore } from '@/store/slo';
 import { PolarisSloMapping } from '@/workspace/slo/Slo';
-import { templates } from '@/polaris-templates/slo-template';
 import { SloHelper, sloMappingMatches } from '@/workspace/slo/SloHelper';
 import { transformToPolarisSloMapping } from '@/orchestrator/utils';
+import { useTemplateStore } from '@/store/template';
 
-export const supportedSloMappingObjectKinds = templates.map<ObjectKind>((x) => ({
-  kind: x.sloMappingKind,
-  group: POLARIS_API.SLO_GROUP,
-  version: 'v1',
-}));
+export function getSupportedSloMappingObjectKinds() {
+  const templateStore = useTemplateStore();
+  return templateStore.sloTemplates.map<ObjectKind>((x) => ({
+    kind: x.sloMappingKind,
+    group: POLARIS_API.SLO_GROUP,
+    version: 'v1',
+  }));
+}
 
 export class SloMappingWatchHandler implements WatchEventsHandler {
   private sloStore = useSloStore();

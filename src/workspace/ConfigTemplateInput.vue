@@ -52,10 +52,8 @@ const label = computed(() => {
 });
 const validationRules = computed(() => {
   const rules = [...props.rules];
-  if (!props.template.optional) {
-    rules.push(
-      (val) => (val !== undefined && val !== null && val !== '') || 'This parameter is required'
-    );
+  if (props.template.required) {
+    rules.push((val) => (val !== undefined && val !== null && val !== '') || 'This parameter is required');
   }
   if (props.template.type === ParameterType.Integer) {
     rules.push((val) => !val || Math.floor(val) === Number(val) || 'Please provide an integer');

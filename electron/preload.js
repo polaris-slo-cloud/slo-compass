@@ -1,5 +1,5 @@
 const { contextBridge } = require('electron');
-const { BrowserWindow, dialog } = require('@electron/remote');
+const { BrowserWindow, dialog, app } = require('@electron/remote');
 const fs = require('fs/promises');
 const k8sApiClient = require('./k8s-api-client');
 const path = require('path');
@@ -47,6 +47,25 @@ contextBridge.exposeInMainWorld('workspaceApi', {
 });
 
 contextBridge.exposeInMainWorld('k8sApi', k8sApiClient);
+
+contextBridge.exposeInMainWorld('templatesApi', {
+  async saveTemplates(templates) {
+    const appDataDirectory = app.getPath('userData');
+    const templatesFile = path.join(appDataDirectory, 'polaris-templates.json');
+    const data = JSON.stringify(templates);
+    await fs.writeFile(templatesFile, data);
+  },
+  async loadTemplates() {
+    const appDataDirectory = app.getPath('userData');
+    const templatesFile = path.join(appDataDirectory, 'polaris-templates.json');
+    try {
+      const templates = await fs.readFile(templatesFile, 'utf8');
+      return JSON.parse(templates);
+    } catch (e) {
+      return [];
+    }
+  },
+})
 
 contextBridge.exposeInMainWorld('filesApi', {
   async chooseDirectory() {

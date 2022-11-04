@@ -6,6 +6,7 @@ import { useMetricsProvider } from '@/metrics-provider/api';
 import { workspaceConnectionStorage } from '@/connections/storage';
 import { updateWorkspaceFromOrchestrator } from '@/initialization/polaris-workspace-loader';
 import { watch } from 'vue';
+import { loadLocalTemplates, setupTemplatesAutosave } from '@/polaris-templates/store-helper';
 
 let stopBackgroundTasks;
 
@@ -35,7 +36,9 @@ async function initializeWorkspace(isOpen) {
 
 export async function initialize() {
   setupAutosave();
+  setupTemplatesAutosave();
   await loadCurrentWorkspace();
+  await loadLocalTemplates();
   setupConnections();
 
   const store = useWorkspaceStore();

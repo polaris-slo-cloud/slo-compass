@@ -1,16 +1,8 @@
 <template>
   <q-form @submit="createWorkspace" style="max-width: 800px" class="full-width">
     <h1>New Workspace</h1>
-    <q-input
-      label="Name *"
-      :rules="[(val) => !!val || 'Workspace name is required']"
-      v-model="model.name"
-    />
-    <DirectoryChooser
-      v-if="canChooseDirectory"
-      v-model="model.workspaceDirectory"
-      label="Workspace Location"
-    />
+    <q-input label="Name *" :rules="[(val) => !!val || 'Workspace name is required']" v-model="model.name" />
+    <DirectoryChooser v-if="canChooseDirectory" v-model="model.workspaceDirectory" label="Workspace Location" />
     <h2>Orchestrator</h2>
     <OrchestratorSelection v-model="model.orchestrator" />
     <h2>Metrics Provider</h2>

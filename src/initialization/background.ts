@@ -2,7 +2,7 @@ import { useMetricsProvider } from '@/metrics-provider/api';
 import { useSloStore } from '@/store/slo';
 import { useTargetStore } from '@/store/target';
 import { OrchestratorWatchManager } from '@/orchestrator/watch-manager';
-import { SloMappingWatchHandler, supportedSloMappingObjectKinds } from '@/workspace/slo/SloMappingWatchHandler';
+import { SloMappingWatchHandler, getSupportedSloMappingObjectKinds } from '@/workspace/slo/SloMappingWatchHandler';
 import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookmark-manager';
 
 export async function setupBackgroundTasks() {
@@ -24,10 +24,10 @@ export async function setupBackgroundTasks() {
     sloStore.updateSloMetrics(result);
   }
   const pollingInterval = setInterval(pollMetrics, pollingIntervalMs);
-  await watchManager.configureWatchers(supportedSloMappingObjectKinds, new SloMappingWatchHandler());
+  await watchManager.configureWatchers(getSupportedSloMappingObjectKinds(), new SloMappingWatchHandler());
 
   return () => {
     clearInterval(pollingInterval);
-    watchManager.stopWatchers(supportedSloMappingObjectKinds);
+    watchManager.stopWatchers(getSupportedSloMappingObjectKinds());
   };
 }

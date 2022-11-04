@@ -9,5 +9,5 @@ export interface ConfigParameter {
   parameter: string;
   displayName: string;
   type: ParameterType;
-  optional: boolean;
+  required: boolean;
 }

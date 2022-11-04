@@ -35,8 +35,7 @@ export const templates: SloTemplateMetadata[] = [
   {
     key: 'costEfficiencySlo',
     name: 'Cost Efficiency',
-    description:
-      'This SLO calculates a cost efficiency using the response time and cost of the target',
+    description: 'This SLO calculates a cost efficiency using the response time and cost of the target',
     controllerName: 'cost-efficiency-slo-controller',
     containerImage: 'polarissloc/slo-cost-efficiency:latest',
     sloMappingResources: 'costefficiencyslomappings',
@@ -46,19 +45,19 @@ export const templates: SloTemplateMetadata[] = [
         parameter: 'responseTimeThresholdMs',
         displayName: 'Response Time Threshold (in ms)',
         type: ParameterType.Integer,
-        optional: false,
+        required: true,
       },
       {
         parameter: 'targetCostEfficiency',
         displayName: 'Cost Efficiency Target',
         type: ParameterType.Decimal,
-        optional: false,
+        required: true,
       },
       {
         parameter: 'minRequestsPercentile',
         displayName: 'Minimum Requests Percentile',
         type: ParameterType.Percentage,
-        optional: true,
+        required: false,
       },
     ],
     metrics: [
@@ -94,7 +93,7 @@ export const templates: SloTemplateMetadata[] = [
         parameter: 'targetAvgCPUUtilizationPercentage',
         displayName: 'Average CPU Utilization Target',
         type: ParameterType.Decimal,
-        optional: false,
+        required: true,
       },
     ],
     metrics: [
@@ -110,15 +109,16 @@ export const templates: SloTemplateMetadata[] = [
   },
 ];
 
-export function getTemplate(key: string): SloTemplateMetadata {
-  return templates.find((x) => x.key === key);
-}
-
-export function findTemplateForKind(kind: string): SloTemplateMetadata {
-  return templates.find((x) => x.sloMappingKind === kind);
-}
-
+//TODO: Refactor for custom templates
 export function getPolarisControllers(template: SloTemplateMetadata): PolarisController[] {
+  const result = [];
+  if (template.containerImage && template.controllerName) {
+    result.push({
+      type: 'SLO Controller',
+      name: template.controllerName,
+      deployment: null,
+    });
+  }
   const metricsControllers =
     template.metrics
       .filter((x) => !!x.metricsController)
@@ -129,13 +129,7 @@ export function getPolarisControllers(template: SloTemplateMetadata): PolarisCon
           deployment: null,
         })
       ) ?? [];
+  result.push(...metricsControllers);
 
-  return [
-    {
-      type: 'SLO Controller',
-      name: template.controllerName,
-      deployment: null,
-    },
-    ...metricsControllers,
-  ];
+  return result;
 }

@@ -39,16 +39,17 @@
                 color="blue"
                 @click="showAddSlo(template)"
               />
+              <WorkspaceItem
+                class="col-6 col-md-4 col-xl-3"
+                title="New Template"
+                isCustom
+                @click="showCreateSloTemplate = true"
+              />
             </div>
           </q-card-section>
         </q-card>
       </q-expansion-item>
-      <q-expansion-item
-        switch-toggle-side
-        expand-separator
-        default-opened
-        label="Elasticity Strategy"
-      >
+      <q-expansion-item switch-toggle-side expand-separator default-opened label="Elasticity Strategy">
         <q-card>
           <q-card-section>
             <div class="row q-gutter-sm">
@@ -71,24 +72,30 @@
       :type="newItemType"
       :template="newItemTemplate"
     />
+    <CreateSloTemplateDialog v-model:show="showCreateSloTemplate" @created="showAddSlo" />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
 import WorkspaceItem from '@/workspace/WorkspaceItem.vue';
-import { templates as sloTemplates } from '@/polaris-templates/slo-template';
 import { templates as strategyTemplates } from '@/polaris-templates/strategy-template';
 import { workspaceItemTypes } from '@/workspace/constants';
 import AddSloTarget from '@/workspace/targets/CreateSloTarget.vue';
 import AddSlo from '@/workspace/slo/CreateSlo.vue';
 import AddElasticityStrategy from '@/workspace/elasticity-strategy/CreateElasticityStrategy.vue';
+import CreateSloTemplateDialog from '@/workspace/slo/templates/CreateSloTemplateDialog.vue';
+import { useTemplateStore } from '@/store/template';
+import { storeToRefs } from 'pinia';
 
+const templateStore = useTemplateStore();
+const { sloTemplates } = storeToRefs(templateStore);
 const search = ref(null);
 
 const showAddItemDialog = ref(false);
 const newItemType = ref('');
 const newItemTemplate = ref({});
+const showCreateSloTemplate = ref(false);
 
 function showAddTarget(type) {
   showAddItemDialog.value = true;

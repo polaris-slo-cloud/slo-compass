@@ -12,12 +12,12 @@ import Slo, { DeployedPolarisSloMapping, PolarisSloMapping } from '@/workspace/s
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { KubernetesObject, V1CustomResourceDefinition } from '@kubernetes/client-node';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
-import { getTemplate as getSloTemplate } from '@/polaris-templates/slo-template';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { KubernetesObjectKindWatcher } from '@/orchestrator/kubernetes/kubernetes-watcher';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { transformToPolarisSloMapping } from '@/orchestrator/utils';
+import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -83,8 +83,7 @@ export default class Api implements IPolarisOrchestratorApi {
 
   test = async (): Promise<boolean> => await this.client.test();
 
-  async deploySlo(slo: Slo, target: SloTarget): Promise<PolarisSloDeploymentResult> {
-    const template = getSloTemplate(slo.template);
+  async deploySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<PolarisSloDeploymentResult> {
     const resources = await resourceGenerator.generateSloResources(
       slo,
       target,
@@ -156,8 +155,12 @@ export default class Api implements IPolarisOrchestratorApi {
     };
   }
 
-  async applySloMapping(slo: Slo, target: SloTarget): Promise<DeployedPolarisSloMapping> {
-    const mapping = resourceGenerator.generateSloMapping(slo, target);
+  async applySloMapping(
+    slo: Slo,
+    target: SloTarget,
+    template: SloTemplateMetadata
+  ): Promise<DeployedPolarisSloMapping> {
+    const mapping = resourceGenerator.generateSloMapping(slo, target, template.sloMappingKind);
     if (slo.deployedSloMapping?.reference) {
       mapping.metadata.name = slo.deployedSloMapping.reference.name;
       if (mapping.metadata.namespace !== slo.deployedSloMapping.reference.namespace) {
@@ -223,6 +226,11 @@ export default class Api implements IPolarisOrchestratorApi {
         };
       }),
     };
+  }
+
+  async deploySloMappingCrd(template: SloTemplateMetadata): Promise<boolean> {
+    const crd = resourceGenerator.generateCrdFromSloTemplate(template);
+    return await this.deployResource(crd);
   }
 
   private async findCustomResourceMetadata(apiVersion: string, kind: string): Promise<CustomResourceMetadata> {

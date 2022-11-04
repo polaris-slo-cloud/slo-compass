@@ -1,6 +1,6 @@
 import { useSloStore } from '@/store/slo';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import { supportedSloMappingObjectKinds } from '@/workspace/slo/SloMappingWatchHandler';
+import { getSupportedSloMappingObjectKinds } from '@/workspace/slo/SloMappingWatchHandler';
 import { ObjectKind } from '@polaris-sloc/core';
 import { SloHelper } from '@/workspace/slo/SloHelper';
 import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookmark-manager';
@@ -32,7 +32,7 @@ export async function updateWorkspaceFromOrchestrator() {
     bookmarkManager.update(objectKind, sloMappings.metadata.resourceVersion);
   }
 
-  for (const objectKind of supportedSloMappingObjectKinds) {
+  for (const objectKind of getSupportedSloMappingObjectKinds()) {
     await updateSlosForObjectKind(objectKind);
   }
 }

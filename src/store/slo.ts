@@ -7,16 +7,18 @@ import { computed, Ref, ref } from 'vue';
 import Slo, { DeployedPolarisSloMapping, PolarisSloMapping, SloMetric } from '@/workspace/slo/Slo';
 import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import { useTargetStore } from '@/store/target';
-import { findTemplateForKind, getPolarisControllers } from '@/polaris-templates/slo-template';
+import { getPolarisControllers } from '@/polaris-templates/slo-template';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { NamespacedObjectReference } from '@polaris-sloc/core';
+import { useTemplateStore } from '@/store/template';
 
 export const useSloStore = defineStore('slo', () => {
   const orchestratorApi = useOrchestratorApi();
   const metricsProvider = useMetricsProvider();
   const elasticityStrategyStore = useElasticityStrategyStore();
   const targetStore = useTargetStore();
+  const templateStore = useTemplateStore();
 
   const slos: Ref<Slo[]> = ref<Slo[]>([]);
 
@@ -51,7 +53,8 @@ export const useSloStore = defineStore('slo', () => {
   async function deploySlo(id: WorkspaceComponentId): Promise<void> {
     const slo = getSlo.value(id);
     const target = slo.target ? targetStore.getSloTarget(slo.target) : null;
-    const result = await orchestratorApi.deploySlo(slo, target);
+    const template = templateStore.getSloTemplate(slo.template);
+    const result = await orchestratorApi.deploySlo(slo, target, template);
     applyDeploymentResult(slo, result);
     slo.deployedSloMapping = result.deployedSloMapping;
     slo.configChanged = !result.deployedSloMapping;
@@ -59,7 +62,8 @@ export const useSloStore = defineStore('slo', () => {
   async function applySloMapping(id: WorkspaceComponentId): Promise<void> {
     const slo = getSlo.value(id);
     const target = targetStore.getSloTarget(slo.target);
-    const appliedSloMapping = await orchestratorApi.applySloMapping(slo, target);
+    const template = templateStore.getSloTemplate(slo.template);
+    const appliedSloMapping = await orchestratorApi.applySloMapping(slo, target, template);
     if (appliedSloMapping) {
       slo.configChanged = false;
       slo.deployedSloMapping = appliedSloMapping;
@@ -152,7 +156,7 @@ export const useSloStore = defineStore('slo', () => {
       .replace(/([^ ])([A-Z])/g, '$1 $2')
       .trim();
     normalizedName = normalizedName[0].toUpperCase() + normalizedName.slice(1);
-    const template = findTemplateForKind(reference.kind);
+    const template = templateStore.findTemplateForKind(reference.kind);
 
     let elasticityStrategyId;
     if (polarisSloMapping.elasticityStrategy) {

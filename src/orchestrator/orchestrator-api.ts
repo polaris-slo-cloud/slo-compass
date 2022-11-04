@@ -1,7 +1,7 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import { OrchestratorConnection } from '@/connections/storage';
-import Slo, {DeployedPolarisSloMapping, PolarisSloMapping} from '@/workspace/slo/Slo';
+import Slo, { DeployedPolarisSloMapping, PolarisSloMapping } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
@@ -10,6 +10,7 @@ import { SloTarget } from '@/workspace/targets/SloTarget';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { ISubscribable, ISubscribableCallback } from '@/crosscutting/subscibable';
 import { v4 as uuidv4 } from 'uuid';
+import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 
 export interface PolarisResource {
   [key: string]: any;
@@ -49,13 +50,14 @@ export interface IOrchestratorApi {
   test(): Promise<boolean>;
   findPolarisDeployments(): Promise<IDeployment[]>;
   findDeployments(namespace?: string): Promise<IDeployment[]>;
-  deploySlo(slo: Slo, target: SloTarget): Promise<PolarisSloDeploymentResult>;
+  deploySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<PolarisSloDeploymentResult>;
   deleteSlo(slo: Slo): Promise<void>;
   deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
-  applySloMapping(slo: Slo, target: SloTarget): Promise<DeployedPolarisSloMapping>;
+  applySloMapping(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
   findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>>;
+  deploySloMappingCrd(template: SloTemplateMetadata): Promise<boolean>;
   createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher;
 }
 
@@ -118,6 +120,9 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
   findSloMappings(): Promise<ApiObjectList<PolarisSloMapping>> {
+    throw new OrchestratorNotConnectedError();
+  }
+  deploySloMappingCrd(): Promise<boolean> {
     throw new OrchestratorNotConnectedError();
   }
 
@@ -183,14 +188,16 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     findPolarisDeployments: () => api.value.findPolarisDeployments(),
     findDeployments: (namespace?) => api.value.findDeployments(namespace),
     test: () => api.value.test(),
-    deploySlo: (slo, target) => deploy(slo, () => api.value.deploySlo(clone(slo), clone(target))),
+    deploySlo: (slo, target, template) =>
+      deploy(slo, () => api.value.deploySlo(clone(slo), clone(target), clone(template))),
     deleteSlo: (slo) => api.value.deleteSlo(clone(slo)),
     deployElasticityStrategy: (elasticityStrategy) =>
       deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy))),
     retryDeployment: (item) => deploy(item, () => api.value.retryDeployment(clone(item))),
-    applySloMapping: (slo, target) => api.value.applySloMapping(clone(slo), clone(target)),
+    applySloMapping: (slo, target, template) => api.value.applySloMapping(clone(slo), clone(target), clone(template)),
     findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),
     findSloMappings: (objectKind) => api.value.findSloMappings(objectKind),
+    deploySloMappingCrd: (template) => api.value.deploySloMappingCrd(clone(template)),
     createWatcher: (bookmarkManager) => api.value.createWatcher(bookmarkManager),
     hasRunningDeployment,
     undismissiedRunningDeployments: computed(() =>

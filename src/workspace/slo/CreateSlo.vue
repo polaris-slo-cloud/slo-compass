@@ -63,7 +63,7 @@ const props = defineProps({
   template: Object,
 });
 
-const emit = defineEmits(['update:modelValue', 'update:show']);
+const emit = defineEmits(['update:show']);
 const showDialog = computed({
   get() {
     return props.show;
@@ -128,7 +128,7 @@ function save() {
         source: x,
       })),
       polarisControllers: getPolarisControllers(props.template),
-      configChanged: false,
+      configChanged: true,
     };
     slo.target = slo.target?.id;
     if (elasticityStrategy.value) {

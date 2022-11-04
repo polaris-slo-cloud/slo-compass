@@ -1,6 +1,12 @@
 <template>
   <div>
-    <EditableField label="Target" class="q-mt-lg" v-model="targetEditModel" :oldValue="oldTarget" :resettable="sloExistsInPolaris">
+    <EditableField
+      label="Target"
+      class="q-mt-lg"
+      v-model="targetEditModel"
+      :oldValue="oldTarget"
+      :resettable="sloExistsInPolaris"
+    >
       <span v-if="targetChanged" class="chip-strike-through-container">
         <span class="chip-strike-through"></span>
         <q-chip :icon="oldTargetComponentIcon">
@@ -104,19 +110,20 @@ import ElasticityStrategySelection from '@/workspace/elasticity-strategy/Elastic
 import MetricsOverview from '@/workspace/slo/MetricsOverview.vue';
 import { useSloStore } from '@/store/slo';
 import { computed } from 'vue';
-import { getTemplate as getSloTemplate } from '@/polaris-templates/slo-template';
 import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import componentIcon from '@/workspace/targets/component-icon';
 import _ from 'lodash';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { useTargetStore } from '@/store/target';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { useTemplateStore } from '@/store/template';
 import ConfigItemView from '@/workspace/slo/ConfigItemView.vue';
 
 const orchestratorApi = useOrchestratorApi();
 const sloStore = useSloStore();
 const elasticityStrategyStore = useElasticityStrategyStore();
 const targetStore = useTargetStore();
+const templateStore = useTemplateStore();
 
 const props = defineProps({
   item: Object,
@@ -136,7 +143,7 @@ const configKeys = computed(() => {
   return mergeDistinct(templateKeys, itemConfigKeys);
 });
 const configTemplate = computed(() => {
-  const template = getSloTemplate(props.item.template);
+  const template = templateStore.getSloTemplate(props.item.template);
   return template
     ? template.config.reduce((map, curr) => {
         map[curr.parameter] = curr;
@@ -234,7 +241,9 @@ const elasticityStrategy = computed({
 
 const oldElasticityStrategy = computed(() =>
   props.item.deployedSloMapping?.sloMapping?.elasticityStrategy
-    ? elasticityStrategyStore.elasticityStrategies.find((x) => x.kind === props.item.deployedSloMapping.sloMapping.elasticityStrategy.kind)
+    ? elasticityStrategyStore.elasticityStrategies.find(
+        (x) => x.kind === props.item.deployedSloMapping.sloMapping.elasticityStrategy.kind
+      )
     : null
 );
 const elasticityStrategyChanged = computed(

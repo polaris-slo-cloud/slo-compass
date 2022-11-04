@@ -42,14 +42,10 @@ const selectedDeployment = computed({
 });
 
 const orchestratorConnected = ref(false);
-const orchestratorIcon = computed(
-  () => orchestratorIconMap[orchestratorApi.orchestratorName.value]
-);
+const orchestratorIcon = computed(() => orchestratorIconMap[orchestratorApi.orchestratorName.value]);
 const options = ref([]);
 const optionsFilter = ref('');
-const filteredOptions = computed(() =>
-  options.value.filter((x) => x.name.toLowerCase().includes(optionsFilter.value))
-);
+const filteredOptions = computed(() => options.value.filter((x) => x.name.toLowerCase().includes(optionsFilter.value)));
 function updateOptionsFilter(val, update) {
   update(() => {
     optionsFilter.value = val.toLowerCase();

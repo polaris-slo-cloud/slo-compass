@@ -10,9 +10,11 @@
             :fill="fillColor"
             :stroke="strokeColor"
             :stroke-width="2"
+            :stroke-dasharray="strokeDashArray"
             :rx="5"
             :ry="5"
           />
+          <path v-if="isCustom" d="M 30 19 h 20 v 2 H 30 V 19 M 39 10 h 2 v 20 H 39 V 20" />
         </g>
       </svg>
       <span>{{ props.title }}</span>
@@ -27,12 +29,16 @@ import { colors } from 'quasar';
 const props = defineProps({
   title: String,
   color: String,
+  isCustom: Boolean,
 });
 
-const fillColor = computed(() => colors.getPaletteColor(props.color));
-const strokeColor = computed(() =>
-  props.color === 'white' ? colors.getPaletteColor('black') : colors.getPaletteColor(props.color)
+const fillColor = computed(() =>
+  props.isCustom ? colors.getPaletteColor('white') : colors.getPaletteColor(props.color)
 );
+const strokeColor = computed(() =>
+  props.color === 'white' || props.isCustom ? colors.getPaletteColor('black') : colors.getPaletteColor(props.color)
+);
+const strokeDashArray = computed(() => (props.isCustom ? '5,5' : undefined));
 </script>
 
 <style lang="scss">
