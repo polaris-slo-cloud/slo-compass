@@ -2,21 +2,31 @@ import { ApiObject, ObjectKind, POLARIS_API, WatchEventsHandler } from '@polaris
 import { useSloStore } from '@/store/slo';
 import { PolarisSloMapping } from '@/workspace/slo/Slo';
 import { SloHelper, sloMappingMatches } from '@/workspace/slo/SloHelper';
-import { transformToPolarisSloMapping } from '@/orchestrator/utils';
 import { useTemplateStore } from '@/store/template';
+import { PolarisMapper } from '@/orchestrator/PolarisMapper';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 
-export function getSupportedSloMappingObjectKinds() {
-  const templateStore = useTemplateStore();
-  return templateStore.sloTemplates.map<ObjectKind>((x) => ({
-    kind: x.sloMappingKind,
+export function toSloMappingObjectKind(mappingKind: string) {
+  return {
+    kind: mappingKind,
     group: POLARIS_API.SLO_GROUP,
     version: 'v1',
-  }));
+  };
+}
+export function getSupportedSloMappingObjectKinds() {
+  const templateStore = useTemplateStore();
+  return templateStore.sloTemplates.map<ObjectKind>((x) => toSloMappingObjectKind(x.sloMappingKind));
 }
 
 export class SloMappingWatchHandler implements WatchEventsHandler {
   private sloStore = useSloStore();
   private helper = new SloHelper();
+  private readonly polarisMapper: PolarisMapper;
+
+  constructor() {
+    const orchestratorApi = useOrchestratorApi();
+    this.polarisMapper = orchestratorApi.createPolarisMapper();
+  }
 
   onError(error: Error): void {
     //TODO:
@@ -25,7 +35,7 @@ export class SloMappingWatchHandler implements WatchEventsHandler {
   private transform(obj: ApiObject<any>): ApiObject<PolarisSloMapping> {
     return {
       ...obj,
-      spec: transformToPolarisSloMapping(obj.spec, obj.metadata.namespace),
+      spec: this.polarisMapper.transformToPolarisSloMapping(obj.spec, obj.metadata.namespace),
     };
   }
 

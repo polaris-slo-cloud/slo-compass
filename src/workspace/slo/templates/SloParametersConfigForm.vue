@@ -5,7 +5,7 @@
       <span class="col">Display Name</span>
       <span class="col">Type</span>
       <span class="col-1">Required</span>
-      <span class="col-1"></span>
+      <span class="col-1" v-if="!reviewOnly"></span>
     </div>
     <ValidateEach v-for="(config, index) in configParameters" :key="config.id" :state="config" :rules="rules">
       <template #default="{ v }">
@@ -49,13 +49,13 @@
           </q-select>
           <!-- ".q-field--with-bottom" Adds the same padding as for the q-input and q-select above -->
           <q-checkbox dense class="col-1 q-field--with-bottom" v-model="config.required" />
-          <div class="col-1 flex q-field--with-bottom">
+          <div class="col-1 flex q-field--with-bottom" v-if="!reviewOnly">
             <q-btn icon="mdi-delete" flat color="negative" @click="removeParameter(index)" />
           </div>
         </div>
       </template>
     </ValidateEach>
-    <div class="q-mt-lg flex justify-end">
+    <div class="q-mt-lg flex justify-end" v-if="!reviewOnly">
       <q-btn flat icon="mdi-plus" label="Add Config Parameter" no-caps @click="addParameter" />
     </div>
   </div>
@@ -71,6 +71,7 @@ import { ParameterType } from '@/polaris-templates/parameters';
 
 const props = defineProps({
   modelValue: Array,
+  reviewOnly: Boolean,
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -111,7 +112,11 @@ const rules = {
 const v$ = useVuelidate();
 
 defineExpose({ v$ });
-onMounted(addParameter);
+onMounted(() => {
+  if (!props.reviewOnly){
+    addParameter();
+  }
+});
 </script>
 
 <style scoped lang="scss"></style>

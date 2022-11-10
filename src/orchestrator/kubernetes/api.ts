@@ -13,11 +13,12 @@ import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrate
 import { KubernetesObject, V1CustomResourceDefinition } from '@kubernetes/client-node';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
 import { SloTarget } from '@/workspace/targets/SloTarget';
-import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
+import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher, POLARIS_API } from '@polaris-sloc/core';
 import { KubernetesObjectKindWatcher } from '@/orchestrator/kubernetes/kubernetes-watcher';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
-import { transformToPolarisSloMapping } from '@/orchestrator/utils';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
+import { PolarisMapper } from '@/orchestrator/PolarisMapper';
+import { KubernetesPolarisMapper } from '@/orchestrator/kubernetes/kubernetes-polaris-mapper';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -36,13 +37,20 @@ interface CustomResourceMetadata {
 
 export default class Api implements IPolarisOrchestratorApi {
   public name = 'Kubernetes';
+  public crdObjectKind: ObjectKind = {
+    kind: 'CustomResourceDefinition',
+    group: 'apiextensions.k8s.io',
+    version: 'v1',
+  };
   private readonly client: K8sClient;
+  private readonly polarisMapper: PolarisMapper;
   private connectionOptions: K8sConnectionOptions;
   private customResourceMetadata: Record<string, Record<string, CustomResourceMetadata>> = {};
 
   constructor(connectionSettings: string) {
     this.client = createClient(connectionSettings);
     this.connectionOptions = { connectionString: connectionSettings, polarisNamespace: 'default' };
+    this.polarisMapper = this.createPolarisMapper();
   }
 
   configure(polarisOptions: string) {
@@ -51,6 +59,10 @@ export default class Api implements IPolarisOrchestratorApi {
 
   public createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher {
     return new KubernetesObjectKindWatcher(this.client, bookmarkManager);
+  }
+
+  public createPolarisMapper(): PolarisMapper {
+    return new KubernetesPolarisMapper();
   }
 
   async findPolarisDeployments(): Promise<IDeployment[]> {
@@ -120,7 +132,7 @@ export default class Api implements IPolarisOrchestratorApi {
               name: resources.sloMapping.metadata.name,
               namespace: resources.sloMapping.metadata.namespace,
             },
-            sloMapping: transformToPolarisSloMapping(
+            sloMapping: this.polarisMapper.transformToPolarisSloMapping(
               resources.sloMapping.spec,
               resources.sloMapping.metadata.namespace
             ),
@@ -178,7 +190,7 @@ export default class Api implements IPolarisOrchestratorApi {
     const successfulDeployment = await this.deployResource(mapping);
     return successfulDeployment
       ? {
-          sloMapping: transformToPolarisSloMapping(mapping.spec, mapping.metadata.namespace),
+          sloMapping: this.polarisMapper.transformToPolarisSloMapping(mapping.spec, mapping.metadata.namespace),
           reference: {
             group,
             version,
@@ -197,7 +209,7 @@ export default class Api implements IPolarisOrchestratorApi {
 
     const identifier = await this.getCustomResourceIdentifier(slo.deployedSloMapping.reference);
     const crdObject = await this.client.getCustomResourceObject(identifier);
-    return transformToPolarisSloMapping(crdObject.spec, crdObject.metadata.namespace);
+    return this.polarisMapper.transformToPolarisSloMapping(crdObject.spec, crdObject.metadata.namespace);
   }
 
   async findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>> {
@@ -222,7 +234,31 @@ export default class Api implements IPolarisOrchestratorApi {
             group,
             version,
           },
-          spec: transformToPolarisSloMapping(obj.spec, obj.metadata.namespace),
+          spec: this.polarisMapper.transformToPolarisSloMapping(obj.spec, obj.metadata.namespace),
+        };
+      }),
+    };
+  }
+
+  async listTemplateDefinitions(): Promise<ApiObjectList<any>> {
+    const customResourceDefinitions = await this.client.listCustomResourceDefinitions();
+    const polarisTemplateGroups = [POLARIS_API.SLO_GROUP as string];
+    const templateItems = customResourceDefinitions.items.filter((x) => polarisTemplateGroups.includes(x.spec.group));
+    const [group, version] = customResourceDefinitions.apiVersion.split('/');
+    return {
+      metadata: {
+        resourceVersion: customResourceDefinitions.metadata.resourceVersion,
+      },
+      kind: customResourceDefinitions.kind,
+      apiVersion: customResourceDefinitions.apiVersion,
+      items: templateItems.map<ApiObject<any>>((obj: any) => {
+        return {
+          ...obj,
+          objectKind: {
+            kind: 'CustomResourceDefinition',
+            group,
+            version,
+          },
         };
       }),
     };

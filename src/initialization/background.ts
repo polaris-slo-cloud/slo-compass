@@ -2,8 +2,16 @@ import { useMetricsProvider } from '@/metrics-provider/api';
 import { useSloStore } from '@/store/slo';
 import { useTargetStore } from '@/store/target';
 import { OrchestratorWatchManager } from '@/orchestrator/watch-manager';
-import { SloMappingWatchHandler, getSupportedSloMappingObjectKinds } from '@/workspace/slo/SloMappingWatchHandler';
+import {
+  SloMappingWatchHandler,
+  getSupportedSloMappingObjectKinds,
+  toSloMappingObjectKind,
+} from '@/workspace/slo/SloMappingWatchHandler';
 import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookmark-manager';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { TemplatesWatchHandler } from '@/polaris-templates/TemplatesWatchHandler';
+import { useTemplateStore } from '@/store/template';
+import { ObjectKindWatchHandlerPair } from '@polaris-sloc/core';
 
 export async function setupBackgroundTasks() {
   const pollingIntervalMs = 30 * 1000;
@@ -12,6 +20,8 @@ export async function setupBackgroundTasks() {
   const metricsProvider = useMetricsProvider();
   const bookmarkManager = new WorkspaceWatchBookmarkManager();
   const watchManager = new OrchestratorWatchManager(bookmarkManager);
+  const orchestratorApi = useOrchestratorApi();
+  const templateStore = useTemplateStore();
 
   async function pollMetrics() {
     const result = [];
@@ -24,10 +34,26 @@ export async function setupBackgroundTasks() {
     sloStore.updateSloMetrics(result);
   }
   const pollingInterval = setInterval(pollMetrics, pollingIntervalMs);
-  await watchManager.configureWatchers(getSupportedSloMappingObjectKinds(), new SloMappingWatchHandler());
 
+  const sloMappingWatchHandler = new SloMappingWatchHandler();
+  const watcherKindHandlerPairs: ObjectKindWatchHandlerPair[] = [
+    { kind: orchestratorApi.crdObjectKind.value, handler: new TemplatesWatchHandler() },
+    ...getSupportedSloMappingObjectKinds().map((kind) => ({ kind, handler: sloMappingWatchHandler })),
+  ];
+  await watchManager.configureWatchers(watcherKindHandlerPairs);
+
+  const unsubscribeFromTemplateStore = templateStore.$onAction(({ name, store, args, after, onError }) => {
+    if (name === 'saveSloTemplateFromPolaris') {
+      const watchedKinds = store.sloTemplates.map((x) => x.sloMappingKind);
+      const newTemplateKind = args[0].sloMappingKind;
+      if (!watchedKinds.includes(newTemplateKind)) {
+        watchManager.startWatchers([toSloMappingObjectKind(newTemplateKind)], new SloMappingWatchHandler());
+      }
+    }
+  });
   return () => {
     clearInterval(pollingInterval);
-    watchManager.stopWatchers(getSupportedSloMappingObjectKinds());
+    watchManager.stopAllWatchers();
+    unsubscribeFromTemplateStore();
   };
 }

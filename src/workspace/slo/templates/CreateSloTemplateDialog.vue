@@ -162,16 +162,16 @@ async function create() {
     return;
   }
   const newTemplate = {
-    key: `slotemplate-${uuidV4()}`,
-    name: generalModel.value.name,
+    sloMappingKind: sloMappingKind.value,
+    sloMappingKindPlural: sloMappingKindPlural.value,
+    displayName: generalModel.value.name,
     description: generalModel.value.description,
     controllerName: polarisConfig.value.deploymentName,
     containerImage: polarisConfig.value.containerImage,
-    sloMappingResources: sloMappingKindPlural.value,
-    sloMappingKind: sloMappingKind.value,
     config: sloConfig.value,
     //TODO: Fill metrics when they are defined
     metrics: [],
+    confirmed: true,
   };
   //TODO: Show Loading
   await templateStore.createSloTemplate(newTemplate);

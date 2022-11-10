@@ -11,6 +11,7 @@ import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { ISubscribable, ISubscribableCallback } from '@/crosscutting/subscibable';
 import { v4 as uuidv4 } from 'uuid';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
+import {PolarisMapper} from "@/orchestrator/PolarisMapper";
 
 export interface PolarisResource {
   [key: string]: any;
@@ -59,9 +60,12 @@ export interface IOrchestratorApi {
   findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>>;
   deploySloMappingCrd(template: SloTemplateMetadata): Promise<boolean>;
   createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher;
+  createPolarisMapper(): PolarisMapper;
+  listTemplateDefinitions(): Promise<ApiObjectList<any>>;
 }
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
+  crdObjectKind: ObjectKind;
   configure(polarisOptions: unknown): void;
 }
 
@@ -69,6 +73,7 @@ export const CONNECTED_EVENT = 'connected';
 
 export interface IOrchestratorApiConnection extends IOrchestratorApi, ISubscribable {
   orchestratorName: ComputedRef<string>;
+  crdObjectKind: ComputedRef<ObjectKind>;
   connect(connection: OrchestratorConnection, polarisOptions: unknown): void;
   testConnection(connection: OrchestratorConnection): Promise<boolean>;
   hasRunningDeployment: ComputedRef<(componentId: string) => boolean>;
@@ -84,6 +89,7 @@ class OrchestratorNotConnectedError extends Error {
 
 class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   public name = 'No Orchestrator';
+  public crdObjectKind = new ObjectKind();
   test(): Promise<boolean> {
     return Promise.resolve(false);
   }
@@ -131,6 +137,14 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   }
 
   deleteSlo(): Promise<void> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  createPolarisMapper(): PolarisMapper {
+    return undefined;
+  }
+
+  listTemplateDefinitions(): Promise<ApiObjectList<any>> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -185,6 +199,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     testConnection,
     name: api.value.name,
     orchestratorName: computed(() => api.value.name),
+    crdObjectKind: computed(() => api.value.crdObjectKind),
     findPolarisDeployments: () => api.value.findPolarisDeployments(),
     findDeployments: (namespace?) => api.value.findDeployments(namespace),
     test: () => api.value.test(),
@@ -199,6 +214,8 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     findSloMappings: (objectKind) => api.value.findSloMappings(objectKind),
     deploySloMappingCrd: (template) => api.value.deploySloMappingCrd(clone(template)),
     createWatcher: (bookmarkManager) => api.value.createWatcher(bookmarkManager),
+    createPolarisMapper: () => api.value.createPolarisMapper(),
+    listTemplateDefinitions: () => api.value.listTemplateDefinitions(),
     hasRunningDeployment,
     undismissiedRunningDeployments: computed(() =>
       Object.values(runningDeployments.value).filter((x: any) => !x.dismissed)

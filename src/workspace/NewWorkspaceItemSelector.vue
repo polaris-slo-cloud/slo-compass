@@ -34,8 +34,8 @@
               <WorkspaceItem
                 class="col-6 col-md-4 col-xl-3"
                 v-for="template of sloTemplates"
-                :key="template.key"
-                :title="template.name"
+                :key="template.sloMappingKind"
+                :title="template.displayName"
                 color="blue"
                 @click="showAddSlo(template)"
               />
@@ -86,10 +86,9 @@ import AddSlo from '@/workspace/slo/CreateSlo.vue';
 import AddElasticityStrategy from '@/workspace/elasticity-strategy/CreateElasticityStrategy.vue';
 import CreateSloTemplateDialog from '@/workspace/slo/templates/CreateSloTemplateDialog.vue';
 import { useTemplateStore } from '@/store/template';
-import { storeToRefs } from 'pinia';
 
 const templateStore = useTemplateStore();
-const { sloTemplates } = storeToRefs(templateStore);
+const sloTemplates = computed(() => templateStore.sloTemplates);
 const search = ref(null);
 
 const showAddItemDialog = ref(false);

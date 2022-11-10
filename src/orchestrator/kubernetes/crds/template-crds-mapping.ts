@@ -1,8 +1,8 @@
 import { V1CustomResourceDefinition } from '@kubernetes/client-node';
 
 const crdsMap = {
-  costEfficiencySlo: ['costefficiencymetricmappings.metrics', 'costefficiencyslomappings.slo'],
-  cpuUsageSlo: ['cpuusageslomappings.slo'],
+  CostEfficiencySloMapping: ['costefficiencymetricmappings.metrics', 'costefficiencyslomappings.slo'],
+  CPUUsageSloMapping: ['cpuusageslomappings.slo'],
   horizontalElasticityStrategy: ['horizontalelasticitystrategies.elasticity'],
   verticalElasticityStrategy: ['verticalelasticitystrategies.elasticity'],
 };

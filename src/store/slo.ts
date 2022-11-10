@@ -156,7 +156,7 @@ export const useSloStore = defineStore('slo', () => {
       .replace(/([^ ])([A-Z])/g, '$1 $2')
       .trim();
     normalizedName = normalizedName[0].toUpperCase() + normalizedName.slice(1);
-    const template = templateStore.findTemplateForKind(reference.kind);
+    const template = templateStore.getSloTemplate(reference.kind);
 
     let elasticityStrategyId;
     if (polarisSloMapping.elasticityStrategy) {
@@ -187,7 +187,7 @@ export const useSloStore = defineStore('slo', () => {
         reference,
         sloMapping: polarisSloMapping,
       },
-      template: template.key,
+      template: template.sloMappingKind,
       metrics: template.metrics.map<SloMetric>((x) => ({
         source: x,
       })),

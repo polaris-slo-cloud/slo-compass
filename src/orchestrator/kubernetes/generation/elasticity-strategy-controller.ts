@@ -1,10 +1,7 @@
 import { V1ClusterRole, V1ClusterRoleBinding, V1Deployment } from '@kubernetes/client-node';
 import { POLARIS_API } from '@polaris-sloc/core';
 
-export const generateElasticityStrategyClusterRole = (
-  name: string,
-  strategyResources: string
-): V1ClusterRole => ({
+export const generateElasticityStrategyClusterRole = (name: string, strategyResources: string): V1ClusterRole => ({
   apiVersion: 'rbac.authorization.k8s.io/v1',
   kind: 'ClusterRole',
   metadata: {
@@ -102,9 +99,7 @@ export const generateElasticityStrategyControllerDeployment = (
             },
           },
         },
-        tolerations: [
-          { key: 'node-role.kubernetes.io/master', operator: 'Exists', effect: 'NoSchedule' },
-        ],
+        tolerations: [{ key: 'node-role.kubernetes.io/master', operator: 'Exists', effect: 'NoSchedule' }],
         containers: [
           {
             image: containerImage,

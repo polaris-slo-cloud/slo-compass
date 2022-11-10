@@ -22,14 +22,14 @@ export class OrchestratorWatchManager implements WatchManager {
     return Array.from(this.watchers.values());
   }
 
-  public async configureWatchers(kinds: ObjectKind[], handler: WatchEventsHandler): Promise<void> {
+  public async configureWatchers(kindHandlerPairs: ObjectKindWatchHandlerPair[]): Promise<void> {
     if (await orchestratorApi.test()) {
-      await this.startWatchers(kinds, handler);
+      await this.startWatchers(kindHandlerPairs);
     }
     this.unsubscribeOrchestrator = orchestratorApi
       .on(CONNECTED_EVENT, async () => {
         this.stopWatchersInternal([...this.watchers.keys()]);
-        await this.startWatchers(kinds, handler);
+        await this.startWatchers(kindHandlerPairs);
       })
       .bind(this);
   }
@@ -47,6 +47,13 @@ export class OrchestratorWatchManager implements WatchManager {
       kindHandlerPairs = kindOrPairs as ObjectKindWatchHandlerPair[];
     }
     return this.startWatchersInternal(kindHandlerPairs);
+  }
+
+  public stopAllWatchers(): void {
+    this.watchers.forEach((watcher) => {
+      watcher.stopWatch();
+    });
+    this.watchers.clear();
   }
 
   stopWatchers(kinds: ObjectKind[]): void {

@@ -74,7 +74,7 @@ const showDialog = computed({
 });
 
 const model = ref({
-  name: props.template?.name,
+  name: props.template?.displayName,
   description: props.template?.description,
   target: null,
   config: {},
@@ -123,7 +123,7 @@ function save() {
     const slo = {
       ...model.value,
       type: workspaceItemTypes.slo,
-      template: props.template.key,
+      template: props.template.sloMappingKind,
       metrics: props.template.metrics.map((x) => ({
         source: x,
       })),

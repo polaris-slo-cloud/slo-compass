@@ -1,16 +1,8 @@
-import {
-  V1ClusterRole,
-  V1ClusterRoleBinding,
-  V1Deployment,
-  V1Service,
-} from '@kubernetes/client-node';
+import { V1ClusterRole, V1ClusterRoleBinding, V1Deployment, V1Service } from '@kubernetes/client-node';
 import { env } from '../constants';
 import { POLARIS_API } from '@polaris-sloc/core';
 
-export const generateMetricSourceClusterRole = (
-  name: string,
-  composedMetricResources: string
-): V1ClusterRole => ({
+export const generateMetricSourceClusterRole = (name: string, composedMetricResources: string): V1ClusterRole => ({
   apiVersion: 'rbac.authorization.k8s.io/v1',
   kind: 'ClusterRole',
   metadata: {

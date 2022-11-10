@@ -57,7 +57,7 @@ watch(
   () => model.value.deployment?.name,
   (val) => {
     if (!nameChanged.value) {
-      model.value.name = val;
+      model.value.displayName = val;
     }
   }
 );

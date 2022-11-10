@@ -8,9 +8,8 @@ import {
 } from '@kubernetes/client-node';
 import K8sClientHelper, { KubernetesPatchStrategies } from '@/orchestrator/kubernetes/k8s-client-helper';
 import { ApiObjectList, CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
-import { ApiObject, ObjectKind, SloMappingSpec } from '@polaris-sloc/core';
+import { ApiObject, ObjectKind, WatchTerminatedError } from '@polaris-sloc/core';
 import { WatchEventType } from '@/orchestrator/kubernetes/kubernetes-watcher';
-import { PolarisSloMapping } from '@/workspace/slo/Slo';
 
 export interface KubernetesSpecObject extends KubernetesObject {
   spec: any;
@@ -27,6 +26,7 @@ export interface K8sClient {
   getCustomResourceObject(identifier: CustomResourceObjectReference): Promise<ApiObject<any>>;
   deleteCustomResourceObject(identifier: CustomResourceObjectReference): Promise<void>;
   listCustomResourceObjects(objectKind: ObjectKind, plural: string): Promise<KubernetesListObject<any>>;
+  listCustomResourceDefinitions(): Promise<V1CustomResourceDefinitionList>;
   findCustomResourceMetadata(apiVersion: string, kind: string): Promise<V1APIResource>;
   watch(
     path: string,
@@ -161,6 +161,14 @@ export default function createClient(connectionSettings: string): K8sClient {
   return new K8sHttpClient(connectionSettings);
 }
 
+function tryJsonParse(data) {
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return null;
+  }
+}
+
 class HttpClientWatch {
   private watchIndex = 0;
 
@@ -173,11 +181,14 @@ class HttpClientWatch {
   public async watch(url, options): Promise<AbortController> {
     try {
       const controller = new AbortController();
-      await this.http.get(url, {
-        signal: controller.signal,
-        onDownloadProgress: this.processWatchEvent.bind(this),
-        ...options,
-      });
+      this.http
+        .get(url, {
+          signal: controller.signal,
+          onDownloadProgress: this.processWatchEvent.bind(this),
+          ...options,
+        })
+        // The watch has been terminated if the request finishes
+        .then(() => this.errorCallback(null));
       return controller;
     } catch (e) {
       this.errorCallback(e);
@@ -188,7 +199,8 @@ class HttpClientWatch {
     const lines = event.currentTarget.response.split('\n');
     const data = lines
       .filter((x) => !!x)
-      .map(JSON.parse)
+      .map(tryJsonParse)
+      .filter((x) => !!x)
       .slice(this.watchIndex);
     for (const watchEvent of data) {
       await this.watchCallback(watchEvent.type, watchEvent.object);

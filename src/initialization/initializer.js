@@ -4,9 +4,13 @@ import { useWorkspaceStore } from '@/store/workspace';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useMetricsProvider } from '@/metrics-provider/api';
 import { workspaceConnectionStorage } from '@/connections/storage';
-import { updateWorkspaceFromOrchestrator } from '@/initialization/polaris-workspace-loader';
+import {
+  loadTemplatesFromOrchestrator,
+  updateWorkspaceFromOrchestrator,
+} from '@/initialization/polaris-workspace-loader';
 import { watch } from 'vue';
 import { loadLocalTemplates, setupTemplatesAutosave } from '@/polaris-templates/store-helper';
+import {useTemplateStore} from "@/store/template";
 
 let stopBackgroundTasks;
 
@@ -26,6 +30,7 @@ function setupConnections() {
 
 async function initializeWorkspace(isOpen) {
   if (isOpen) {
+    await loadTemplatesFromOrchestrator();
     await updateWorkspaceFromOrchestrator();
     stopBackgroundTasks = await setupBackgroundTasks();
   } else if (stopBackgroundTasks) {

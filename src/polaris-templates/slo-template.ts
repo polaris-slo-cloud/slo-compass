@@ -2,15 +2,15 @@ import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
 import { PolarisController } from '@/workspace/PolarisComponent';
 
 export interface SloTemplateMetadata {
-  key: string;
-  name: string;
+  sloMappingKind: string;
+  sloMappingKindPlural: string;
+  displayName: string;
   description?: string;
   controllerName: string;
   containerImage: string;
-  sloMappingResources: string;
-  sloMappingKind: string;
   config: ConfigParameter[];
   metrics: SloMetricSource[];
+  confirmed: boolean;
 }
 
 export interface PrometheusQueryData {
@@ -33,13 +33,12 @@ export interface ComposedMetricSource {
 
 export const templates: SloTemplateMetadata[] = [
   {
-    key: 'costEfficiencySlo',
-    name: 'Cost Efficiency',
+    sloMappingKind: 'CostEfficiencySloMapping',
+    sloMappingKindPlural: 'costefficiencyslomappings',
+    displayName: 'Cost Efficiency',
     description: 'This SLO calculates a cost efficiency using the response time and cost of the target',
     controllerName: 'cost-efficiency-slo-controller',
     containerImage: 'polarissloc/slo-cost-efficiency:latest',
-    sloMappingResources: 'costefficiencyslomappings',
-    sloMappingKind: 'CostEfficiencySloMapping',
     config: [
       {
         parameter: 'responseTimeThresholdMs',
@@ -79,15 +78,15 @@ export const templates: SloTemplateMetadata[] = [
         },
       },
     ],
+    confirmed: true,
   },
   {
-    key: 'cpuUsageSlo',
-    name: 'CPU Usage',
+    sloMappingKind: 'CPUUsageSloMapping',
+    sloMappingKindPlural: 'cpuusageslomappings',
+    displayName: 'CPU Usage',
     description: 'This SLO utilizes the CPU usage metrics to calculate its compliance',
     controllerName: 'cpu-usage-slo-controller',
     containerImage: 'polarissloc/slo-cpu-usage:latest',
-    sloMappingResources: 'cpuusageslomappings',
-    sloMappingKind: 'CPUUsageSloMapping',
     config: [
       {
         parameter: 'targetAvgCPUUtilizationPercentage',
@@ -106,6 +105,7 @@ export const templates: SloTemplateMetadata[] = [
         },
       },
     ],
+    confirmed: true,
   },
 ];
 

@@ -4,7 +4,7 @@ import { IDeployment } from '@/orchestrator/orchestrator-api';
 import Slo from '@/workspace/slo/Slo';
 import { POLARIS_API } from '@polaris-sloc/core';
 import { ConfigParameter } from '@/polaris-templates/parameters';
-import {convertParametersToSchemaProperties} from "@/orchestrator/kubernetes/generation/helpers";
+import { convertParametersToSchemaProperties } from '@/orchestrator/kubernetes/helpers';
 
 export const generateSloClusterRole = (name: string, mappingResources: string): V1ClusterRole => ({
   apiVersion: 'rbac.authorization.k8s.io/v1',

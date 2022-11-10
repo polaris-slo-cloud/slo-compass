@@ -73,7 +73,7 @@ export default {
       )
     );
 
-    const crds = await loadCrdsForTemplate(template.key);
+    const crds = await loadCrdsForTemplate(template.sloMappingKind);
     resources.push(...crds);
 
     const sloMapping = this.generateSloMapping(slo, target, template.sloMappingKind);
@@ -81,8 +81,8 @@ export default {
       ...[
         generateNamespaceSpec(namespace),
         generateServiceAccount(template.controllerName, namespace),
-        generateSloClusterRole(template.controllerName, template.sloMappingResources),
-        generateSloClusterRoleBinding(template.controllerName, namespace, template.sloMappingResources),
+        generateSloClusterRole(template.controllerName, template.sloMappingKindPlural),
+        generateSloClusterRoleBinding(template.controllerName, namespace, template.sloMappingKindPlural),
         generateSloControllerDeployment(template.controllerName, namespace, template.containerImage),
       ]
     );
@@ -115,5 +115,5 @@ export default {
     return resources;
   },
   generateCrdFromSloTemplate: (template: SloTemplateMetadata) =>
-    generateSloMappingCrd(template.sloMappingKind, template.sloMappingResources, template.config, template.description),
+    generateSloMappingCrd(template.sloMappingKind, template.sloMappingKindPlural, template.config, template.description),
 };
