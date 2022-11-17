@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card style="width: 700px; max-width: 80vw">
       <q-card-section>
-        <div class="text-h3">{{ template.name }} SLO</div>
+        <div class="text-h3">{{ template.displayName }} SLO</div>
         <q-input
           ref="nameInput"
           autofocus
@@ -20,11 +20,7 @@
           :template="config"
           ref="optionInputs"
         />
-        <ElasticityStrategySelection
-          class="q-mt-lg"
-          label="Elasticity Strategy"
-          v-model="elasticityStrategy"
-        />
+        <ElasticityStrategySelection class="q-mt-lg" label="Elasticity Strategy" v-model="elasticityStrategy" />
         <div
           class="text-h6 q-mt-lg q-mb-sm"
           v-if="elasticityStrategy && elasticityStrategyTemplate.sloSpecificConfig.length > 0"
@@ -56,8 +52,10 @@ import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
 import { useSloStore } from '@/store/slo';
 import { workspaceItemTypes } from '@/workspace/constants';
+import { useTemplateStore } from '@/store/template';
 
 const store = useSloStore();
+const templateStore = useTemplateStore();
 const props = defineProps({
   show: Boolean,
   template: Object,
@@ -71,6 +69,11 @@ const showDialog = computed({
   set(v) {
     emit('update:show', v);
   },
+});
+watch(showDialog, (value, oldValue) => {
+  if (value && !oldValue) {
+    resetModel();
+  }
 });
 
 const model = ref({
@@ -94,7 +97,7 @@ function resetModel() {
   elasticityStrategy.value = null;
   elasticityStrategyConfig.value = {};
   model.value = {
-    name: props.template?.name,
+    name: props.template?.displayName,
     description: props.template?.description,
     target: null,
     config: {},
@@ -124,8 +127,8 @@ function save() {
       ...model.value,
       type: workspaceItemTypes.slo,
       template: props.template.sloMappingKind,
-      metrics: props.template.metrics.map((x) => ({
-        source: x,
+      metrics: props.template.metricTemplates.map((x) => ({
+        source: templateStore.getSloMetricTemplate(x),
       })),
       polarisControllers: getPolarisControllers(props.template),
       configChanged: true,

@@ -1,4 +1,8 @@
-import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
+import {
+  ElasticityStrategyConfigParameter,
+  ElasticityStrategyParameterType,
+  ParameterType
+} from '@/polaris-templates/parameters';
 import { PolarisController } from '@/workspace/PolarisComponent';
 
 export interface ElasticityStrategyTemplateMetadata {
@@ -9,15 +13,14 @@ export interface ElasticityStrategyTemplateMetadata {
   controllerName: string;
   containerImage: string;
   strategyResources: string;
-  sloSpecificConfig: ConfigParameter[];
+  sloSpecificConfig: ElasticityStrategyConfigParameter[];
 }
 
 export const templates: ElasticityStrategyTemplateMetadata[] = [
   {
     key: 'horizontalElasticityStrategy',
     name: 'Horizontal Elasticity Strategy',
-    description:
-      'Provides a simple elasticity strategy to scale resources out and in depending on the SLO compliance',
+    description: 'Provides a simple elasticity strategy to scale resources out and in depending on the SLO compliance',
     kind: 'HorizontalElasticityStrategy',
     controllerName: 'horizontal-elasticity-strategy-controller',
     containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
@@ -25,13 +28,13 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     sloSpecificConfig: [
       {
         parameter: 'minReplicas',
-        type: ParameterType.Integer,
+        type: ElasticityStrategyParameterType.Integer,
         displayName: 'Minimum Number of Replicas',
         required: false,
       },
       {
         parameter: 'maxReplicas',
-        type: ParameterType.Integer,
+        type: ElasticityStrategyParameterType.Integer,
         displayName: 'Maximum Number of Replicas',
         required: false,
       },
@@ -40,8 +43,7 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
   {
     key: 'verticalElasticityStrategy',
     name: 'Vertical Elasticity Strategy',
-    description:
-      'Provides a simple elasticity strategy to scale resources up and down depending on the SLO compliance',
+    description: 'Provides a simple elasticity strategy to scale resources up and down depending on the SLO compliance',
     kind: 'VerticalElasticityStrategy',
     controllerName: 'vertical-elasticity-strategy-controller',
     containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
@@ -49,25 +51,25 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     sloSpecificConfig: [
       {
         parameter: 'minResources',
-        type: ParameterType.Resources,
+        type: ElasticityStrategyParameterType.Resources,
         displayName: 'Minimum amount of resources',
         required: true,
       },
       {
         parameter: 'maxResources',
-        type: ParameterType.Resources,
+        type: ElasticityStrategyParameterType.Resources,
         displayName: 'Maximum amount of resources',
         required: true,
       },
       {
         parameter: 'scaleUpPercent',
-        type: ParameterType.Percentage,
+        type: ElasticityStrategyParameterType.Percentage,
         displayName: 'Scale up percentage',
         required: false,
       },
       {
         parameter: 'scaleDownPercent',
-        type: ParameterType.Percentage,
+        type: ElasticityStrategyParameterType.Percentage,
         displayName: 'Scale down percentage',
         required: false,
       },
@@ -83,9 +85,7 @@ export function findTemplateForKind(kind: string): ElasticityStrategyTemplateMet
   return templates.find((x) => x.kind === kind);
 }
 
-export function getPolarisControllers(
-  template: ElasticityStrategyTemplateMetadata
-): PolarisController[] {
+export function getPolarisControllers(template: ElasticityStrategyTemplateMetadata): PolarisController[] {
   return [
     {
       type: 'Elasticity Strategy Controller',

@@ -5,14 +5,12 @@
       <q-btn icon="mdi-reload" flat padding="sm" @click="pollMetrics" />
     </div>
     <div class="row q-col-gutter-md q-mt-none">
-      <q-card
-        v-for="metric of slo.metrics"
-        :key="metric.source.displayName"
-        class="col-12 col-lg-6 col-xl-4 q-pa-none"
-      >
+      <q-card v-for="metric of slo.metrics" :key="metric.source.displayName" class="col-12 col-lg-6 col-xl-4 q-pa-none">
         <q-card-section>
           <div class="field-item-label">{{ metric.source.displayName }}</div>
-          <div class="metric-value-text text-right">{{ metricValue(metric) }}</div>
+          <div class="metric-value-text text-right">
+            {{ metricValue(metric) }} {{ metric.source.queryResultType.unit }}
+          </div>
           <div class="text-negative text-caption" v-if="isOutOfDate(metric)">
             Last update {{ metricLastUpdateTime(metric) }}
           </div>
@@ -25,7 +23,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import dayjs from 'dayjs';
+import * as _ from 'lodash';
 import { useSloStore } from '@/store/slo';
+import { MetricQueryResultValueType } from '@/polaris-templates/slo-metrics/metrics-template';
 
 const store = useSloStore();
 
@@ -34,13 +34,17 @@ const props = defineProps({
 });
 
 const now = ref(dayjs());
-const isOutOfDate = (metric) =>
-  !metric.lastUpdated || dayjs(metric.lastUpdated).isAfter(now.value.add(5, 'minute'));
+const isOutOfDate = (metric) => !metric.lastUpdated || dayjs(metric.lastUpdated).isAfter(now.value.add(5, 'minute'));
 
-const metricLastUpdateTime = (metric) =>
-  metric.lastUpdated ? dayjs(metric.lastUpdated).from(now.value) : 'NEVER';
+const metricLastUpdateTime = (metric) => (metric.lastUpdated ? dayjs(metric.lastUpdated).from(now.value) : 'NEVER');
 
-const metricValue = (metric) => metric.value ?? '-';
+function formatMetricValue(metric) {
+  if (metric.source.queryResultType.type === MetricQueryResultValueType.Decimal)  {
+    return _.round(metric.value, 2);
+  }
+  return metric.value;
+}
+const metricValue = (metric) => metric.value ? formatMetricValue(metric) : '-';
 
 async function pollMetrics() {
   await store.pollMetrics(props.slo.id);

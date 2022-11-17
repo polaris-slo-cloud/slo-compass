@@ -1,5 +1,7 @@
 import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
 import { PolarisController } from '@/workspace/PolarisComponent';
+import { SloMetricTemplateId } from '@/polaris-templates/slo-metrics/metrics-template';
+import { useTemplateStore } from '@/store/template';
 
 export interface SloTemplateMetadata {
   sloMappingKind: string;
@@ -9,26 +11,8 @@ export interface SloTemplateMetadata {
   controllerName: string;
   containerImage: string;
   config: ConfigParameter[];
-  metrics: SloMetricSource[];
+  metricTemplates: SloMetricTemplateId[];
   confirmed: boolean;
-}
-
-export interface PrometheusQueryData {
-  appName: string;
-  metricName: string;
-  labelFilters: Record<string, string>;
-}
-
-export interface SloMetricSource {
-  displayName: string;
-  metricsController?: ComposedMetricSource;
-  prometheusQuery: PrometheusQueryData;
-}
-
-export interface ComposedMetricSource {
-  controllerName: string;
-  containerImage: string;
-  composedMetricResources: string;
 }
 
 export const templates: SloTemplateMetadata[] = [
@@ -59,25 +43,7 @@ export const templates: SloTemplateMetadata[] = [
         required: false,
       },
     ],
-    metrics: [
-      {
-        displayName: 'Cost Efficiency',
-        metricsController: {
-          controllerName: 'metrics-rest-api-cost-efficiency-controller',
-          containerImage: 'polarissloc/metrics-rest-api-cost-efficiency-controller:latest',
-          composedMetricResources: 'costefficiencymetricmappings',
-        },
-        prometheusQuery: {
-          appName: 'polaris_composed',
-          metricName: 'metrics_polaris_slo_cloud_github_io_v1_cost_efficiency',
-          labelFilters: {
-            target_gvk: '${targetGvk}',
-            target_namespace: '${targetNamespace}',
-            target_name: '${targetName}',
-          },
-        },
-      },
-    ],
+    metricTemplates: ['cost_efficiency_composed_metric'],
     confirmed: true,
   },
   {
@@ -95,16 +61,7 @@ export const templates: SloTemplateMetadata[] = [
         required: true,
       },
     ],
-    metrics: [
-      {
-        displayName: 'CPU Load Avg 10s',
-        prometheusQuery: {
-          appName: 'container',
-          metricName: 'cpu_load_average_10s',
-          labelFilters: { pod: '${targetName}' },
-        },
-      },
-    ],
+    metricTemplates: ['cpu_load_avg_10s_raw_metric'],
     confirmed: true,
   },
 ];
@@ -119,8 +76,10 @@ export function getPolarisControllers(template: SloTemplateMetadata): PolarisCon
       deployment: null,
     });
   }
+  const templateStore = useTemplateStore();
   const metricsControllers =
-    template.metrics
+    template.metricTemplates
+      .map(templateStore.getSloMetricTemplate)
       .filter((x) => !!x.metricsController)
       .map(
         (x): PolarisController => ({

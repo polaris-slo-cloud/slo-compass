@@ -4,7 +4,7 @@
       <q-card-section>
         <div class="text-h6">New Metrics Provider</div>
         <q-input autofocus label="Name" v-model="model.name" />
-        <q-select label="Provider" v-model="model.metricsProvider" :options="availableProviders" />
+        <q-select label="Provider" v-model="model.metricsProvider" :options="availableProviderNames" />
         <component :is="providerSettingsComponent" v-model="model.connectionSettings" />
         <div class="q-mt-md flex items-center">
           <q-btn flat label="Test Connection" no-caps @click="testConnection" />
@@ -26,7 +26,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useMetricsProvider } from '@/metrics-provider/api';
-import { availableProviders, getProvider } from '@/metrics-provider/providers';
+import { availableProviderNames, getProvider } from '@/metrics-provider/providers';
 import { metricsProviderStorage } from '@/connections/storage';
 
 const metricsProvider = useMetricsProvider();
@@ -40,7 +40,7 @@ const model = ref({});
 
 function resetModel() {
   model.value = {
-    metricsProvider: availableProviders[0],
+    metricsProvider: availableProviderNames[0],
   };
 }
 

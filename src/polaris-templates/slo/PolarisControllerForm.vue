@@ -1,9 +1,9 @@
 <template>
-  <section>
+  <div>
     <div class="text-h3">Polaris Controller</div>
     <q-input label="Deployment Name" v-model="deploymentName" />
     <q-input label="Container Image" v-model="containerImage" />
-  </section>
+  </div>
 </template>
 
 <script setup>

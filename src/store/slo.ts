@@ -188,8 +188,8 @@ export const useSloStore = defineStore('slo', () => {
         sloMapping: polarisSloMapping,
       },
       template: template.sloMappingKind,
-      metrics: template.metrics.map<SloMetric>((x) => ({
-        source: x,
+      metrics: template.metricTemplates.map<SloMetric>((x) => ({
+        source: templateStore.getSloMetricTemplate(x),
       })),
       polarisControllers,
       config: polarisSloMapping.config,

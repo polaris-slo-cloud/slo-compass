@@ -22,7 +22,7 @@
             :header-nav="maxStep >= 2"
             :done="step > 2"
           >
-            <section class="row">
+            <div class="row">
               <EditableField label="Slo Mapping Kind" v-model="polarisConfig.sloMappingKind" class="col-6">
                 {{ sloMappingKind }}
                 <template #edit="scope">
@@ -35,7 +35,7 @@
                   <q-input dense outlined autofocus v-model="scope.value" :shadow-text="sloMappingKind" />
                 </template>
               </EditableField>
-            </section>
+            </div>
             <PolarisControllerForm v-model="polarisConfig" ref="polarisConfigForm" class="q-mt-md" />
           </q-step>
           <q-step
@@ -56,7 +56,7 @@
             :done="step > 4"
             :header-nav="maxStep === 4"
           >
-            <h1 class="text-negative">TODO!!!!</h1>
+            <SloTemplateMetricsForm v-model="metrics" />
           </q-step>
           <template #navigation>
             <q-stepper-navigation class="flex">
@@ -83,13 +83,13 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import SloTemplateGeneralForm from '@/workspace/slo/templates/SloTemplateGeneralForm.vue';
-import PolarisControllerForm from '@/workspace/slo/templates/PolarisControllerForm.vue';
-import SloParametersConfigForm from '@/workspace/slo/templates/SloParametersConfigForm.vue';
+import SloTemplateGeneralForm from '@/polaris-templates/slo/SloTemplateGeneralForm.vue';
+import PolarisControllerForm from '@/polaris-templates/slo/PolarisControllerForm.vue';
+import SloParametersConfigForm from '@/polaris-templates/slo/SloParametersConfigForm.vue';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import { useVuelidate } from '@vuelidate/core';
-import { v4 as uuidV4 } from 'uuid';
 import { useTemplateStore } from '@/store/template';
+import SloTemplateMetricsForm from '@/polaris-templates/slo/SloTemplateMetricsForm.vue';
 
 const templateStore = useTemplateStore();
 
@@ -101,6 +101,7 @@ const emit = defineEmits(['update:show', 'created']);
 const generalModel = ref({});
 const polarisConfig = ref({});
 const sloConfig = ref([]);
+const metrics = ref([]);
 
 const sloMappingKind = computed(() =>
   polarisConfig.value.sloMappingKind || generalModel.value.name
@@ -169,8 +170,7 @@ async function create() {
     controllerName: polarisConfig.value.deploymentName,
     containerImage: polarisConfig.value.containerImage,
     config: sloConfig.value,
-    //TODO: Fill metrics when they are defined
-    metrics: [],
+    metricTemplates: metrics.value.map((x) => x.id),
     confirmed: true,
   };
   //TODO: Show Loading

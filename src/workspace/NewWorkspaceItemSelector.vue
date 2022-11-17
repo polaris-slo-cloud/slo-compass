@@ -84,7 +84,7 @@ import { workspaceItemTypes } from '@/workspace/constants';
 import AddSloTarget from '@/workspace/targets/CreateSloTarget.vue';
 import AddSlo from '@/workspace/slo/CreateSlo.vue';
 import AddElasticityStrategy from '@/workspace/elasticity-strategy/CreateElasticityStrategy.vue';
-import CreateSloTemplateDialog from '@/workspace/slo/templates/CreateSloTemplateDialog.vue';
+import CreateSloTemplateDialog from '@/polaris-templates/slo/CreateSloTemplateDialog.vue';
 import { useTemplateStore } from '@/store/template';
 
 const templateStore = useTemplateStore();

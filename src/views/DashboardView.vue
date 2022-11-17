@@ -6,7 +6,7 @@ import { computed, ref, watch } from 'vue';
 import useWindowSize from '@/crosscutting/composables/window-size';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useTemplateStore } from '@/store/template';
-import ReviewTemplateDialog from '@/workspace/slo/templates/ReviewTemplateDialog.vue';
+import ReviewTemplateDialog from '@/polaris-templates/slo/ReviewTemplateDialog.vue';
 
 const orchestratorApi = useOrchestratorApi();
 const templateStore = useTemplateStore();

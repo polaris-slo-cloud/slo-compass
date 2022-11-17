@@ -2,16 +2,27 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { SloTemplateMetadata, templates as defaultSloTemplates } from '@/polaris-templates/slo-template';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import {ConfigParameter} from "@/polaris-templates/parameters";
+import { ConfigParameter } from '@/polaris-templates/parameters';
+import {
+  SloMetricSourceTemplate,
+  SloMetricTemplateId,
+  templates as defaultMetricSourceTemplates,
+} from '@/polaris-templates/slo-metrics/metrics-template';
 
 export const useTemplateStore = defineStore('templates', () => {
   const orchestratorApi = useOrchestratorApi();
 
   const sloTemplates = ref<SloTemplateMetadata[]>(defaultSloTemplates);
+  const sloMetricSourceTemplates = ref<SloMetricSourceTemplate[]>(defaultMetricSourceTemplates);
 
   const getSloTemplate = computed(() => {
     const templateMap = new Map(sloTemplates.value.map((x) => [x.sloMappingKind, x]));
     return (key: string): SloTemplateMetadata => templateMap.get(key);
+  });
+
+  const getSloMetricTemplate = computed(() => {
+    const templateMap = new Map(sloMetricSourceTemplates.value.map((x) => [x.id, x]));
+    return (id: SloMetricTemplateId): SloMetricSourceTemplate => templateMap.get(id);
   });
 
   async function createSloTemplate(template: SloTemplateMetadata) {
@@ -22,6 +33,14 @@ export const useTemplateStore = defineStore('templates', () => {
 
     sloTemplates.value.push(template);
     await orchestratorApi.deploySloMappingCrd(template);
+  }
+
+  function addMetricsSourceTemplate(template: SloMetricSourceTemplate) {
+    if (sloMetricSourceTemplates.value.find((x) => x.id === template.id)) {
+      //TODO: This template already exists, do we need a notification here?
+      return;
+    }
+    sloMetricSourceTemplates.value.push(template);
   }
 
   function saveSloTemplateFromPolaris(template: SloTemplateMetadata) {
@@ -63,8 +82,11 @@ export const useTemplateStore = defineStore('templates', () => {
 
   return {
     sloTemplates,
+    sloMetricSourceTemplates,
     getSloTemplate,
+    getSloMetricTemplate,
     createSloTemplate,
+    addMetricsSourceTemplate,
     saveSloTemplateFromPolaris,
     confirmTemplate,
   };

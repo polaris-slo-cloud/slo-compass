@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="showDialog" persistent>
-    <q-card style="width: 900px; max-width: 80vw">
+    <q-card class="medium-dialog">
       <q-card-section>
         <div class="text-h3">{{ currentTemplate.displayName }}</div>
       </q-card-section>
@@ -17,10 +17,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useTemplateStore } from '@/store/template';
 import { v4 as uuidV4 } from 'uuid';
-import SloParametersConfigForm from '@/workspace/slo/templates/SloParametersConfigForm.vue';
+import SloParametersConfigForm from '@/polaris-templates/slo/SloParametersConfigForm.vue';
 const templateStore = useTemplateStore();
 
 const props = defineProps({
@@ -31,7 +31,6 @@ const emit = defineEmits(['update:show']);
 const unconfirmedTemplates = computed(() => templateStore.sloTemplates.filter((x) => !x.confirmed));
 const hasMoreToReview = computed(() => unconfirmedTemplates.value.length > 1);
 const currentTemplate = ref({});
-openNextTemplate();
 
 function openNextTemplate() {
   const nextTemplate = unconfirmedTemplates.value[0];
@@ -55,6 +54,11 @@ const showDialog = computed({
   set(v) {
     emit('update:show', v);
   },
+});
+watch(showDialog, (newValue, oldValue) => {
+  if (newValue && !oldValue) {
+    openNextTemplate();
+  }
 });
 
 function cancel() {

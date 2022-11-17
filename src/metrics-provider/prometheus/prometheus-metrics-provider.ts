@@ -1,42 +1,27 @@
-import { PrometheusQueryData } from '@/polaris-templates/slo-template';
+import { PrometheusQuery, PrometheusQueryData } from '@/metrics-provider/prometheus/metadata';
 import { InstantVector, PrometheusConnectionOptions, PrometheusDriver } from 'prometheus-query';
-import Slo, { SloTarget } from '@/workspace/slo/Slo';
-import * as _ from 'lodash';
+import Slo from '@/workspace/slo/Slo';
 import { MetricQueryResult, MetricsProvider } from '@/metrics-provider/api';
 import { ObjectKind } from '@polaris-sloc/core';
+import { SloTarget } from '@/workspace/targets/SloTarget';
 
 interface PrometheusConfig {
   endpoint: string;
 }
 
+const sloParameterMap: Record<string, (target: SloTarget) => string> = {
+  targetGvk: (target) => ObjectKind.stringify(target.deployment.connectionMetadata),
+  targetNamespace: (target) => target.deployment.connectionMetadata.namespace,
+  targetName: (target) => target.deployment.connectionMetadata.name,
+};
+
 //TODO: This is very Kubernetes specific. Make more general!!!
-function getSloParameter(paramName: string, target: SloTarget): string {
-  const sanitizedName = paramName.replace(/^\${/, '').replace(/}$/, '');
-  switch (sanitizedName) {
-    case 'targetGvk':
-      return `${ObjectKind.stringify(target.deployment.connectionMetadata)}`;
-    case 'targetNamespace':
-      return target.deployment.connectionMetadata.namespace;
-    case 'targetName':
-      return target.deployment.connectionMetadata.name;
+function injectQueryParameters(query: string, target: SloTarget): string {
+  let interpolated = query;
+  for (const [parameter, getTargetValue] of Object.entries(sloParameterMap)) {
+    interpolated = interpolated.replace('${' + parameter + '}', getTargetValue(target));
   }
-}
-function injectQueryParameters(
-  queryData: PrometheusQueryData,
-  target: SloTarget
-): PrometheusQueryData {
-  const query: PrometheusQueryData = _.cloneDeep(queryData);
-
-  Object.entries(query.labelFilters).forEach(([label, value]) => {
-    if (!value.startsWith('${') || !value.endsWith('}')) {
-      return;
-    }
-
-    const newValue = getSloParameter(value, target);
-    query.labelFilters[label] = newValue;
-  });
-
-  return query;
+  return interpolated;
 }
 
 export class PrometheusMetricsProvider implements MetricsProvider {
@@ -68,8 +53,7 @@ export class PrometheusMetricsProvider implements MetricsProvider {
   public async pollSloMetrics(slo: Slo, target: SloTarget): Promise<MetricQueryResult[]> {
     const result = [];
     for (const metric of slo.metrics) {
-      const query = injectQueryParameters(metric.source.prometheusQuery, target);
-      const value = await this.pollMetric<number>(query);
+      const value = await this.pollMetric<number>(metric.source.prometheus, target);
       result.push({
         metric: metric.source.displayName,
         value: value[0],
@@ -78,19 +62,18 @@ export class PrometheusMetricsProvider implements MetricsProvider {
     return result;
   }
 
-  private async pollMetric<T>(query: PrometheusQueryData): Promise<T[]> {
+  private async pollMetric<T>(query: PrometheusQuery, target: SloTarget): Promise<T[]> {
     const promQuery = new PrometheusDriver(this.prometheusConfig);
-    const queryString = this.buildQuery(query);
+    let queryString = query.rawQuery ?? this.buildQuery(query.queryData);
+    queryString = injectQueryParameters(queryString, target);
 
     const { result } = await promQuery.instantQuery(queryString);
-    return result.map((x: InstantVector) => x.value as T);
+    return result.map((x: InstantVector) => x.value.value as T);
   }
 
   private buildQuery(query: PrometheusQueryData): string {
     const select = `${query.appName}_${query.metricName}`;
-    const filters = Object.entries(query.labelFilters).map(
-      ([label, value]) => `${label}='${value}'`
-    );
+    const filters = Object.entries(query.labelFilters).map(([label, value]) => `${label}='${value}'`);
 
     return `${select}{${filters.join(',')}}`;
   }
