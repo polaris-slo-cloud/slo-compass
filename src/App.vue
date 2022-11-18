@@ -16,6 +16,11 @@ const menuList = ref([
     to: '/',
   },
   {
+    icon: 'mdi-application-brackets-outline',
+    label: 'Templates',
+    to: '/templates',
+  },
+  {
     icon: 'mdi-connection',
     label: 'Connections',
     to: '/connections',

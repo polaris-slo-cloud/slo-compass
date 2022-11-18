@@ -1,7 +1,7 @@
 <template>
   <div>
     <q-list>
-      <q-item-label header>SLO Metrics</q-item-label>
+      <q-item-label header v-if="!hideHeader">SLO Metrics</q-item-label>
       <q-item-label caption v-if="metrics.length === 0">No Metrics configured</q-item-label>
       <q-item v-for="(metric, idx) of metrics" :key="metric.id">
         <q-item-section>
@@ -43,25 +43,20 @@
         </q-item-section>
       </q-item>
     </q-list>
-    <q-dialog v-model="showCreateMetricDefinition" persistent>
-      <q-card class="medium-dialog">
-        <q-card-section>
-          <MetricDefinitionForm @created="metricDefinitionCreated" @cancel="showCreateMetricDefinition = false" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
+    <CreateSloMetricTemplateDialog v-model:show="showCreateMetricDefinition" @created="addMetric" />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
 import { useTemplateStore } from '@/store/template';
-import MetricDefinitionForm from '@/polaris-templates/slo-metrics/MetricDefinitionForm.vue';
+import CreateSloMetricTemplateDialog from '@/polaris-templates/slo-metrics/CreateSloMetricTemplateDialog.vue';
 
 const store = useTemplateStore();
 
 const props = defineProps({
   modelValue: Array,
+  hideHeader: Boolean,
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -90,10 +85,6 @@ const filteredMetricDefinitions = computed(() => {
 });
 
 const showCreateMetricDefinition = ref(false);
-function metricDefinitionCreated(metric) {
-  addMetric(metric);
-  showCreateMetricDefinition.value = false;
-}
 </script>
 
 <style scoped lang="scss"></style>

@@ -1,9 +1,10 @@
-import { PrometheusQuery, PrometheusQueryData } from '@/metrics-provider/prometheus/metadata';
+import { PrometheusQueryData } from '@/metrics-provider/prometheus/metadata';
 import { InstantVector, PrometheusConnectionOptions, PrometheusDriver } from 'prometheus-query';
 import Slo from '@/workspace/slo/Slo';
 import { MetricQueryResult, MetricsProvider } from '@/metrics-provider/api';
 import { ObjectKind } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
+import { MetricsProviderQuery } from '@/polaris-templates/slo-metrics/metrics-template';
 
 interface PrometheusConfig {
   endpoint: string;
@@ -53,7 +54,7 @@ export class PrometheusMetricsProvider implements MetricsProvider {
   public async pollSloMetrics(slo: Slo, target: SloTarget): Promise<MetricQueryResult[]> {
     const result = [];
     for (const metric of slo.metrics) {
-      const value = await this.pollMetric<number>(metric.source.prometheus, target);
+      const value = await this.pollMetric<number>(metric.source.providerQueries.prometheus, target);
       result.push({
         metric: metric.source.displayName,
         value: value[0],
@@ -62,7 +63,7 @@ export class PrometheusMetricsProvider implements MetricsProvider {
     return result;
   }
 
-  private async pollMetric<T>(query: PrometheusQuery, target: SloTarget): Promise<T[]> {
+  private async pollMetric<T>(query: MetricsProviderQuery, target: SloTarget): Promise<T[]> {
     const promQuery = new PrometheusDriver(this.prometheusConfig);
     let queryString = query.rawQuery ?? this.buildQuery(query.queryData);
     queryString = injectQueryParameters(queryString, target);

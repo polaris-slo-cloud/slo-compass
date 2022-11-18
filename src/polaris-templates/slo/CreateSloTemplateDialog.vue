@@ -46,7 +46,7 @@
             :done="isDone(3, parametersConfigForm?.v$)"
             :error="hasError(3, parametersConfigForm?.v$)"
           >
-            <SloParametersConfigForm v-model="sloConfig" ref="parametersConfigForm" />
+            <SloParametersConfigForm v-model="sloConfig" ref="parametersConfigForm" addEmpty />
           </q-step>
           <q-step
             :name="4"
@@ -95,6 +95,7 @@ const templateStore = useTemplateStore();
 
 const props = defineProps({
   show: Boolean,
+  skipDeployment: Boolean,
 });
 const emit = defineEmits(['update:show', 'created']);
 
@@ -174,7 +175,11 @@ async function create() {
     confirmed: true,
   };
   //TODO: Show Loading
-  await templateStore.createSloTemplate(newTemplate);
+  if (props.skipDeployment) {
+    templateStore.saveSloTemplate(newTemplate);
+  } else {
+    await templateStore.createSloTemplate(newTemplate);
+  }
   resetForm();
   emit('created', newTemplate);
   showDialog.value = false;

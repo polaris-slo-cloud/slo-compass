@@ -35,7 +35,7 @@ export const useTemplateStore = defineStore('templates', () => {
     await orchestratorApi.deploySloMappingCrd(template);
   }
 
-  function addMetricsSourceTemplate(template: SloMetricSourceTemplate) {
+  function addSloMetricSourceTemplate(template: SloMetricSourceTemplate) {
     if (sloMetricSourceTemplates.value.find((x) => x.id === template.id)) {
       //TODO: This template already exists, do we need a notification here?
       return;
@@ -80,13 +80,43 @@ export const useTemplateStore = defineStore('templates', () => {
     existingTemplate.confirmed = true;
   }
 
+  function saveSloTemplate(template: SloTemplateMetadata) {
+    const existingIndex = sloTemplates.value.findIndex((x) => x.sloMappingKind === template.sloMappingKind);
+    if (existingIndex >= 0) {
+      sloTemplates.value[existingIndex] = template;
+    } else {
+      sloTemplates.value.push(template);
+    }
+  }
+
+  function removeSloTemplate(kind: string) {
+    sloTemplates.value = sloTemplates.value.filter((x) => x.sloMappingKind !== kind);
+  }
+
+  function saveSloMetricSourceTemplate(template: SloMetricSourceTemplate) {
+    const existingIndex = sloMetricSourceTemplates.value.findIndex((x) => x.id === template.id);
+    if (existingIndex >= 0) {
+      sloMetricSourceTemplates.value[existingIndex] = template;
+    } else {
+      sloMetricSourceTemplates.value.push(template);
+    }
+  }
+
+  function removeSloMetricSourceTemplate(id: SloMetricTemplateId) {
+    sloMetricSourceTemplates.value = sloMetricSourceTemplates.value.filter((x) => x.id !== id);
+  }
+
   return {
     sloTemplates,
     sloMetricSourceTemplates,
     getSloTemplate,
     getSloMetricTemplate,
     createSloTemplate,
-    addMetricsSourceTemplate,
+    saveSloTemplate,
+    removeSloTemplate,
+    addSloMetricSourceTemplate,
+    saveSloMetricSourceTemplate,
+    removeSloMetricSourceTemplate,
     saveSloTemplateFromPolaris,
     confirmTemplate,
   };

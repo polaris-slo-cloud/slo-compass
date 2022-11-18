@@ -5,11 +5,6 @@ import { MetricsProvider } from '@/metrics-provider/api';
 import PrometheusConnectionSettings from './PrometheusConnectionSettings.vue';
 import { SloMetricSourceTemplate, SloMetricSourceType } from '@/polaris-templates/slo-metrics/metrics-template';
 
-export interface PrometheusQuery {
-  rawQuery?: string;
-  queryData?: PrometheusQueryData;
-}
-
 export interface PrometheusQueryData {
   appName: string;
   metricName: string;
@@ -41,17 +36,17 @@ const configure: IConfigureMetricsProvider = {
   createMetricsProvider: (connection: MetricsConnection): MetricsProvider =>
     new PrometheusMetricsProvider({ endpoint: connection.connectionSettings as string }),
   addProviderMetricsSource(template: SloMetricSourceTemplate, rawQueries?: Record<string, string>): void {
-    if (rawQueries) {
-      template[this.metricSourceTemplateKey] = { rawQuery: rawQueries[this.metricSourceTemplateKey] };
+    if (template.isSimpleQuery) {
+      const baseTemplate = template.type === SloMetricSourceType.Composed ? composedMetricSource : rawMetricSource;
+      template.providerQueries[this.metricSourceTemplateKey] = {
+        queryData: {
+          ...baseTemplate,
+          metricName: `${metricNamePrefix(template.type)}${template.metricName}`,
+        },
+      };
       return;
     }
-    const baseTemplate = template.type === SloMetricSourceType.Composed ? composedMetricSource : rawMetricSource;
-    template[this.metricSourceTemplateKey] = {
-      queryData: {
-        ...baseTemplate,
-        metricName: `${metricNamePrefix(template.type)}${template.metricName}`,
-      },
-    };
+    template.providerQueries[this.metricSourceTemplateKey] = { rawQuery: rawQueries[this.metricSourceTemplateKey] };
   },
 };
 

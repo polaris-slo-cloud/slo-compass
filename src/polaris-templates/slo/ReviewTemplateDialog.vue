@@ -1,11 +1,13 @@
 <template>
   <q-dialog v-model="showDialog" persistent>
-    <q-card class="medium-dialog">
+    <q-card style="max-width: 80vw; width: 1200px">
       <q-card-section>
         <div class="text-h3">{{ currentTemplate.displayName }}</div>
       </q-card-section>
       <q-card-section>
         <SloParametersConfigForm v-model="currentTemplate.config" review-only />
+        <h3>Metrics</h3>
+        <SloTemplateMetricsForm v-model="metrics" />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="cancel" />
@@ -21,6 +23,7 @@ import { computed, ref, watch } from 'vue';
 import { useTemplateStore } from '@/store/template';
 import { v4 as uuidV4 } from 'uuid';
 import SloParametersConfigForm from '@/polaris-templates/slo/SloParametersConfigForm.vue';
+import SloTemplateMetricsForm from '@/polaris-templates/slo/SloTemplateMetricsForm.vue';
 const templateStore = useTemplateStore();
 
 const props = defineProps({
@@ -31,6 +34,13 @@ const emit = defineEmits(['update:show']);
 const unconfirmedTemplates = computed(() => templateStore.sloTemplates.filter((x) => !x.confirmed));
 const hasMoreToReview = computed(() => unconfirmedTemplates.value.length > 1);
 const currentTemplate = ref({});
+
+const metrics = computed({
+  get: () => currentTemplate.value?.metricTemplates?.map(templateStore.getSloMetricTemplate) ?? [],
+  set(v) {
+    currentTemplate.value.metricTemplates = v.map((x) => x.id);
+  },
+});
 
 function openNextTemplate() {
   const nextTemplate = unconfirmedTemplates.value[0];

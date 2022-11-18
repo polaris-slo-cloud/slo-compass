@@ -1,27 +1,15 @@
 <template>
   <div>
     <div class="row q-col-gutter-md text-bold">
-      <span class="col">Parameter Key</span>
       <span class="col">Display Name</span>
       <span class="col">Type</span>
+      <span class="col">Parameter Key</span>
       <span class="col-1">Required</span>
       <span class="col-1" v-if="!reviewOnly"></span>
     </div>
     <ValidateEach v-for="(config, index) in configParameters" :key="config.id" :state="config" :rules="rules">
       <template #default="{ v }">
         <div class="row q-col-gutter-x-md q-mb-xs">
-          <q-input
-            outlined
-            dense
-            class="col"
-            v-model="v.parameter.$model"
-            :error="v.parameter.$error"
-            @blur="v.parameter.$touch"
-          >
-            <template v-slot:error>
-              <span class="text-no-wrap">{{ v.parameter.$errors[0] && v.parameter.$errors[0].$message }}</span>
-            </template>
-          </q-input>
           <q-input
             outlined
             dense
@@ -47,6 +35,18 @@
               <span class="text-no-wrap">{{ v.type.$errors[0] && v.type.$errors[0].$message }}</span>
             </template>
           </q-select>
+          <q-input
+            outlined
+            dense
+            class="col"
+            v-model="v.parameter.$model"
+            :error="v.parameter.$error"
+            @blur="v.parameter.$touch"
+          >
+            <template v-slot:error>
+              <span class="text-no-wrap">{{ v.parameter.$errors[0] && v.parameter.$errors[0].$message }}</span>
+            </template>
+          </q-input>
           <!-- ".q-field--with-bottom" Adds the same padding as for the q-input and q-select above -->
           <q-checkbox dense class="col-1 q-field--with-bottom" v-model="config.required" />
           <div class="col-1 flex q-field--with-bottom" v-if="!reviewOnly">
@@ -71,6 +71,7 @@ import { ParameterType } from '@/polaris-templates/parameters';
 
 const props = defineProps({
   modelValue: Array,
+  addEmpty: Boolean,
   reviewOnly: Boolean,
 });
 const emit = defineEmits(['update:modelValue']);
@@ -113,7 +114,7 @@ const v$ = useVuelidate();
 
 defineExpose({ v$ });
 onMounted(() => {
-  if (!props.reviewOnly){
+  if (props.addEmpty) {
     addParameter();
   }
 });

@@ -35,7 +35,7 @@ export class KubernetesPolarisMapper implements PolarisMapper {
       displayName,
       description: schema.description,
       config: sloConfigProperties,
-      metrics: [],
+      metricTemplates: [],
       // TODO: Get if exists
       containerImage: '',
       // TODO: Get if exists
