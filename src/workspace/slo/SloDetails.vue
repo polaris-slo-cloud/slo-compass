@@ -110,7 +110,6 @@ import ElasticityStrategySelection from '@/workspace/elasticity-strategy/Elastic
 import MetricsOverview from '@/workspace/slo/MetricsOverview.vue';
 import { useSloStore } from '@/store/slo';
 import { computed } from 'vue';
-import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import componentIcon from '@/workspace/targets/component-icon';
 import _ from 'lodash';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
@@ -229,11 +228,11 @@ const elasticityStrategy = computed({
     if (v.id === oldElasticityStrategy.value?.id) {
       config = props.item.deployedSloMapping.sloMapping.elasticityStrategyConfig;
     }
-    const template = getElasticityStrategyTemplate(v.template);
+    const template = templateStore.getElasticityStrategyTemplate(v.template);
 
     if (v.id !== props.item.elasticityStrategy?.id) {
       save({
-        elasticityStrategy: { id: v.id, kind: template.kind, config },
+        elasticityStrategy: { id: v.id, kind: template.elasticityStrategyKind, config },
       });
     }
   },
@@ -242,7 +241,7 @@ const elasticityStrategy = computed({
 const oldElasticityStrategy = computed(() =>
   props.item.deployedSloMapping?.sloMapping?.elasticityStrategy
     ? elasticityStrategyStore.elasticityStrategies.find(
-        (x) => x.kind === props.item.deployedSloMapping.sloMapping.elasticityStrategy.kind
+        (x) => x.template === props.item.deployedSloMapping.sloMapping.elasticityStrategy.kind
       )
     : null
 );
@@ -264,7 +263,7 @@ const elasticityStrategyConfigTemplate = computed(() => {
   if (!elasticityStrategy.value) {
     return {};
   }
-  const template = getElasticityStrategyTemplate(elasticityStrategy.value.template);
+  const template = templateStore.getElasticityStrategyTemplate(elasticityStrategy.value.template);
   return template
     ? template.sloSpecificConfig.reduce((map, curr) => {
         map[curr.parameter] = curr;

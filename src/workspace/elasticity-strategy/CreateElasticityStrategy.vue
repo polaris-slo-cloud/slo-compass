@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card style="width: 700px; max-width: 80vw">
       <q-card-section>
-        <div class="text-h3">{{ template.name }}</div>
+        <div class="text-h3">{{ template.displayName }}</div>
         <q-input
           ref="nameInput"
           autofocus
@@ -42,13 +42,13 @@ const showDialog = computed({
 });
 
 const model = ref({
-  name: props.template?.name,
+  name: props.template?.displayName,
   description: props.template?.description,
 });
 watch(() => props.template, resetModel, { deep: true });
 function resetModel() {
   model.value = {
-    name: props.template?.name,
+    name: props.template?.displayName,
     description: props.template?.description,
   };
 }
@@ -62,8 +62,7 @@ function save() {
     const strategy = {
       ...model.value,
       type: 'ElasticityStrategy',
-      template: props.template.key,
-      kind: props.template.kind,
+      template: props.template.elasticityStrategyKind,
       polarisControllers: getPolarisControllers(props.template),
     };
     store.saveElasticityStrategy(strategy);

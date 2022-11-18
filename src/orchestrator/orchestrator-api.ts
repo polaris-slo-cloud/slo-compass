@@ -12,6 +12,7 @@ import { ISubscribable, ISubscribableCallback } from '@/crosscutting/subscibable
 import { v4 as uuidv4 } from 'uuid';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import {PolarisMapper} from "@/orchestrator/PolarisMapper";
+import {ElasticityStrategyTemplateMetadata} from "@/polaris-templates/strategy-template";
 
 export interface PolarisResource {
   [key: string]: any;
@@ -53,7 +54,7 @@ export interface IOrchestratorApi {
   findDeployments(namespace?: string): Promise<IDeployment[]>;
   deploySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<PolarisSloDeploymentResult>;
   deleteSlo(slo: Slo): Promise<void>;
-  deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult>;
+  deployElasticityStrategy(elasticityStrategy: ElasticityStrategy, template: ElasticityStrategyTemplateMetadata): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
   applySloMapping(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
@@ -206,8 +207,8 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     deploySlo: (slo, target, template) =>
       deploy(slo, () => api.value.deploySlo(clone(slo), clone(target), clone(template))),
     deleteSlo: (slo) => api.value.deleteSlo(clone(slo)),
-    deployElasticityStrategy: (elasticityStrategy) =>
-      deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy))),
+    deployElasticityStrategy: (elasticityStrategy, template) =>
+      deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy), clone(template))),
     retryDeployment: (item) => deploy(item, () => api.value.retryDeployment(clone(item))),
     applySloMapping: (slo, target, template) => api.value.applySloMapping(clone(slo), clone(target), clone(template)),
     findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),

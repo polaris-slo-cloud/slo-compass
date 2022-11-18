@@ -49,6 +49,8 @@ export async function loadTemplatesFromOrchestrator() {
     for (const crd of orchestratorCrds.items) {
       if (mapper.isSloTemplateCrd(crd)) {
         store.saveSloTemplateFromPolaris(mapper.mapCrdToSloTemplate(crd));
+      } else if (mapper.isElasticityStrategyCrd(crd)) {
+        store.saveElasticityStrategyFromPolaris(mapper.mapCrdToElasticityStrategyTemplate(crd));
       }
     }
     bookmarkManager.update(orchestratorApi.crdObjectKind.value, orchestratorCrds.metadata.resourceVersion);

@@ -5,9 +5,7 @@
         <div class="text-h3">{{ currentTemplate.displayName }}</div>
       </q-card-section>
       <q-card-section>
-        <SloParametersConfigForm v-model="currentTemplate.config" review-only />
-        <h3>Metrics</h3>
-        <SloTemplateMetricsForm v-model="metrics" />
+        <SloSpecificParametersConfigForm v-model="currentTemplate.sloSpecificConfig" review-only />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="cancel" />
@@ -22,8 +20,7 @@
 import { computed, ref, watch } from 'vue';
 import { useTemplateStore } from '@/store/template';
 import { v4 as uuidV4 } from 'uuid';
-import SloParametersConfigForm from '@/polaris-templates/slo/SloParametersConfigForm.vue';
-import SloTemplateMetricsForm from '@/polaris-templates/slo/SloTemplateMetricsForm.vue';
+import SloSpecificParametersConfigForm from '@/polaris-templates/elasticity-strategy/SloSpecificParametersConfigForm.vue';
 const templateStore = useTemplateStore();
 
 const props = defineProps({
@@ -31,16 +28,9 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:show']);
 
-const unconfirmedTemplates = computed(() => templateStore.sloTemplates.filter((x) => !x.confirmed));
+const unconfirmedTemplates = computed(() => templateStore.elasticityStrategyTemplates.filter((x) => !x.confirmed));
 const hasMoreToReview = computed(() => unconfirmedTemplates.value.length > 1);
 const currentTemplate = ref({});
-
-const metrics = computed({
-  get: () => currentTemplate.value?.metricTemplates?.map(templateStore.getSloMetricTemplate) ?? [],
-  set(v) {
-    currentTemplate.value.metricTemplates = v.map((x) => x.id);
-  },
-});
 
 function openNextTemplate() {
   const nextTemplate = unconfirmedTemplates.value[0];
@@ -50,8 +40,8 @@ function openNextTemplate() {
   }
 
   currentTemplate.value = {
-    sloMappingKind: nextTemplate.sloMappingKind,
-    config: nextTemplate.config.map((x) => ({
+    elasticityStrategyKind: nextTemplate.elasticityStrategyKind,
+    sloSpecificConfig: nextTemplate.sloSpecificConfig.map((x) => ({
       id: uuidV4(),
       ...x,
     })),
@@ -76,11 +66,11 @@ function cancel() {
   showDialog.value = false;
 }
 function confirmTemplate() {
-  templateStore.confirmSloTemplate(currentTemplate.value.sloMappingKind, currentTemplate.value.config);
+  templateStore.confirmElasticityStrategyTemplate(currentTemplate.value.elasticityStrategyKind, currentTemplate.value.sloSpecificConfig);
   cancel();
 }
 function confirmTemplateAndNext() {
-  templateStore.confirmSloTemplate(currentTemplate.value.sloMappingKind, currentTemplate.value.config);
+  templateStore.confirmElasticityStrategyTemplate(currentTemplate.value.elasticityStrategyKind, currentTemplate.value.sloSpecificConfig);
   openNextTemplate();
 }
 </script>

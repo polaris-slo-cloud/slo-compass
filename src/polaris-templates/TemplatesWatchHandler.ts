@@ -19,6 +19,9 @@ export class TemplatesWatchHandler implements WatchEventsHandler {
     if (this.polarisMapper.isSloTemplateCrd(obj)) {
       const template = this.polarisMapper.mapCrdToSloTemplate(obj);
       this.templateStore.saveSloTemplateFromPolaris(template);
+    } else if (this.polarisMapper.isElasticityStrategyCrd(obj)) {
+      const template = this.polarisMapper.mapCrdToElasticityStrategyTemplate(obj);
+      this.templateStore.saveElasticityStrategyFromPolaris(template);
     }
   }
 
@@ -31,6 +34,9 @@ export class TemplatesWatchHandler implements WatchEventsHandler {
     if (this.polarisMapper.isSloTemplateCrd(obj)) {
       const template = this.polarisMapper.mapCrdToSloTemplate(obj);
       this.templateStore.saveSloTemplateFromPolaris(template);
+    } else if (this.polarisMapper.isElasticityStrategyCrd(obj)) {
+      const template = this.polarisMapper.mapCrdToElasticityStrategyTemplate(obj);
+      this.templateStore.saveElasticityStrategyFromPolaris(template);
     }
   }
 }

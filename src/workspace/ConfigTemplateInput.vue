@@ -48,7 +48,7 @@ const label = computed(() => {
   if (props.template.type === ParameterType.Percentage) {
     label += ' (%)';
   }
-  return props.template.optional ? label : `${label} *`;
+  return props.template.required ? `${label} *` : label;
 });
 const validationRules = computed(() => {
   const rules = [...props.rules];

@@ -265,6 +265,12 @@ export const generateSloMappingCrd = (
                     required: parameters.filter((x) => x.required).map((x) => x.parameter),
                     properties: convertParametersToSchemaProperties(parameters),
                   },
+                  staticElasticityStrategyConfig: {
+                    type: 'object',
+                    description:
+                      "Any static configuration parameters, which are unknown to the SLO, but which may be required to configure the chosen kind of elasticity strategy should be specified here.They will be copied over into the spec of the elasticity strategy.\n\nFor example, suppose the SLO knows only about the parameters in `SloCompliance`, but you want to use an elasticity strategy that requires an additional parameter, e.g., `maxReplicas`.This can be configured when instantiating the SloMapping:\n\n``` new MySloMapping({      elasticityStrategy: new ElasticityStrategyKind({          kind: 'my-special-elasticity-strategy-kind',          ...}),      ...,      staticElasticityStrategyConfig: {          // Anything in here will be copied over to the `staticConfig` property of the elasticity strategy spec.          maxReplicas: 100,      }, }); ```",
+                    x_kubernetes_preserve_unknown_fields: true,
+                  },
                 },
               },
             },

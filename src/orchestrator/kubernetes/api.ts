@@ -19,6 +19,7 @@ import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { KubernetesPolarisMapper } from '@/orchestrator/kubernetes/kubernetes-polaris-mapper';
+import { ElasticityStrategyTemplateMetadata } from '@/polaris-templates/strategy-template';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -148,10 +149,14 @@ export default class Api implements IPolarisOrchestratorApi {
     }
   }
 
-  async deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult> {
+  async deployElasticityStrategy(
+    elasticityStrategy: ElasticityStrategy,
+    template: ElasticityStrategyTemplateMetadata
+  ): Promise<PolarisDeploymentResult> {
     const resources = await resourceGenerator.generateElasticityStrategyResources(
       elasticityStrategy,
-      this.connectionOptions.polarisNamespace
+      this.connectionOptions.polarisNamespace,
+      template
     );
 
     return await this.deployControllerResources(resources, elasticityStrategy.polarisControllers);
@@ -175,7 +180,11 @@ export default class Api implements IPolarisOrchestratorApi {
     const mapping = resourceGenerator.generateSloMapping(slo, target, template.sloMappingKind);
     if (slo.deployedSloMapping?.reference) {
       mapping.metadata.name = slo.deployedSloMapping.reference.name;
-      if (mapping.metadata.namespace !== slo.deployedSloMapping.reference.namespace) {
+      if (
+        mapping.metadata.namespace !== slo.deployedSloMapping.reference.namespace ||
+        // Kubernetes keeps elasticity strategy config properties if the config schema has changed. Therefore, we delete the old mapping if the elasticity strategy kind changes
+        mapping.spec.elasticityStrategy.kind !== slo.deployedSloMapping.sloMapping.elasticityStrategy.kind
+      ) {
         try {
           const identifier = await this.getCustomResourceIdentifier(slo.deployedSloMapping.reference);
           await this.client.deleteCustomResourceObject(identifier);
@@ -242,7 +251,7 @@ export default class Api implements IPolarisOrchestratorApi {
 
   async listTemplateDefinitions(): Promise<ApiObjectList<any>> {
     const customResourceDefinitions = await this.client.listCustomResourceDefinitions();
-    const polarisTemplateGroups = [POLARIS_API.SLO_GROUP as string];
+    const polarisTemplateGroups: string[] = [POLARIS_API.SLO_GROUP, POLARIS_API.ELASTICITY_GROUP];
     const templateItems = customResourceDefinitions.items.filter((x) => polarisTemplateGroups.includes(x.spec.group));
     const [group, version] = customResourceDefinitions.apiVersion.split('/');
     return {

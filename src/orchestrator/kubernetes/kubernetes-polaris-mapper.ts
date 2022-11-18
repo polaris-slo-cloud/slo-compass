@@ -3,7 +3,9 @@ import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { PolarisSloMapping } from '@/workspace/slo/Slo';
 import { ApiObject, POLARIS_API } from '@polaris-sloc/core';
 import { V1CustomResourceDefinitionSpec } from '@kubernetes/client-node';
-import { mapParameterFromSchema } from '@/orchestrator/kubernetes/helpers';
+import {mapElasticityStrategyParameterFromSchema, mapParameterFromSchema} from '@/orchestrator/kubernetes/helpers';
+import { ElasticityStrategyTemplateMetadata } from '@/polaris-templates/strategy-template';
+import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
 
 export class KubernetesPolarisMapper implements PolarisMapper {
   isSloTemplateCrd(crd: ApiObject<any>): boolean {
@@ -22,7 +24,7 @@ export class KubernetesPolarisMapper implements PolarisMapper {
 
     const sloConfigSchema = schema.properties.spec?.properties.sloConfig;
     let sloConfigProperties = [];
-    if (sloConfigSchema) {
+    if (sloConfigSchema?.properties) {
       sloConfigProperties = Object.entries(sloConfigSchema.properties).map(([key, schema]) => {
         const isRequired = !!sloConfigSchema.required && sloConfigSchema.required.includes(key);
         return mapParameterFromSchema(key, schema, isRequired);
@@ -60,6 +62,40 @@ export class KubernetesPolarisMapper implements PolarisMapper {
         version: targetApiVersion,
         kind: spec.targetRef.kind,
       },
+    };
+  }
+
+  isElasticityStrategyCrd(crd: ApiObject<any>): boolean {
+    return crd.spec?.group === POLARIS_API.ELASTICITY_GROUP;
+  }
+
+  mapCrdToElasticityStrategyTemplate(crd: ApiObject<any>): ElasticityStrategyTemplateMetadata {
+    const crdSpec = crd.spec as V1CustomResourceDefinitionSpec;
+    const schema = crdSpec.versions[0].schema.openAPIV3Schema;
+    const displayName = crdSpec.names.kind
+      // Add spaces in front of uppercase letters
+      .replace(/([A-Z])/g, ' $1')
+      .trim();
+
+    let sloSpecificConfig: ElasticityStrategyConfigParameter[] = [];
+    const sloSpecificConfigSchema = schema.properties.spec?.properties.staticConfig;
+    if (sloSpecificConfigSchema?.properties) {
+      sloSpecificConfig = Object.entries(sloSpecificConfigSchema.properties).map(([key, schema]) => {
+        const isRequired = !!sloSpecificConfigSchema.required && sloSpecificConfigSchema.required.includes(key);
+        return mapElasticityStrategyParameterFromSchema(key, schema, isRequired);
+      });
+    }
+    return {
+      elasticityStrategyKind: crdSpec.names.kind,
+      elasticityStrategyKindPlural: crdSpec.names.plural,
+      displayName,
+      sloSpecificConfig,
+      description: schema.description,
+      // TODO: Get if exists
+      containerImage: '',
+      // TODO: Get if exists
+      controllerName: '',
+      confirmed: false,
     };
   }
 }

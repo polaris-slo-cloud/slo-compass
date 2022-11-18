@@ -45,7 +45,6 @@
 
 <script setup>
 import { ref, computed, nextTick, onBeforeUpdate, watch } from 'vue';
-import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
 import { getPolarisControllers } from '@/polaris-templates/slo-template';
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
@@ -105,7 +104,7 @@ function resetModel() {
 }
 
 const elasticityStrategyTemplate = computed(() =>
-  elasticityStrategy.value ? getElasticityStrategyTemplate(elasticityStrategy.value.template) : {}
+  elasticityStrategy.value ? templateStore.getElasticityStrategyTemplate(elasticityStrategy.value.template) : {}
 );
 
 const nameInput = ref(null);
@@ -137,7 +136,7 @@ function save() {
     if (elasticityStrategy.value) {
       slo.elasticityStrategy = {
         id: elasticityStrategy.value.id,
-        kind: elasticityStrategyTemplate.value.kind,
+        kind: elasticityStrategyTemplate.value.elasticityStrategyKind,
         config: elasticityStrategyConfig.value,
       };
     }

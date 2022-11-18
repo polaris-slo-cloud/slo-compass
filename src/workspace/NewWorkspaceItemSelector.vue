@@ -55,9 +55,9 @@
             <div class="row q-gutter-sm">
               <WorkspaceItem
                 class="col-6 col-md-4 col-xl-3"
-                v-for="template of strategyTemplates"
-                :key="template.key"
-                :title="template.name"
+                v-for="template of elasticityStrategyTemplates"
+                :key="template.elasticityStrategyKind"
+                :title="template.displayName"
                 color="amber"
                 @click="showAddStrategy(template)"
               />
@@ -79,7 +79,6 @@
 <script setup>
 import { computed, ref } from 'vue';
 import WorkspaceItem from '@/workspace/WorkspaceItem.vue';
-import { templates as strategyTemplates } from '@/polaris-templates/strategy-template';
 import { workspaceItemTypes } from '@/workspace/constants';
 import AddSloTarget from '@/workspace/targets/CreateSloTarget.vue';
 import AddSlo from '@/workspace/slo/CreateSlo.vue';
@@ -89,6 +88,7 @@ import { useTemplateStore } from '@/store/template';
 
 const templateStore = useTemplateStore();
 const sloTemplates = computed(() => templateStore.sloTemplates);
+const elasticityStrategyTemplates = computed(() => templateStore.elasticityStrategyTemplates);
 const search = ref(null);
 
 const showAddItemDialog = ref(false);

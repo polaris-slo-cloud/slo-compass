@@ -3,8 +3,8 @@ import { V1CustomResourceDefinition } from '@kubernetes/client-node';
 const crdsMap = {
   CostEfficiencySloMapping: ['costefficiencymetricmappings.metrics', 'costefficiencyslomappings.slo'],
   CPUUsageSloMapping: ['cpuusageslomappings.slo'],
-  horizontalElasticityStrategy: ['horizontalelasticitystrategies.elasticity'],
-  verticalElasticityStrategy: ['verticalelasticitystrategies.elasticity'],
+  HorizontalElasticityStrategy: ['horizontalelasticitystrategies.elasticity'],
+  VerticalElasticityStrategy: ['verticalelasticitystrategies.elasticity'],
 };
 
 export default async function loadCrdsForTemplate(templateName: string): Promise<V1CustomResourceDefinition[]> {

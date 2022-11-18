@@ -6,10 +6,12 @@ import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { applyDeploymentResult } from '@/store/utils';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
-import { findTemplateForKind, getPolarisControllers } from '@/polaris-templates/strategy-template';
+import { getPolarisControllers } from '@/polaris-templates/strategy-template';
+import { useTemplateStore } from '@/store/template';
 
 export const useElasticityStrategyStore = defineStore('elasticityStrategy', () => {
   const orchestratorApi = useOrchestratorApi();
+  const templateStore = useTemplateStore();
 
   const ensureCreatedSemaphore = ref<Map<string, Promise<void>>>(new Map());
   async function lockKind(kind: string) {
@@ -18,7 +20,9 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     }
 
     let unlock;
-    const lock = new Promise<void>((resolve) => { unlock = resolve; });
+    const lock = new Promise<void>((resolve) => {
+      unlock = resolve;
+    });
     ensureCreatedSemaphore.value.set(kind, lock);
     return () => {
       ensureCreatedSemaphore.value.delete(kind);
@@ -47,19 +51,19 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
 
   async function deployElasticityStrategy(id) {
     const elasticityStrategy = getElasticityStrategy.value(id);
-    const result = await orchestratorApi.deployElasticityStrategy(elasticityStrategy);
+    const result = await orchestratorApi.deployElasticityStrategy(elasticityStrategy, templateStore.getElasticityStrategyTemplate(elasticityStrategy.template));
     applyDeploymentResult(elasticityStrategy, result);
   }
 
   async function ensureElasticityStrategyCreated(kind: string): Promise<WorkspaceComponentId> {
     const unlockKind = await lockKind(kind);
-    const strategy = elasticityStrategies.value.find((x) => x.kind === kind);
+    const strategy = elasticityStrategies.value.find((x) => x.template === kind);
     if (strategy) {
       unlockKind();
       return strategy.id;
     }
 
-    const template = findTemplateForKind(kind);
+    const template = templateStore.getElasticityStrategyTemplate(kind);
     const polarisControllers = getPolarisControllers(template);
     for (const controller of polarisControllers) {
       const polarisDeployments = await orchestratorApi.findPolarisDeployments();
@@ -73,8 +77,7 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
       type: workspaceItemTypes.elasticityStrategy,
       name: kind.replace(/([A-Z])/g, ' $1').trim(),
       description: '',
-      template: template.key,
-      kind,
+      template: template.elasticityStrategyKind,
       polarisControllers,
     };
     saveElasticityStrategy(newStrategy);

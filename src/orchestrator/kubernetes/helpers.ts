@@ -1,4 +1,9 @@
-import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
+import {
+  ConfigParameter,
+  ElasticityStrategyConfigParameter,
+  ElasticityStrategyParameterType,
+  ParameterType
+} from '@/polaris-templates/parameters';
 import { V1JSONSchemaProps } from '@kubernetes/client-node';
 
 const parameterTypeMap = Object.freeze({
@@ -28,10 +33,36 @@ export function mapParameterFromSchema(
   let parameterType = ParameterType.Integer;
   if (schemaProps.type === 'number') {
     parameterType = ParameterType.Decimal;
-  } else if (schemaProps.type === 'object') {
-    parameterType = ParameterType.Resources;
   } else if (schemaProps.minimum === 0) {
     parameterType = ParameterType.Percentage;
+  }
+  return {
+    parameter: parameterKey,
+    displayName,
+    type: parameterType,
+    required,
+  };
+}
+
+export function mapElasticityStrategyParameterFromSchema(
+  parameterKey: string,
+  schemaProps: V1JSONSchemaProps,
+  required: boolean
+): ElasticityStrategyConfigParameter {
+  const displayName = parameterKey
+    // Uppercase first letter
+    .replace(/^([a-z])/g, (_, letter) => letter.toUpperCase())
+    // Add spaces in front of uppercase letters
+    .replace(/([A-Z])/g, ' $1')
+    .trim();
+  // Guess the correct parameter type. The user has to review this manually
+  let parameterType = ElasticityStrategyParameterType.Integer;
+  if (schemaProps.type === 'number') {
+    parameterType = ElasticityStrategyParameterType.Decimal;
+  } else if (schemaProps.type === 'object') {
+    parameterType = ElasticityStrategyParameterType.Resources;
+  } else if (schemaProps.minimum === 0) {
+    parameterType = ElasticityStrategyParameterType.Percentage;
   }
   return {
     parameter: parameterKey,

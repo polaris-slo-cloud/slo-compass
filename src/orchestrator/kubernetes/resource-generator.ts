@@ -1,5 +1,4 @@
-import { ComposedMetricSource, SloTemplateMetadata } from '@/polaris-templates/slo-template';
-import { getTemplate as getElasticityStrategyTemplate } from '@/polaris-templates/strategy-template';
+import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { generateNamespaceSpec, generateServiceAccount } from '@/orchestrator/kubernetes/generation/common-resources';
 import {
   generateSloClusterRole,
@@ -26,6 +25,8 @@ import {
 } from '@/orchestrator/kubernetes/generation/elasticity-strategy-controller';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
+import { ComposedMetricSource } from '@/polaris-templates/slo-metrics/metrics-template';
+import {ElasticityStrategyTemplateMetadata} from "@/polaris-templates/strategy-template";
 
 interface SloResources {
   staticResources: KubernetesObject[];
@@ -68,7 +69,10 @@ export default {
     const resources = [];
     resources.push(
       ...generateMetricsResources(
-        template.metrics.filter((x) => !!x.metricsController).map((x) => x.metricsController),
+        slo.metrics
+          .map((x) => x.source)
+          .filter((x) => !!x.metricsController)
+          .map((x) => x.metricsController),
         namespace
       )
     );
@@ -94,20 +98,23 @@ export default {
   },
   generateElasticityStrategyResources: async function (
     elasticityStrategy: ElasticityStrategy,
-    namespace: string
+    namespace: string,
+    template: ElasticityStrategyTemplateMetadata
   ): Promise<KubernetesObject[]> {
-    const template = getElasticityStrategyTemplate(elasticityStrategy.template);
-
     const resources = [];
-    const crds = await loadCrdsForTemplate(template.key);
+    const crds = await loadCrdsForTemplate(template.elasticityStrategyKind);
 
     resources.push(...crds);
     resources.push(
       ...[
         generateNamespaceSpec(namespace),
         generateServiceAccount(template.controllerName, namespace),
-        generateElasticityStrategyClusterRole(template.controllerName, template.strategyResources),
-        generateElasticityStrategyClusterRoleBinding(template.controllerName, namespace, template.strategyResources),
+        generateElasticityStrategyClusterRole(template.controllerName, template.elasticityStrategyKindPlural),
+        generateElasticityStrategyClusterRoleBinding(
+          template.controllerName,
+          namespace,
+          template.elasticityStrategyKindPlural
+        ),
         generateElasticityStrategyControllerDeployment(template.controllerName, namespace, template.containerImage),
       ]
     );
@@ -115,5 +122,10 @@ export default {
     return resources;
   },
   generateCrdFromSloTemplate: (template: SloTemplateMetadata) =>
-    generateSloMappingCrd(template.sloMappingKind, template.sloMappingKindPlural, template.config, template.description),
+    generateSloMappingCrd(
+      template.sloMappingKind,
+      template.sloMappingKindPlural,
+      template.config,
+      template.description
+    ),
 };
