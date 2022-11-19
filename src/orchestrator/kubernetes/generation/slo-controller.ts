@@ -124,7 +124,7 @@ export const generateSloControllerDeployment = (
               { name: 'PROMETHEUS_HOST', value: env.prometheusHost },
               { name: 'PROMETHEUS_PORT', value: env.prometheusPort },
               { name: 'SLO_CONTROL_LOOP_INTERVAL_MSEC', value: '20000' },
-              { name: 'KUBERNETES_SERVICE_HOST', value: 'kubernetes.default.svc' },
+              { name: 'KUBERNETES_SERVICE_HOST', value: env.kubernetesHost },
               { name: 'POLARIS_CONNECTION_CHECK_TIMEOUT_MS', value: '600000' },
             ],
             securityContext: {

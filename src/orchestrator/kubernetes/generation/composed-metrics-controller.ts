@@ -134,7 +134,7 @@ export const generateComposedMetricsControllerDeployment = (
                 value: env.prometheusMetricsEndpointPath,
               },
               { name: 'COMPOSED_METRIC_COMPUTATION_INTERVAL_MS', value: '20000' },
-              { name: 'KUBERNETES_SERVICE_HOST', value: 'kubernetes.default.svc' },
+              { name: 'KUBERNETES_SERVICE_HOST', value: env.kubernetesHost },
               { name: 'POLARIS_CONNECTION_CHECK_TIMEOUT_MS', value: '600000' },
             ],
           },

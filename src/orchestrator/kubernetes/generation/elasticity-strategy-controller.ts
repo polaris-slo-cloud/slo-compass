@@ -1,5 +1,6 @@
 import { V1ClusterRole, V1ClusterRoleBinding, V1Deployment } from '@kubernetes/client-node';
 import { POLARIS_API } from '@polaris-sloc/core';
+import { env } from '../constants';
 
 export const generateElasticityStrategyClusterRole = (name: string, strategyResources: string): V1ClusterRole => ({
   apiVersion: 'rbac.authorization.k8s.io/v1',
@@ -111,7 +112,7 @@ export const generateElasticityStrategyControllerDeployment = (
               },
             },
             env: [
-              { name: 'KUBERNETES_SERVICE_HOST', value: 'kubernetes.default.svc' },
+              { name: 'KUBERNETES_SERVICE_HOST', value: env.kubernetesHost },
               { name: 'POLARIS_CONNECTION_CHECK_TIMEOUT_MS', value: '600000' },
             ],
             securityContext: {
