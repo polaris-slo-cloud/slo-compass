@@ -1,5 +1,16 @@
 <template>
   <div>
+    <div v-if="sloExistsInPolaris" class="q-mt-lg">
+      <div class="field-label">Status</div>
+      <div class="flex items-center">
+        <q-icon name="mdi-circle" :color="statusColor" class="q-mr-xs" />
+        <span v-if="item.compliance" class="flex">
+          <span class="field-item-label q-mr-xs">Compliance:</span>
+          {{ item.compliance }} %
+        </span>
+        <span v-else class="text-muted text-italic">- No compliance found </span>
+      </div>
+    </div>
     <EditableField
       label="Target"
       class="q-mt-lg"
@@ -117,6 +128,7 @@ import { useTargetStore } from '@/store/target';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useTemplateStore } from '@/store/template';
 import ConfigItemView from '@/workspace/slo/ConfigItemView.vue';
+import {getComplianceColor} from "@/workspace/slo/Slo";
 
 const orchestratorApi = useOrchestratorApi();
 const sloStore = useSloStore();
@@ -127,6 +139,8 @@ const templateStore = useTemplateStore();
 const props = defineProps({
   item: Object,
 });
+
+const statusColor = computed(() => getComplianceColor(props.item));
 
 const sloExistsInPolaris = computed(() => props.item.deployedSloMapping && !props.item.deployedSloMapping.deleted);
 

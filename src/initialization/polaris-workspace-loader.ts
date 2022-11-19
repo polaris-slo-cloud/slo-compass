@@ -1,7 +1,7 @@
 import { useSloStore } from '@/store/slo';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { ObjectKind } from '@polaris-sloc/core';
-import { SloHelper } from '@/workspace/slo/SloHelper';
+import { ownerToNamespacedObjectReference, SloHelper } from '@/workspace/slo/SloHelper';
 import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookmark-manager';
 import { useTemplateStore } from '@/store/template';
 import { useWorkspaceStore } from '@/store/workspace';
@@ -35,8 +35,20 @@ export async function updateWorkspaceFromOrchestrator() {
     bookmarkManager.update(objectKind, sloMappings.metadata.resourceVersion);
   }
 
+  async function updateSloCompliancesForObjectKind(objectKind: ObjectKind) {
+    const sloCompliances = await orchestratorApi.findSloCompliances(objectKind);
+    for (const obj of sloCompliances.items) {
+      const sloReference = ownerToNamespacedObjectReference(obj.metadata.ownerReferences[0], obj.metadata.namespace);
+      sloStore.updateSloCompliance(sloReference, obj.spec.sloOutputParams.currSloCompliancePercentage);
+    }
+    bookmarkManager.update(objectKind, sloCompliances.metadata.resourceVersion);
+  }
+
   for (const objectKind of workspaceStore.deployedSloMappings) {
     await updateSlosForObjectKind(objectKind);
+  }
+  for (const objectKind of workspaceStore.usedElasticityStrategyKinds) {
+    await updateSloCompliancesForObjectKind(objectKind);
   }
 }
 

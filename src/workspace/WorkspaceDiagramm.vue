@@ -71,6 +71,7 @@ import { useWorkspaceStore } from '@/store/workspace';
 import { ForceLayout } from 'v-network-graph/lib/force-layout';
 import WorkspaceFilter from '@/workspace/WorkspaceFilter.vue';
 import { workspaceItemTypes } from '@/workspace/constants';
+import { getComplianceColor } from '@/workspace/slo/Slo';
 
 const store = useWorkspaceStore();
 const props = defineProps({
@@ -251,6 +252,7 @@ const data = computed(() => {
     nodes[slo.id] = {
       name: slo.name,
       color: colors.getPaletteColor('blue'),
+      statusColor: getComplianceColor(slo),
       polarisComponent: slo,
     };
     if (slo.elasticityStrategy) {

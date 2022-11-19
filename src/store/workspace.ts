@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useSloStore } from '@/store/slo';
 import { WorkspaceComponent, WorkspaceComponentId } from '@/workspace/PolarisComponent';
@@ -11,7 +11,8 @@ import Slo from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { SloTarget } from '@/workspace/targets/SloTarget';
-import { ObjectKind } from "@polaris-sloc/core";
+import { ObjectKind, POLARIS_API } from '@polaris-sloc/core';
+import { distinctBy } from '@/crosscutting/list-utils';
 
 declare global {
   interface Window {
@@ -35,6 +36,16 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const watchBookmarks = ref({});
   const deployedSloMappings = ref<ObjectKind[]>([]);
   const deployedSloMappingKinds = computed(() => deployedSloMappings.value.map((x) => ObjectKind.stringify(x)));
+
+  const usedElasticityStrategyKinds = computed<ObjectKind[]>(() =>
+    slos.value
+      .map((x) => ({
+        kind: x.elasticityStrategy.kind,
+        version: 'v1',
+        group: POLARIS_API.ELASTICITY_GROUP,
+      }))
+      .filter(distinctBy((x) => x.kind))
+  );
 
   const slos = computed<Slo[]>(() => sloStore.slos);
   const targets = computed<SloTarget[]>(() => targetStore.targets);
@@ -128,6 +139,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     getItem,
     watchBookmarks,
     deployedSloMappings,
+    usedElasticityStrategyKinds,
     createWorkspace,
     loadWorkspace,
     retryDeployment,

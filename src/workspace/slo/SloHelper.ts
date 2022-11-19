@@ -1,4 +1,4 @@
-import { ApiObject, NamespacedObjectReference } from '@polaris-sloc/core';
+import {ApiObject, NamespacedObjectReference, OwnerReference} from '@polaris-sloc/core';
 import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
 import { useSloStore } from '@/store/slo';
 import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
@@ -12,6 +12,16 @@ export function sloMappingMatches(sloMapping: NamespacedObjectReference, obj: Ap
     sloMapping.group === obj.objectKind.group &&
     sloMapping.version === obj.objectKind.version
   );
+}
+
+export function ownerToNamespacedObjectReference(sloOwnerReference: OwnerReference, namespace: string): NamespacedObjectReference {
+  return {
+    name: sloOwnerReference.name,
+    namespace,
+    group: sloOwnerReference.group,
+    version: sloOwnerReference.version,
+    kind: sloOwnerReference.kind,
+  };
 }
 export class SloHelper {
   private sloStore = useSloStore();

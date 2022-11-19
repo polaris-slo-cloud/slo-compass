@@ -54,14 +54,14 @@ export class OrchestratorWatchManager implements WatchManager {
       watcher.stopWatch();
     });
     this.watchers.clear();
-  }
-
-  stopWatchers(kinds: ObjectKind[]): void {
-    this.stopWatchersInternal(kinds.map(ObjectKind.stringify));
     if (this.unsubscribeOrchestrator) {
       this.unsubscribeOrchestrator();
       this.unsubscribeOrchestrator = null;
     }
+  }
+
+  stopWatchers(kinds: ObjectKind[]): void {
+    this.stopWatchersInternal(kinds.map(ObjectKind.stringify));
   }
 
   private stopWatchersInternal(kinds: string[]): void {

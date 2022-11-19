@@ -1,6 +1,6 @@
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
-import { PolarisSloMapping } from '@/workspace/slo/Slo';
+import {PolarisElasticityStrategySloOutput, PolarisSloMapping} from '@/workspace/slo/Slo';
 import { ApiObject, POLARIS_API } from '@polaris-sloc/core';
 import { V1CustomResourceDefinitionSpec } from '@kubernetes/client-node';
 import {mapElasticityStrategyParameterFromSchema, mapParameterFromSchema} from '@/orchestrator/kubernetes/helpers';
@@ -98,4 +98,20 @@ export class KubernetesPolarisMapper implements PolarisMapper {
       confirmed: false,
     };
   }
+
+  transformToPolarisElasticityStrategySloOutput(spec: any, namespace: string): PolarisElasticityStrategySloOutput {
+    const [targetGroup, targetApiVersion] = spec.targetRef.apiVersion.split('/');
+    return {
+      sloOutputParams: spec.sloOutputParams,
+      staticConfig: spec.staticConfig,
+      target: {
+        name: spec.targetRef.name,
+        namespace: namespace,
+        group: targetGroup,
+        version: targetApiVersion,
+        kind: spec.targetRef.kind,
+      },
+    };
+  }
+
 }

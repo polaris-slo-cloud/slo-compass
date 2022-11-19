@@ -4,7 +4,8 @@ import {
   ElasticityStrategyParameterType,
   ParameterType
 } from '@/polaris-templates/parameters';
-import { V1JSONSchemaProps } from '@kubernetes/client-node';
+import {V1JSONSchemaProps, V1OwnerReference} from '@kubernetes/client-node';
+import {OwnerReference} from "@polaris-sloc/core";
 
 const parameterTypeMap = Object.freeze({
   Integer: 'integer',
@@ -91,4 +92,17 @@ export function convertParametersToSchemaProperties(parameters: ConfigParameter[
     props[currentParameter.parameter] = mapParameter(currentParameter);
     return props;
   }, {});
+}
+
+export function transformK8sOwnerReference(ownerReference: V1OwnerReference): OwnerReference {
+  const [group, version] = ownerReference.apiVersion.split('/');
+  return {
+    group,
+    version,
+    kind: ownerReference.kind,
+    name: ownerReference.name,
+    uid: ownerReference.uid,
+    blockOwnerDeletion: ownerReference.blockOwnerDeletion,
+    controller: ownerReference.controller,
+  };
 }

@@ -219,6 +219,22 @@ export const useSloStore = defineStore('slo', () => {
     }
   }
 
+  function updateSloCompliance(sloReference: NamespacedObjectReference, compliance?: number) {
+    const slo = slos.value.find(
+      (x) =>
+        !!x.deployedSloMapping?.reference &&
+        x.deployedSloMapping.reference.name === sloReference.name &&
+        x.deployedSloMapping.reference.namespace === sloReference.namespace &&
+        x.deployedSloMapping.reference.kind === sloReference.kind &&
+        x.deployedSloMapping.reference.group === sloReference.group &&
+        x.deployedSloMapping.reference.version === sloReference.version
+    );
+
+    if (slo) {
+      slo.compliance = compliance;
+    }
+  }
+
   return {
     slos,
     getSlo,
@@ -232,5 +248,6 @@ export const useSloStore = defineStore('slo', () => {
     createFromPolarisMapping,
     deleteSlo,
     polarisMappingRemoved,
+    updateSloCompliance,
   };
 });

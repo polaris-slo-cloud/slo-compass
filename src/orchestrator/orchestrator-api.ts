@@ -1,11 +1,15 @@
 import { computed, ComputedRef, ref } from 'vue';
 import type { Ref } from 'vue';
 import { OrchestratorConnection } from '@/connections/storage';
-import Slo, { DeployedPolarisSloMapping, PolarisSloMapping } from '@/workspace/slo/Slo';
+import Slo, {
+  DeployedPolarisSloMapping,
+  PolarisElasticityStrategySloOutput,
+  PolarisSloMapping
+} from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
-import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
+import {ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher, SloCompliance} from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { ISubscribable, ISubscribableCallback } from '@/crosscutting/subscibable';
@@ -59,6 +63,7 @@ export interface IOrchestratorApi {
   applySloMapping(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
   findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>>;
+  findSloCompliances(objectKind: ObjectKind): Promise<ApiObjectList<PolarisElasticityStrategySloOutput>>;
   deploySloMappingCrd(template: SloTemplateMetadata): Promise<boolean>;
   createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher;
   createPolarisMapper(): PolarisMapper;
@@ -148,6 +153,10 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   listTemplateDefinitions(): Promise<ApiObjectList<any>> {
     throw new OrchestratorNotConnectedError();
   }
+
+  findSloCompliances(): Promise<ApiObjectList<PolarisElasticityStrategySloOutput>> {
+    throw new OrchestratorNotConnectedError();
+  }
 }
 const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
 const subscribers: Ref<Map<string, Map<string, ISubscribableCallback>>> = ref(new Map());
@@ -213,6 +222,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     applySloMapping: (slo, target, template) => api.value.applySloMapping(clone(slo), clone(target), clone(template)),
     findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),
     findSloMappings: (objectKind) => api.value.findSloMappings(objectKind),
+    findSloCompliances: (objectKind) => api.value.findSloCompliances(objectKind),
     deploySloMappingCrd: (template) => api.value.deploySloMappingCrd(clone(template)),
     createWatcher: (bookmarkManager) => api.value.createWatcher(bookmarkManager),
     createPolarisMapper: () => api.value.createPolarisMapper(),

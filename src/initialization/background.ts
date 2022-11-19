@@ -9,6 +9,8 @@ import { TemplatesWatchHandler } from '@/polaris-templates/TemplatesWatchHandler
 import { useTemplateStore } from '@/store/template';
 import { ObjectKindWatchHandlerPair } from '@polaris-sloc/core';
 import { useWorkspaceStore } from '@/store/workspace';
+import { SloEvaluationWatchHandler } from '@/workspace/slo/SloEvaluationWatchHandler';
+import { watch } from 'vue';
 
 export async function setupBackgroundTasks() {
   const pollingIntervalMs = 30 * 1000;
@@ -34,9 +36,11 @@ export async function setupBackgroundTasks() {
   const pollingInterval = setInterval(pollMetrics, pollingIntervalMs);
 
   const sloMappingWatchHandler = new SloMappingWatchHandler();
+  const sloEvaluationWatchHandler = new SloEvaluationWatchHandler();
   const watcherKindHandlerPairs: ObjectKindWatchHandlerPair[] = [
     { kind: orchestratorApi.crdObjectKind.value, handler: new TemplatesWatchHandler() },
     ...workspaceStore.deployedSloMappings.map((kind) => ({ kind, handler: sloMappingWatchHandler })),
+    ...workspaceStore.usedElasticityStrategyKinds.map((kind) => ({ kind, handler: sloEvaluationWatchHandler })),
   ];
   await watchManager.configureWatchers(watcherKindHandlerPairs);
 
@@ -49,9 +53,18 @@ export async function setupBackgroundTasks() {
       }
     }
   });
+  const unsubscribeFromUsedElasticityStrategiesWatch = watch(
+    () => workspaceStore.usedElasticityStrategyKinds,
+    (value, oldValue) => {
+      watchManager.stopWatchers(oldValue);
+      watchManager.startWatchers(value, new SloEvaluationWatchHandler());
+    },
+    { deep: true }
+  );
   return () => {
     clearInterval(pollingInterval);
     watchManager.stopAllWatchers();
     unsubscribeFromTemplateStore();
+    unsubscribeFromUsedElasticityStrategiesWatch();
   };
 }

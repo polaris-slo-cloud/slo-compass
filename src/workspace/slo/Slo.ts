@@ -1,6 +1,5 @@
 import { PolarisComponent } from '@/workspace/PolarisComponent';
-
-import { NamespacedObjectReference } from '@polaris-sloc/core';
+import { NamespacedObjectReference, SloCompliance } from '@polaris-sloc/core';
 import { SloMetricSourceTemplate } from '@/polaris-templates/slo-metrics/metrics-template';
 
 interface SloElasticityStrategy {
@@ -34,10 +33,34 @@ export interface DeployedPolarisSloMapping {
 }
 
 export default interface Slo extends PolarisComponent {
+  compliance?: number;
   target?: string;
   metrics: SloMetric[];
   config: Record<string, unknown>;
   configChanged: boolean;
   elasticityStrategy?: SloElasticityStrategy;
   deployedSloMapping: DeployedPolarisSloMapping;
+}
+
+export interface PolarisElasticityStrategySloOutput {
+  sloOutputParams: SloCompliance;
+  target: NamespacedObjectReference;
+  staticConfig: Record<string, unknown>;
+}
+
+export function getComplianceColor(slo: Slo) {
+  if (!slo?.compliance) {
+    return 'grey';
+  }
+
+  const thresholds = {
+    green: 10,
+    orange: 25,
+  };
+  const complianceDeviation = Math.abs(100 - slo.compliance);
+  return complianceDeviation <= thresholds.green
+    ? 'positive'
+    : complianceDeviation <= thresholds.orange
+    ? 'orange'
+    : 'negative';
 }
