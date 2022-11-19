@@ -63,14 +63,14 @@
           <span>{{ template.providerQueries[provider.metricSourceTemplateKey].rawQuery }}</span>
         </div>
       </div>
-      <template #edit="scope">
-        <q-btn-toggle v-model="scope.metricQueryType" :options="metricQueryTypes" />
+      <template #edit="{ value }">
+        <q-btn-toggle v-model="value.metricQueryType" :options="metricQueryTypes" />
         <q-input
-          v-if="scope.metricQueryType === 'simple'"
+          v-if="value.metricQueryType === 'simple'"
           :prefix="metricNamePrefix"
           label="Metric Name*"
-          v-model="scope.metricName"
-          :error="!scope.metricName"
+          v-model="value.metricName"
+          :error="!value.metricName"
           error-message="You need to define a metric name"
         />
         <div v-else>
@@ -78,8 +78,8 @@
             v-for="provider of availableProviders"
             :key="provider.metricSourceTemplateKey"
             :label="`${provider.name} Metric Query*`"
-            v-model="scope.rawMetricQueries[provider.metricSourceTemplateKey]"
-            :error="!scope.rawMetricQueries[provider.metricSourceTemplateKey]"
+            v-model="value.rawMetricQueries[provider.metricSourceTemplateKey]"
+            :error="!value.rawMetricQueries[provider.metricSourceTemplateKey]"
             error-message="You need to define a metric query"
           />
         </div>
