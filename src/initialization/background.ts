@@ -2,21 +2,19 @@ import { useMetricsProvider } from '@/metrics-provider/api';
 import { useSloStore } from '@/store/slo';
 import { useTargetStore } from '@/store/target';
 import { OrchestratorWatchManager } from '@/orchestrator/watch-manager';
-import {
-  SloMappingWatchHandler,
-  getSupportedSloMappingObjectKinds,
-  toSloMappingObjectKind,
-} from '@/workspace/slo/SloMappingWatchHandler';
+import { SloMappingWatchHandler, toSloMappingObjectKind } from '@/workspace/slo/SloMappingWatchHandler';
 import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookmark-manager';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { TemplatesWatchHandler } from '@/polaris-templates/TemplatesWatchHandler';
 import { useTemplateStore } from '@/store/template';
 import { ObjectKindWatchHandlerPair } from '@polaris-sloc/core';
+import { useWorkspaceStore } from '@/store/workspace';
 
 export async function setupBackgroundTasks() {
   const pollingIntervalMs = 30 * 1000;
   const sloStore = useSloStore();
   const targetStore = useTargetStore();
+  const workspaceStore = useWorkspaceStore();
   const metricsProvider = useMetricsProvider();
   const bookmarkManager = new WorkspaceWatchBookmarkManager();
   const watchManager = new OrchestratorWatchManager(bookmarkManager);
@@ -38,7 +36,7 @@ export async function setupBackgroundTasks() {
   const sloMappingWatchHandler = new SloMappingWatchHandler();
   const watcherKindHandlerPairs: ObjectKindWatchHandlerPair[] = [
     { kind: orchestratorApi.crdObjectKind.value, handler: new TemplatesWatchHandler() },
-    ...getSupportedSloMappingObjectKinds().map((kind) => ({ kind, handler: sloMappingWatchHandler })),
+    ...workspaceStore.deployedSloMappings.map((kind) => ({ kind, handler: sloMappingWatchHandler })),
   ];
   await watchManager.configureWatchers(watcherKindHandlerPairs);
 

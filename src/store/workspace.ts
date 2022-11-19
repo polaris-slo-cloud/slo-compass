@@ -11,6 +11,7 @@ import Slo from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { SloTarget } from '@/workspace/targets/SloTarget';
+import { ObjectKind } from "@polaris-sloc/core";
 
 declare global {
   interface Window {
@@ -32,6 +33,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const location = ref<string>(null);
   const polarisOptions = ref(null);
   const watchBookmarks = ref({});
+  const deployedSloMappings = ref<ObjectKind[]>([]);
+  const deployedSloMappingKinds = computed(() => deployedSloMappings.value.map((x) => ObjectKind.stringify(x)));
 
   const slos = computed<Slo[]>(() => sloStore.slos);
   const targets = computed<SloTarget[]>(() => targetStore.targets);
@@ -102,6 +105,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     watchBookmarks.value[kind] = bookmark;
   }
 
+  function addDeployedSloMapping(kind: ObjectKind) {
+    if (!deployedSloMappingKinds.value.includes(ObjectKind.stringify(kind))) {
+      deployedSloMappings.value.push(kind);
+    }
+  }
+
+  function removeDeployedSloMapping(kind: ObjectKind) {
+    const stringifiedKind = ObjectKind.stringify(kind);
+    deployedSloMappings.value = deployedSloMappings.value.filter((x) => ObjectKind.stringify(x) !== stringifiedKind);
+  }
+
   return {
     isOpened,
     workspaceId,
@@ -113,11 +127,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     elasticityStrategies,
     getItem,
     watchBookmarks,
+    deployedSloMappings,
     createWorkspace,
     loadWorkspace,
     retryDeployment,
     save,
     updateWatchBookmark,
     deleteItem,
+    addDeployedSloMapping,
+    removeDeployedSloMapping,
   };
 });
