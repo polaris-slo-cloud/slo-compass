@@ -1,13 +1,25 @@
 import { PrometheusQueryData } from '@/metrics-provider/prometheus/metadata';
-import { InstantVector, PrometheusConnectionOptions, PrometheusDriver } from 'prometheus-query';
+import { InstantVector, PrometheusConnectionOptions, PrometheusDriver, RangeVector } from 'prometheus-query';
 import Slo from '@/workspace/slo/Slo';
-import { MetricQueryResult, MetricsProvider } from '@/metrics-provider/api';
+import {
+  MetricQueryResult,
+  MetricRangeQueryResult,
+  MetricsProvider,
+  RangeQueryResultItem,
+  TimestampedQueryResult,
+} from '@/metrics-provider/api';
 import { ObjectKind } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { MetricsProviderQuery } from '@/polaris-templates/slo-metrics/metrics-template';
+import * as _ from 'lodash';
 
 interface PrometheusConfig {
   endpoint: string;
+}
+interface PrometheusQueryRange {
+  start: number;
+  end: number;
+  step: number;
 }
 
 const sloParameterMap: Record<string, (target: SloTarget) => string> = {
@@ -54,12 +66,34 @@ export class PrometheusMetricsProvider implements MetricsProvider {
   public async pollSloMetrics(slo: Slo, target: SloTarget): Promise<MetricQueryResult[]> {
     const result = [];
     for (const metric of slo.metrics) {
-      const value = await this.pollMetric<number>(metric.source.providerQueries.prometheus, target);
+      const values = await this.pollMetric<number>(metric.source.providerQueries.prometheus, target);
       result.push({
         metric: metric.source.displayName,
-        value: value[0],
+        value: _.mean(values),
       });
     }
+    return result;
+  }
+
+  public async pollSloMetricsHistory(slo: Slo, target: SloTarget): Promise<MetricRangeQueryResult[]> {
+    const result = [];
+
+    const range = {
+      // last 24h
+      start: new Date().getTime() - 24 * 60 * 60 * 1000,
+      end: new Date().getTime(),
+      // every 30 minutes
+      step: 30 * 60,
+    };
+    for (const metric of slo.metrics) {
+      const values = await this.pollMetricRange<number>(metric.source.providerQueries.prometheus, target, range);
+      result.push({
+        metric: metric.source.displayName,
+        resultType: metric.source.queryResultType,
+        queryResult: values,
+      });
+    }
+
     return result;
   }
 
@@ -70,6 +104,22 @@ export class PrometheusMetricsProvider implements MetricsProvider {
 
     const { result } = await promQuery.instantQuery(queryString);
     return result.map((x: InstantVector) => x.value.value as T);
+  }
+
+  private async pollMetricRange<T>(
+    query: MetricsProviderQuery,
+    target: SloTarget,
+    range: PrometheusQueryRange
+  ): Promise<RangeQueryResultItem<T>[]> {
+    const promQuery = new PrometheusDriver(this.prometheusConfig);
+    let queryString = query.rawQuery ?? this.buildQuery(query.queryData);
+    queryString = injectQueryParameters(queryString, target);
+
+    const { result } = await promQuery.rangeQuery(queryString, range.start, range.end, range.step);
+    return result.map((x: RangeVector) => ({
+      values: x.values.map<TimestampedQueryResult<T>>(({ time, value }) => ({ timestamp: time, value: value as T })),
+      target: x.metric.labels['pod'] as string,
+    }));
   }
 
   private buildQuery(query: PrometheusQueryData): string {

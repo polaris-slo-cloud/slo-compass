@@ -1,7 +1,9 @@
-import {ApiObject, NamespacedObjectReference, OwnerReference} from '@polaris-sloc/core';
+import { ApiObject, NamespacedObjectReference, OwnerReference } from '@polaris-sloc/core';
 import Slo, { PolarisSloMapping } from '@/workspace/slo/Slo';
 import { useSloStore } from '@/store/slo';
+import { useTargetStore } from '@/store/target';
 import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
+import * as _ from 'lodash';
 
 export function sloMappingMatches(sloMapping: NamespacedObjectReference, obj: ApiObject<PolarisSloMapping>): boolean {
   return (
@@ -14,7 +16,10 @@ export function sloMappingMatches(sloMapping: NamespacedObjectReference, obj: Ap
   );
 }
 
-export function ownerToNamespacedObjectReference(sloOwnerReference: OwnerReference, namespace: string): NamespacedObjectReference {
+export function ownerToNamespacedObjectReference(
+  sloOwnerReference: OwnerReference,
+  namespace: string
+): NamespacedObjectReference {
   return {
     name: sloOwnerReference.name,
     namespace,
@@ -25,6 +30,7 @@ export function ownerToNamespacedObjectReference(sloOwnerReference: OwnerReferen
 }
 export class SloHelper {
   private sloStore = useSloStore();
+  private targetStore = useTargetStore();
 
   public async createOrUpdateSlo(obj: ApiObject<PolarisSloMapping>): Promise<WorkspaceComponentId> {
     const labelMatcher =
@@ -47,5 +53,23 @@ export class SloHelper {
     }
 
     return await this.sloStore.createFromPolarisMapping(obj.metadata.labels?.polarisId, obj.spec, reference);
+  }
+
+  public sloMappingChanged(slo: Slo) {
+    const configChanged = !_.isEqual(slo.config, slo.deployedSloMapping?.sloMapping?.config);
+    const elasticityStrategyConfigChanged = !_.isEqual(
+      slo.elasticityStrategy.config,
+      slo.deployedSloMapping?.sloMapping?.elasticityStrategyConfig
+    );
+
+    const sloTarget = slo.target ? this.targetStore.getSloTarget(slo.target) : null;
+    const targetChanged = !_.isEqual(
+      sloTarget.deployment.connectionMetadata,
+      slo.deployedSloMapping?.sloMapping?.target
+    );
+    const elasticityStrategyChanged =
+      slo.elasticityStrategy.kind !== slo.deployedSloMapping?.sloMapping?.elasticityStrategy.kind;
+
+    return configChanged || elasticityStrategyConfigChanged || targetChanged || elasticityStrategyChanged;
   }
 }

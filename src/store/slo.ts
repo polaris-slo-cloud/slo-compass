@@ -71,11 +71,7 @@ export const useSloStore = defineStore('slo', () => {
   }
   async function resetSloMapping(id: WorkspaceComponentId): Promise<void> {
     const slo = getSlo.value(id);
-    const polarisSloMapping = await orchestratorApi.findSloMapping(slo);
-    await updateSlo(slo, {
-      reference: slo.deployedSloMapping.reference,
-      sloMapping: polarisSloMapping,
-    });
+    await updateSlo(slo, slo.deployedSloMapping);
   }
   async function updatePolarisMapping(
     id: WorkspaceComponentId,

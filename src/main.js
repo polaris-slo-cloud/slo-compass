@@ -12,6 +12,10 @@ import minMax from 'dayjs/plugin/minMax';
 dayjs.extend(relativeTime);
 dayjs.extend(minMax);
 
+import { Chart as ChartJS, registerables } from 'chart.js';
+
+ChartJS.register(...registerables);
+
 import router from './router';
 import VNetworkGraph from 'v-network-graph';
 

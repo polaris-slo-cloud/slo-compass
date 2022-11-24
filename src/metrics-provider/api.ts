@@ -1,17 +1,36 @@
-import Slo, { SloTarget } from '@/workspace/slo/Slo';
+import Slo from '@/workspace/slo/Slo';
 import { Ref, ref } from 'vue';
 import { MetricsConnection } from '@/connections/storage';
 import { getProvider } from '@/metrics-provider/providers';
+import { SloTarget } from '@/workspace/targets/SloTarget';
+import { MetricQueryResultType } from '@/polaris-templates/slo-metrics/metrics-template';
 
 export interface MetricQueryResult {
   metric: string;
   value: number;
 }
 
+export interface TimestampedQueryResult<T> {
+  timestamp: Date;
+  value: T;
+}
+
+export interface RangeQueryResultItem<T> {
+  target: string;
+  values: TimestampedQueryResult<T>[];
+}
+
+export interface MetricRangeQueryResult {
+  metric: string;
+  resultType: MetricQueryResultType;
+  queryResult: RangeQueryResultItem<number>;
+}
+
 export interface MetricsProvider {
   name: string;
   test(): Promise<boolean>;
   pollSloMetrics(slo: Slo, target: SloTarget): Promise<MetricQueryResult[]>;
+  pollSloMetricsHistory(slo: Slo, target: SloTarget): Promise<MetricRangeQueryResult[]>;
 }
 
 export interface MetricsProviderApi extends MetricsProvider {
@@ -27,15 +46,16 @@ class NotConnectedProvider implements MetricsProvider {
   public pollSloMetrics(): Promise<MetricQueryResult[]> {
     return Promise.resolve([]);
   }
+  public pollSloMetricsHistory(): Promise<MetricRangeQueryResult[]> {
+    return Promise.resolve([]);
+  }
 }
 
 const provider: Ref<MetricsProvider> = ref(new NotConnectedProvider());
 
 function createMetricsProvider(connection: MetricsConnection): MetricsProvider {
   const providerConfig = getProvider(connection.metricsProvider);
-  return providerConfig
-    ? providerConfig.createMetricsProvider(connection)
-    : new NotConnectedProvider();
+  return providerConfig ? providerConfig.createMetricsProvider(connection) : new NotConnectedProvider();
 }
 
 function connect(connection: MetricsConnection): void {
@@ -52,5 +72,6 @@ export function useMetricsProvider(): MetricsProviderApi {
     testConnection,
     test: () => provider.value.test(),
     pollSloMetrics: (slo: Slo, target: SloTarget) => provider.value.pollSloMetrics(slo, target),
+    pollSloMetricsHistory: (slo: Slo, target: SloTarget) => provider.value.pollSloMetricsHistory(slo, target),
   };
 }

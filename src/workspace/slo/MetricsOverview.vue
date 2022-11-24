@@ -48,7 +48,7 @@ function formatMetricValue(metric) {
 
   return `${formatted} ${metric.source.queryResultType.unit}`;
 }
-const metricValue = (metric) => metric.value ? formatMetricValue(metric) : '-';
+const metricValue = (metric) => metric.value !== null && metric.value !== undefined ? formatMetricValue(metric) : '-';
 
 async function pollMetrics() {
   await store.pollMetrics(props.slo.id);
