@@ -11,7 +11,7 @@ import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
 import Slo, {
   DeployedPolarisSloMapping,
   PolarisElasticityStrategySloOutput,
-  PolarisSloMapping
+  PolarisSloMapping,
 } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { KubernetesObject, V1CustomResourceDefinition } from '@kubernetes/client-node';
@@ -23,15 +23,13 @@ import {
   ObjectKind,
   ObjectKindWatcher,
   POLARIS_API,
-  SloCompliance,
 } from '@polaris-sloc/core';
 import { KubernetesObjectKindWatcher } from '@/orchestrator/kubernetes/kubernetes-watcher';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { KubernetesPolarisMapper } from '@/orchestrator/kubernetes/kubernetes-polaris-mapper';
-import { ElasticityStrategyTemplateMetadata } from '@/polaris-templates/strategy-template';
-import {transformK8sOwnerReference} from "@/orchestrator/kubernetes/helpers";
+import { transformK8sOwnerReference } from '@/orchestrator/kubernetes/helpers';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -161,14 +159,10 @@ export default class Api implements IPolarisOrchestratorApi {
     }
   }
 
-  async deployElasticityStrategy(
-    elasticityStrategy: ElasticityStrategy,
-    template: ElasticityStrategyTemplateMetadata
-  ): Promise<PolarisDeploymentResult> {
+  async deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult> {
     const resources = await resourceGenerator.generateElasticityStrategyResources(
       elasticityStrategy,
-      this.connectionOptions.polarisNamespace,
-      template
+      this.connectionOptions.polarisNamespace
     );
 
     return await this.deployControllerResources(resources, elasticityStrategy.polarisControllers);

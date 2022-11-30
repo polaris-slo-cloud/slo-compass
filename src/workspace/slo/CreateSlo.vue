@@ -20,15 +20,15 @@
           :template="config"
           ref="optionInputs"
         />
-        <ElasticityStrategySelection class="q-mt-lg" label="Elasticity Strategy" v-model="elasticityStrategy" />
+        <ElasticityStrategySelection class="q-mt-lg" label="Elasticity Strategy" v-model="elasticityStrategyKind" />
         <div
           class="text-h6 q-mt-lg q-mb-sm"
-          v-if="elasticityStrategy && elasticityStrategyTemplate.sloSpecificConfig.length > 0"
+          v-if="elasticityStrategy && elasticityStrategy.sloSpecificConfig.length > 0"
         >
           Elasticity Strategy Config
         </div>
         <ConfigTemplateInput
-          v-for="config of elasticityStrategyTemplate.sloSpecificConfig"
+          v-for="config of elasticityStrategy.sloSpecificConfig"
           :key="config.parameter"
           v-model="elasticityStrategyConfig[config.parameter]"
           :template="config"
@@ -52,9 +52,12 @@ import ElasticityStrategySelection from '@/workspace/elasticity-strategy/Elastic
 import { useSloStore } from '@/store/slo';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { useTemplateStore } from '@/store/template';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 const store = useSloStore();
 const templateStore = useTemplateStore();
+const elasticityStrategyStore = useElasticityStrategyStore();
+
 const props = defineProps({
   show: Boolean,
   template: Object,
@@ -81,19 +84,22 @@ const model = ref({
   target: null,
   config: {},
 });
-const elasticityStrategy = ref(null);
+const elasticityStrategyKind = ref(null);
+const elasticityStrategy = computed(() =>
+  elasticityStrategyKind.value ? elasticityStrategyStore.getElasticityStrategy(elasticityStrategyKind.value) : null
+);
 const elasticityStrategyConfig = ref({});
 watch(
-  elasticityStrategy,
+  elasticityStrategyKind,
   (value, oldValue) => {
-    if (value?.template !== oldValue?.template) {
+    if (value !== oldValue) {
       elasticityStrategyConfig.value = {};
     }
   },
   { deep: true }
 );
 function resetModel() {
-  elasticityStrategy.value = null;
+  elasticityStrategyKind.value = null;
   elasticityStrategyConfig.value = {};
   model.value = {
     name: props.template?.displayName,
@@ -102,10 +108,6 @@ function resetModel() {
     config: {},
   };
 }
-
-const elasticityStrategyTemplate = computed(() =>
-  elasticityStrategy.value ? templateStore.getElasticityStrategyTemplate(elasticityStrategy.value.template) : {}
-);
 
 const nameInput = ref(null);
 const optionInputs = ref([]);
@@ -133,10 +135,9 @@ function save() {
       configChanged: true,
     };
     slo.target = slo.target?.id;
-    if (elasticityStrategy.value) {
+    if (elasticityStrategyKind.value) {
       slo.elasticityStrategy = {
-        id: elasticityStrategy.value.id,
-        kind: elasticityStrategyTemplate.value.elasticityStrategyKind,
+        kind: elasticityStrategyKind.value,
         config: elasticityStrategyConfig.value,
       };
     }

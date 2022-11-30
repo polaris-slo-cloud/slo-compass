@@ -1,11 +1,12 @@
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
-import {PolarisElasticityStrategySloOutput, PolarisSloMapping} from '@/workspace/slo/Slo';
+import { PolarisElasticityStrategySloOutput, PolarisSloMapping } from '@/workspace/slo/Slo';
 import { ApiObject, POLARIS_API } from '@polaris-sloc/core';
 import { V1CustomResourceDefinitionSpec } from '@kubernetes/client-node';
-import {mapElasticityStrategyParameterFromSchema, mapParameterFromSchema} from '@/orchestrator/kubernetes/helpers';
-import { ElasticityStrategyTemplateMetadata } from '@/polaris-templates/strategy-template';
+import { mapElasticityStrategyParameterFromSchema, mapParameterFromSchema } from '@/orchestrator/kubernetes/helpers';
 import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
+import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
+import { workspaceItemTypes } from '@/workspace/constants';
 
 export class KubernetesPolarisMapper implements PolarisMapper {
   isSloTemplateCrd(crd: ApiObject<any>): boolean {
@@ -69,7 +70,7 @@ export class KubernetesPolarisMapper implements PolarisMapper {
     return crd.spec?.group === POLARIS_API.ELASTICITY_GROUP;
   }
 
-  mapCrdToElasticityStrategyTemplate(crd: ApiObject<any>): ElasticityStrategyTemplateMetadata {
+  mapCrdToElasticityStrategy(crd: ApiObject<any>): ElasticityStrategy {
     const crdSpec = crd.spec as V1CustomResourceDefinitionSpec;
     const schema = crdSpec.versions[0].schema.openAPIV3Schema;
     const displayName = crdSpec.names.kind
@@ -86,15 +87,15 @@ export class KubernetesPolarisMapper implements PolarisMapper {
       });
     }
     return {
-      elasticityStrategyKind: crdSpec.names.kind,
-      elasticityStrategyKindPlural: crdSpec.names.plural,
-      displayName,
+      id: crd.metadata.uid,
+      type: workspaceItemTypes.elasticityStrategy,
+      kind: crdSpec.names.kind,
+      kindPlural: crdSpec.names.plural,
+      name: displayName,
       sloSpecificConfig,
       description: schema.description,
-      // TODO: Get if exists
-      containerImage: '',
-      // TODO: Get if exists
-      controllerName: '',
+      //TODO: Get if exists
+      polarisControllers: [],
       confirmed: false,
     };
   }
@@ -113,5 +114,4 @@ export class KubernetesPolarisMapper implements PolarisMapper {
       },
     };
   }
-
 }

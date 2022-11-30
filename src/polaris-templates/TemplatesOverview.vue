@@ -29,12 +29,12 @@
         </q-card>
       </div>
     </div>
-    <h3>Elasticity Strategy Templates</h3>
+    <h3>Elasticity Strategies</h3>
     <div class="row q-col-gutter-md">
-      <div class="col-6 col-md-3 col-lg-2" v-for="template of elasticityStrategyTemplates" :key="template.elasticityStrategyKind">
-        <q-card class="cursor-pointer" @click="openElasticityStrategyTemplate(template)" flat bordered>
+      <div class="col-6 col-md-3 col-lg-2" v-for="strategy of elasticityStrategies" :key="strategy.kind">
+        <q-card class="cursor-pointer" @click="openElasticityStrategy(strategy)" flat bordered>
           <q-card-section>
-            <div class="text-h4">{{ template.displayName }}</div>
+            <div class="text-h4">{{ strategy.name }}</div>
           </q-card-section>
         </q-card>
       </div>
@@ -49,11 +49,14 @@ import { useRouter } from 'vue-router';
 import { useTemplateStore } from '@/store/template';
 import CreateSloTemplateDialog from '@/polaris-templates/slo/CreateSloTemplateDialog.vue';
 import CreateSloMetricTemplateDialog from '@/polaris-templates/slo-metrics/CreateSloMetricTemplateDialog.vue';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 const router = useRouter();
 
 const store = useTemplateStore();
-const { sloTemplates, sloMetricSourceTemplates, elasticityStrategyTemplates } = storeToRefs(store);
+const { sloTemplates, sloMetricSourceTemplates } = storeToRefs(store);
+const elasticityStrategyStore = useElasticityStrategyStore();
+const { elasticityStrategies } = storeToRefs(elasticityStrategyStore);
 
 const showCreateSloTemplate = ref(false);
 const showCreateSloMetricSourceTemplate = ref(false);
@@ -64,8 +67,8 @@ function openSloTemplate(template) {
 function openSloMetricSourceTemplate(template) {
   router.push({ name: 'slo-metric-source-template', params: { id: template.id } });
 }
-function openElasticityStrategyTemplate(template) {
-  router.push({ name: 'elasticity-strategy-template', params: { kind: template.elasticityStrategyKind } });
+function openElasticityStrategy(strategy) {
+  router.push({ name: 'elasticity-strategy', params: { kind: strategy.kind } });
 }
 </script>
 

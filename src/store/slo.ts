@@ -93,11 +93,8 @@ export const useSloStore = defineStore('slo', () => {
   }
   async function updateSlo(slo: Slo, deployedSloMapping: DeployedPolarisSloMapping): Promise<void> {
     const polarisSloMapping = deployedSloMapping.sloMapping;
-    let elasticityStrategyId;
     if (polarisSloMapping.elasticityStrategy) {
-      elasticityStrategyId = await elasticityStrategyStore.ensureElasticityStrategyCreated(
-        polarisSloMapping.elasticityStrategy.kind
-      );
+      await elasticityStrategyStore.ensureElasticityStrategyCreated(polarisSloMapping.elasticityStrategy.kind);
     }
     let target;
     if (polarisSloMapping.target) {
@@ -109,7 +106,6 @@ export const useSloStore = defineStore('slo', () => {
       config: polarisSloMapping.config,
       target,
       elasticityStrategy: {
-        id: elasticityStrategyId,
         kind: polarisSloMapping.elasticityStrategy.kind,
         config: polarisSloMapping.elasticityStrategyConfig,
       },
@@ -154,11 +150,8 @@ export const useSloStore = defineStore('slo', () => {
     normalizedName = normalizedName[0].toUpperCase() + normalizedName.slice(1);
     const template = templateStore.getSloTemplate(reference.kind);
 
-    let elasticityStrategyId;
     if (polarisSloMapping.elasticityStrategy) {
-      elasticityStrategyId = await elasticityStrategyStore.ensureElasticityStrategyCreated(
-        polarisSloMapping.elasticityStrategy.kind
-      );
+      await elasticityStrategyStore.ensureElasticityStrategyCreated(polarisSloMapping.elasticityStrategy.kind);
     }
     let target;
     if (polarisSloMapping.target) {
@@ -192,7 +185,6 @@ export const useSloStore = defineStore('slo', () => {
       configChanged: false,
       target,
       elasticityStrategy: {
-        id: elasticityStrategyId,
         kind: polarisSloMapping.elasticityStrategy.kind,
         config: polarisSloMapping.elasticityStrategyConfig,
       },

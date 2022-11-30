@@ -6,12 +6,11 @@ import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { applyDeploymentResult } from '@/store/utils';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
-import { getPolarisControllers } from '@/polaris-templates/strategy-template';
-import { useTemplateStore } from '@/store/template';
+import { defaultStrategies } from '@/workspace/elasticity-strategy/strategy-template';
+import {ElasticityStrategyConfigParameter} from "@/polaris-templates/parameters";
 
 export const useElasticityStrategyStore = defineStore('elasticityStrategy', () => {
   const orchestratorApi = useOrchestratorApi();
-  const templateStore = useTemplateStore();
 
   const ensureCreatedSemaphore = ref<Map<string, Promise<void>>>(new Map());
   async function lockKind(kind: string) {
@@ -30,18 +29,18 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     };
   }
 
-  const elasticityStrategies = ref<ElasticityStrategy[]>([]);
+  const elasticityStrategies = ref<ElasticityStrategy[]>(defaultStrategies);
 
   const getElasticityStrategy = computed(() => {
-    const strategiesMap = new Map(elasticityStrategies.value.map((x) => [x.id, x]));
-    return (id) => strategiesMap.get(id);
+    const strategiesMap = new Map(elasticityStrategies.value.map((x) => [x.kind, x]));
+    return (kind) => strategiesMap.get(kind);
   });
 
   function saveElasticityStrategy(strategy: ElasticityStrategy) {
     if (!strategy.id) {
       strategy.id = uuidv4();
     }
-    const existingIndex = elasticityStrategies.value.findIndex((x) => x.id === strategy.id);
+    const existingIndex = elasticityStrategies.value.findIndex((x) => x.kind === strategy.kind);
     if (existingIndex >= 0) {
       elasticityStrategies.value[existingIndex] = strategy;
     } else {
@@ -49,36 +48,73 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     }
   }
 
+  function saveElasticityStrategyFromPolaris(strategy: ElasticityStrategy) {
+    const existingElasticityStrategy = getElasticityStrategy.value(strategy.kind);
+    if (existingElasticityStrategy) {
+      if (!existingElasticityStrategy.confirmed) {
+        existingElasticityStrategy.sloSpecificConfig = strategy.sloSpecificConfig;
+      } else {
+        const oldPropertyKeys = existingElasticityStrategy.sloSpecificConfig.map((x) => x.parameter);
+        const newPropertyKeys = strategy.sloSpecificConfig.map((x) => x.parameter);
+        const newProperties = strategy.sloSpecificConfig.filter((x) => !oldPropertyKeys.includes(x.parameter));
+        const removedPropertyKeys = existingElasticityStrategy.sloSpecificConfig
+          .filter((x) => !newPropertyKeys.includes(x.parameter))
+          .map((x) => x.parameter);
+
+        if (newProperties.length > 0 || removedPropertyKeys.length > 0) {
+          existingElasticityStrategy.sloSpecificConfig = [
+            ...existingElasticityStrategy.sloSpecificConfig,
+            ...newProperties,
+          ].filter((x) => !removedPropertyKeys.includes(x.parameter));
+          existingElasticityStrategy.confirmed = false;
+        }
+      }
+    } else {
+      elasticityStrategies.value.push(strategy);
+    }
+  }
+
+  function confirmElasticityStrategy(kind: string, sloSpecificConfig: ElasticityStrategyConfigParameter[]) {
+    const elasticityStrategy = getElasticityStrategy.value(kind);
+    if (!elasticityStrategy) {
+      //TODO: This elasticity strategy does not exists, do we need a notification here?
+      return;
+    }
+
+    elasticityStrategy.sloSpecificConfig = sloSpecificConfig;
+    elasticityStrategy.confirmed = true;
+  }
+
   async function deployElasticityStrategy(id) {
-    const elasticityStrategy = getElasticityStrategy.value(id);
-    const result = await orchestratorApi.deployElasticityStrategy(elasticityStrategy, templateStore.getElasticityStrategyTemplate(elasticityStrategy.template));
+    const elasticityStrategy = elasticityStrategies.value.find((x) => x.id === id);
+    const result = await orchestratorApi.deployElasticityStrategy(elasticityStrategy);
     applyDeploymentResult(elasticityStrategy, result);
+  }
+
+  function removeElasticityStrategy(kind: string) {
+    elasticityStrategies.value = elasticityStrategies.value.filter((x) => x.kind !== kind);
   }
 
   async function ensureElasticityStrategyCreated(kind: string): Promise<WorkspaceComponentId> {
     const unlockKind = await lockKind(kind);
-    const strategy = elasticityStrategies.value.find((x) => x.template === kind);
+    const strategy = getElasticityStrategy.value(kind);
     if (strategy) {
       unlockKind();
       return strategy.id;
     }
+    //TODO: Get matching polaris controllers
 
-    const template = templateStore.getElasticityStrategyTemplate(kind);
-    const polarisControllers = getPolarisControllers(template);
-    for (const controller of polarisControllers) {
-      const polarisDeployments = await orchestratorApi.findPolarisDeployments();
-      controller.deployment = polarisDeployments.find(
-        (x) => x.connectionMetadata.name === template.controllerName
-      )?.connectionMetadata;
-    }
-
+    // TODO: This should only happen if the elasticity strategy does not exist inside the Polaris Cluster. Display a warning to the user
     const newStrategy: ElasticityStrategy = {
       id: uuidv4(),
       type: workspaceItemTypes.elasticityStrategy,
       name: kind.replace(/([A-Z])/g, ' $1').trim(),
       description: '',
-      template: template.elasticityStrategyKind,
-      polarisControllers,
+      kind,
+      kindPlural: '',
+      sloSpecificConfig: [],
+      confirmed: false,
+      polarisControllers: [],
     };
     saveElasticityStrategy(newStrategy);
     unlockKind();
@@ -89,7 +125,10 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     elasticityStrategies,
     getElasticityStrategy,
     saveElasticityStrategy,
+    saveElasticityStrategyFromPolaris,
+    confirmElasticityStrategy,
     deployElasticityStrategy,
     ensureElasticityStrategyCreated,
+    removeElasticityStrategy,
   };
 });

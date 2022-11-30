@@ -3,7 +3,6 @@ import { NamespacedObjectReference, SloCompliance } from '@polaris-sloc/core';
 import { SloMetricSourceTemplate } from '@/polaris-templates/slo-metrics/metrics-template';
 
 interface SloElasticityStrategy {
-  id: string;
   kind: string;
   config: Record<string, unknown>;
 }
@@ -33,6 +32,7 @@ export interface DeployedPolarisSloMapping {
 }
 
 export default interface Slo extends PolarisComponent {
+  template: string;
   compliance?: number;
   target?: string;
   metrics: SloMetric[];

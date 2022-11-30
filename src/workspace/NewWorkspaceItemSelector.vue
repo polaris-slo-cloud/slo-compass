@@ -49,22 +49,6 @@
           </q-card-section>
         </q-card>
       </q-expansion-item>
-      <q-expansion-item switch-toggle-side expand-separator default-opened label="Elasticity Strategy">
-        <q-card>
-          <q-card-section>
-            <div class="row q-gutter-sm">
-              <WorkspaceItem
-                class="col-6 col-md-4 col-xl-3"
-                v-for="template of elasticityStrategyTemplates"
-                :key="template.elasticityStrategyKind"
-                :title="template.displayName"
-                color="amber"
-                @click="showAddStrategy(template)"
-              />
-            </div>
-          </q-card-section>
-        </q-card>
-      </q-expansion-item>
     </q-list>
     <component
       :is="workspaceItemDialog"
@@ -82,13 +66,11 @@ import WorkspaceItem from '@/workspace/WorkspaceItem.vue';
 import { workspaceItemTypes } from '@/workspace/constants';
 import AddSloTarget from '@/workspace/targets/CreateSloTarget.vue';
 import AddSlo from '@/workspace/slo/CreateSlo.vue';
-import AddElasticityStrategy from '@/workspace/elasticity-strategy/CreateElasticityStrategy.vue';
 import CreateSloTemplateDialog from '@/polaris-templates/slo/CreateSloTemplateDialog.vue';
 import { useTemplateStore } from '@/store/template';
 
 const templateStore = useTemplateStore();
 const sloTemplates = computed(() => templateStore.sloTemplates);
-const elasticityStrategyTemplates = computed(() => templateStore.elasticityStrategyTemplates);
 const search = ref(null);
 
 const showAddItemDialog = ref(false);
@@ -105,11 +87,6 @@ function showAddSlo(template) {
   newItemType.value = workspaceItemTypes.slo;
   newItemTemplate.value = template;
 }
-function showAddStrategy(template) {
-  showAddItemDialog.value = true;
-  newItemType.value = workspaceItemTypes.elasticityStrategy;
-  newItemTemplate.value = template;
-}
 
 const workspaceItemDialog = computed(() => {
   switch (newItemType.value) {
@@ -118,8 +95,6 @@ const workspaceItemDialog = computed(() => {
       return AddSloTarget;
     case workspaceItemTypes.slo:
       return AddSlo;
-    case workspaceItemTypes.elasticityStrategy:
-      return AddElasticityStrategy;
   }
   return 'div';
 });

@@ -50,6 +50,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const slos = computed<Slo[]>(() => sloStore.slos);
   const targets = computed<SloTarget[]>(() => targetStore.targets);
   const elasticityStrategies = computed<ElasticityStrategy[]>(() => elasticityStrategyStore.elasticityStrategies);
+  const usedElasticityStrategies = computed<ElasticityStrategy[]>(() =>
+    usedElasticityStrategyKinds.value.map((x) => elasticityStrategyStore.getElasticityStrategy(x.kind))
+  );
 
   const getItem = computed<(id: string) => WorkspaceComponent>(() => {
     const allItems = [...targets.value, ...slos.value, ...elasticityStrategies.value];
@@ -140,6 +143,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     watchBookmarks,
     deployedSloMappings,
     usedElasticityStrategyKinds,
+    usedElasticityStrategies,
     createWorkspace,
     loadWorkspace,
     retryDeployment,

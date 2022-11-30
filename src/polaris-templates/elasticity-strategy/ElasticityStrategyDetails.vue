@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-between items-start">
-    <InlineEdit v-model="templateName" display-type="h1" style="min-width: 25%">
+    <InlineEdit v-model="name" display-type="h1" style="min-width: 25%">
       <template #edit="scope">
         <q-input outlined label="Display Name" v-model="scope.value" />
       </template>
@@ -10,25 +10,21 @@
       <q-card>
         <q-card-section class="row items-center">
           <q-avatar icon="mdi-delete" color="negative" text-color="white" />
-          <span class="q-ml-sm">
-            Are you sure that you want to delete the {{ templateName }} elasticity strategy template?
-          </span>
+          <span class="q-ml-sm"> Are you sure that you want to delete the {{ name }} elasticity strategy? </span>
           <div class="text-italic text-subtitle2 q-mt-sm">
-            This operation only removes the template locally. If it still exists inside a connected Polaris Cluster, the
-            template will be re-added after restarting the application.
+            This operation only removes the elasticity strategy locally. If it still exists inside a connected Polaris
+            Cluster, the elasticity strategy will be re-added after restarting the application.
           </div>
         </q-card-section>
 
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="primary" v-close-popup />
-          <q-btn label="Delete" color="negative" v-close-popup @click="deleteTemplate" />
+          <q-btn label="Delete" color="negative" v-close-popup @click="deleteElasticityStrategy" />
         </q-card-actions>
       </q-card>
     </q-dialog>
   </div>
-  <span class="text-subtitle1 text-muted">
-    {{ template.elasticityStrategyKind }} ({{ template.elasticityStrategyKindPlural }})
-  </span>
+  <span class="text-subtitle1 text-muted">{{ elasticityStrategy.kind }} ({{ elasticityStrategy.kindPlural }})</span>
   <EditableField label="Description" class="q-mt-lg" v-model="description">
     {{ formatIfEmpty(description) }}
     <template #edit="scope">
@@ -67,29 +63,29 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useTemplateStore } from '@/store/template';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import SloSpecificParametersConfigForm from '@/polaris-templates/elasticity-strategy/SloSpecificParametersConfigForm.vue';
 
 const route = useRoute();
-const store = useTemplateStore();
+const store = useElasticityStrategyStore();
 
-const template = ref({});
-const templateName = computed({
-  get: () => (template.value ? template.value.displayName : ''),
+const elasticityStrategy = ref({});
+const name = computed({
+  get: () => (elasticityStrategy.value ? elasticityStrategy.value.name : ''),
   set(v) {
-    save({ displayName: v });
+    save({ name: v });
   },
 });
 const description = computed({
-  get: () => template.value?.description,
+  get: () => elasticityStrategy.value?.description,
   set(v) {
     save({ description: v });
   },
 });
 
 const sloSpecificConfig = computed({
-  get: () => template.value?.sloSpecificConfig,
+  get: () => elasticityStrategy.value?.sloSpecificConfig,
   set(v) {
     save({ sloSpecificConfig: v });
   },
@@ -104,17 +100,17 @@ const sloSpecificConfigColumns = [
 const formatIfEmpty = (text) => text || '-';
 
 const confirmDelete = ref(false);
-function deleteTemplate() {
-  store.removeElasticityStrategyTemplate(template.value.elasticityStrategyKind);
+function deleteElasticityStrategy() {
+  store.removeElasticityStrategy(elasticityStrategy.value.kind);
 }
 
 function save(changes) {
-  store.saveElasticityStrategyTemplate({ ...template.value, ...changes });
+  store.saveElasticityStrategy({ ...elasticityStrategy.value, ...changes });
   loadTemplate(route.params.kind);
 }
 watch(() => route.params.kind, loadTemplate);
 function loadTemplate(kind) {
-  template.value = store.getElasticityStrategyTemplate(kind);
+  elasticityStrategy.value = store.getElasticityStrategy(kind);
 }
 
 onMounted(() => {

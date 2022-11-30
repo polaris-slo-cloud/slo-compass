@@ -3,8 +3,8 @@
     v-model="selectedElasticityStrategy"
     :label="label"
     :options="filteredOptions"
-    option-value="id"
-    option-label="name"
+    emit-value
+    map-options
     use-input
     @filter="updateOptionsFilter"
   />
@@ -31,10 +31,10 @@ const selectedElasticityStrategy = computed({
   },
 });
 
-const options = computed(() => store.elasticityStrategies);
+const options = computed(() => store.elasticityStrategies.map((x) => ({ label: x.name, value: x.kind })));
 const optionsFilter = ref('');
 const filteredOptions = computed(() =>
-  options.value.filter((x) => x.name.toLowerCase().includes(optionsFilter.value))
+  options.value.filter((x) => x.label.toLowerCase().includes(optionsFilter.value))
 );
 function updateOptionsFilter(val, update) {
   update(() => {

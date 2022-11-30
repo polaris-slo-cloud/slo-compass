@@ -2,9 +2,9 @@
   <div>
     <EditableField
       label="Elasticity Strategy"
-      v-model="elasticityStrategy"
+      v-model="elasticityStrategyKind"
       :resettable="sloExistsInPolaris"
-      :oldValue="oldElasticityStrategy"
+      :oldValue="oldElasticityStrategy?.kind"
     >
       <span v-if="elasticityStrategyChanged" class="old-value">
         {{ oldElasticityStrategy.name }}
@@ -47,7 +47,6 @@ import { computed } from 'vue';
 import * as _ from 'lodash';
 import { useSloStore } from '@/store/slo';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
-import { useTemplateStore } from '@/store/template';
 import { SloHelper } from '@/workspace/slo/SloHelper';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import ConfigItemView from '@/workspace/slo/ConfigItemView.vue';
@@ -56,7 +55,6 @@ import ElasticityStrategySelection from '@/workspace/elasticity-strategy/Elastic
 
 const store = useSloStore();
 const elasticityStrategyStore = useElasticityStrategyStore();
-const templateStore = useTemplateStore();
 const helper = new SloHelper();
 
 const props = defineProps({
@@ -90,36 +88,34 @@ function resetElasticityStrategyConfig(configKey) {
   });
 }
 
-const elasticityStrategy = computed({
+const elasticityStrategyKind = computed({
   get() {
-    return props.slo.elasticityStrategy
-      ? elasticityStrategyStore.getElasticityStrategy(props.slo.elasticityStrategy.id)
-      : null;
+    return props.slo.elasticityStrategy ? props.slo.elasticityStrategy.kind : null;
   },
-  set(v) {
-    let config = props.slo.elasticityStrategy?.template === v.template ? props.slo.elasticityStrategy.config : {};
-    if (v.id === oldElasticityStrategy.value?.id) {
+  set(kind) {
+    let config = props.slo.elasticityStrategy?.kind === kind ? props.slo.elasticityStrategy.config : {};
+    if (kind === oldElasticityStrategy.value?.kind) {
       config = props.slo.deployedSloMapping.sloMapping.elasticityStrategyConfig;
     }
-    const template = templateStore.getElasticityStrategyTemplate(v.template);
-
-    if (v.id !== props.slo.elasticityStrategy?.id) {
+    if (kind !== props.slo.elasticityStrategy?.kind) {
       save({
-        elasticityStrategy: { id: v.id, kind: template.elasticityStrategyKind, config },
+        elasticityStrategy: { kind, config },
       });
     }
   },
 });
 
+const elasticityStrategy = computed(() =>
+  elasticityStrategyKind.value ? elasticityStrategyStore.getElasticityStrategy(elasticityStrategyKind.value) : null
+);
+
 const oldElasticityStrategy = computed(() =>
   props.slo.deployedSloMapping?.sloMapping?.elasticityStrategy
-    ? elasticityStrategyStore.elasticityStrategies.find(
-        (x) => x.template === props.slo.deployedSloMapping.sloMapping.elasticityStrategy.kind
-      )
+    ? elasticityStrategyStore.getElasticityStrategy(props.slo.deployedSloMapping.sloMapping.elasticityStrategy.kind)
     : null
 );
 const elasticityStrategyChanged = computed(
-  () => !!oldElasticityStrategy.value && oldElasticityStrategy.value.id !== elasticityStrategy.value?.id
+  () => !!oldElasticityStrategy.value && oldElasticityStrategy.value.kind !== elasticityStrategyKind.value
 );
 const elasticityStrategyName = computed(() => formatIfEmpty(elasticityStrategy.value?.name));
 const configKeys = computed(() => {
@@ -132,9 +128,8 @@ const configTemplate = computed(() => {
   if (!elasticityStrategy.value) {
     return {};
   }
-  const template = templateStore.getElasticityStrategyTemplate(elasticityStrategy.value.template);
-  return template
-    ? template.sloSpecificConfig.reduce((map, curr) => {
+  return elasticityStrategy.value.sloSpecificConfig
+    ? elasticityStrategy.value.sloSpecificConfig.reduce((map, curr) => {
         map[curr.parameter] = curr;
         return map;
       }, {})
@@ -147,7 +142,7 @@ const configEditModel = computed({
   set(v) {
     if (!_.isEqual(v, props.slo.elasticityStrategy.config)) {
       save({
-        elasticityStrategy: { ...props.slo.elasticityStrategy, config: v },
+        elasticityStrategy: { kind: elasticityStrategyKind.value, config: v },
       });
     }
   },

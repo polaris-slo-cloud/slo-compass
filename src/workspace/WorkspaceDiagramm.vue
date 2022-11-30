@@ -72,8 +72,10 @@ import { ForceLayout } from 'v-network-graph/lib/force-layout';
 import WorkspaceFilter from '@/workspace/WorkspaceFilter.vue';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { getComplianceColor } from '@/workspace/slo/Slo';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 const store = useWorkspaceStore();
+const elasticityStrategyStore = useElasticityStrategyStore();
 const props = defineProps({
   selectedComponent: Object,
 });
@@ -256,9 +258,10 @@ const data = computed(() => {
       polarisComponent: slo,
     };
     if (slo.elasticityStrategy) {
-      edges[`edge_${slo.id}_${slo.elasticityStrategy.id}`] = {
+      const elasticityStrategy = elasticityStrategyStore.getElasticityStrategy(slo.elasticityStrategy.kind);
+      edges[`edge_${slo.id}_${elasticityStrategy.id}`] = {
         source: slo.id,
-        target: slo.elasticityStrategy.id,
+        target: elasticityStrategy.id,
         label: 'Scales target with',
       };
     }
@@ -271,7 +274,7 @@ const data = computed(() => {
     }
   }
 
-  for (const strategy of store.elasticityStrategies) {
+  for (const strategy of store.usedElasticityStrategies) {
     nodes[strategy.id] = {
       name: strategy.name,
       color: colors.getPaletteColor('amber'),

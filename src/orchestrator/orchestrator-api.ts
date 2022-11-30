@@ -4,19 +4,18 @@ import { OrchestratorConnection } from '@/connections/storage';
 import Slo, {
   DeployedPolarisSloMapping,
   PolarisElasticityStrategySloOutput,
-  PolarisSloMapping
+  PolarisSloMapping,
 } from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
 import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
-import {ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher, SloCompliance} from '@polaris-sloc/core';
+import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { ISubscribable, ISubscribableCallback } from '@/crosscutting/subscibable';
 import { v4 as uuidv4 } from 'uuid';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
-import {PolarisMapper} from "@/orchestrator/PolarisMapper";
-import {ElasticityStrategyTemplateMetadata} from "@/polaris-templates/strategy-template";
+import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 
 export interface PolarisResource {
   [key: string]: any;
@@ -58,7 +57,7 @@ export interface IOrchestratorApi {
   findDeployments(namespace?: string): Promise<IDeployment[]>;
   deploySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<PolarisSloDeploymentResult>;
   deleteSlo(slo: Slo): Promise<void>;
-  deployElasticityStrategy(elasticityStrategy: ElasticityStrategy, template: ElasticityStrategyTemplateMetadata): Promise<PolarisDeploymentResult>;
+  deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult>;
   retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
   applySloMapping(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
@@ -216,8 +215,8 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     deploySlo: (slo, target, template) =>
       deploy(slo, () => api.value.deploySlo(clone(slo), clone(target), clone(template))),
     deleteSlo: (slo) => api.value.deleteSlo(clone(slo)),
-    deployElasticityStrategy: (elasticityStrategy, template) =>
-      deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy), clone(template))),
+    deployElasticityStrategy: (elasticityStrategy) =>
+      deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy))),
     retryDeployment: (item) => deploy(item, () => api.value.retryDeployment(clone(item))),
     applySloMapping: (slo, target, template) => api.value.applySloMapping(clone(slo), clone(target), clone(template)),
     findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),

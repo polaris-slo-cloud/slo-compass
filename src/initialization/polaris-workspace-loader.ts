@@ -6,6 +6,7 @@ import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookm
 import { useTemplateStore } from '@/store/template';
 import { useWorkspaceStore } from '@/store/workspace';
 import { toSloMappingObjectKind } from '@/workspace/slo/SloMappingWatchHandler';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 export async function updateWorkspaceFromOrchestrator() {
   const orchestratorApi = useOrchestratorApi();
@@ -56,6 +57,7 @@ export async function loadTemplatesFromOrchestrator() {
   const orchestratorApi = useOrchestratorApi();
   const store = useTemplateStore();
   const workspaceStore = useWorkspaceStore();
+  const elasticityStrategyStore = useElasticityStrategyStore();
   const bookmarkManager = new WorkspaceWatchBookmarkManager();
   const mapper = orchestratorApi.createPolarisMapper();
 
@@ -67,7 +69,7 @@ export async function loadTemplatesFromOrchestrator() {
         store.saveSloTemplateFromPolaris(sloTemplate);
         workspaceStore.addDeployedSloMapping(toSloMappingObjectKind(sloTemplate.sloMappingKind));
       } else if (mapper.isElasticityStrategyCrd(crd)) {
-        store.saveElasticityStrategyFromPolaris(mapper.mapCrdToElasticityStrategyTemplate(crd));
+        elasticityStrategyStore.saveElasticityStrategyFromPolaris(mapper.mapCrdToElasticityStrategy(crd));
       }
     }
     bookmarkManager.update(orchestratorApi.crdObjectKind.value, orchestratorCrds.metadata.resourceVersion);

@@ -7,10 +7,12 @@ import useWindowSize from '@/crosscutting/composables/window-size';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useTemplateStore } from '@/store/template';
 import ReviewSloTemplateDialog from '@/polaris-templates/slo/ReviewTemplateDialog.vue';
-import ReviewStrategyTemplateDialog from '@/polaris-templates/elasticity-strategy/ReviewTemplateDialog.vue';
+import ReviewStrategyConfigTemplateDialog from '@/polaris-templates/elasticity-strategy/ReviewStrategyConfigTemplateDialog.vue';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 const orchestratorApi = useOrchestratorApi();
 const templateStore = useTemplateStore();
+const elasticityStrategyStore = useElasticityStrategyStore();
 
 const windowSize = useWindowSize();
 const selection = ref(null);
@@ -39,14 +41,14 @@ const unconfirmedSloTemplatesDisplay = computed(() =>
 );
 const showReviewUnconfirmedSloTemplates = ref(false);
 
-const unconfirmedStrategyTemplates = computed(() =>
-  templateStore.elasticityStrategyTemplates.filter((x) => !x.confirmed)
+const unconfirmedStrategyConfigTemplates = computed(() =>
+  elasticityStrategyStore.elasticityStrategies.filter((x) => !x.confirmed)
 );
-const hasUnconfirmedStrategyTemplates = computed(() => unconfirmedStrategyTemplates.value.length > 0);
-const unconfirmedStrategyTemplatesDisplay = computed(() =>
-  unconfirmedStrategyTemplates.value.map((x) => `"${x.displayName}"`).join(', ')
+const hasUnconfirmedStrategyConfigTemplates = computed(() => unconfirmedStrategyConfigTemplates.value.length > 0);
+const unconfirmedStrategyConfigTemplatesDisplay = computed(() =>
+  unconfirmedStrategyConfigTemplates.value.map((x) => `"${x.name}"`).join(', ')
 );
-const showReviewUnconfirmedStrategyTemplates = ref(false);
+const showReviewUnconfirmedStrategyConfigTemplates = ref(false);
 
 watch(selection, (value) => {
   if (value) {
@@ -84,22 +86,23 @@ function openNewItemSelection() {
         <q-btn flat label="Review" @click="showReviewUnconfirmedSloTemplates = true" />
       </template>
     </q-banner>
-    <q-banner inline-actions class="bg-info text-white" v-if="hasUnconfirmedStrategyTemplates">
+    <q-banner inline-actions class="bg-info text-white" v-if="hasUnconfirmedStrategyConfigTemplates">
       <template #avatar>
         <q-icon name="mdi-information" />
       </template>
       <span>
-        The elasticity strategy template{{ unconfirmedStrategyTemplates.length > 1 ? 's' : '' }}
-        {{ unconfirmedStrategyTemplatesDisplay }} {{ unconfirmedStrategyTemplates.length > 1 ? 'have' : 'has' }} been
-        loaded from Polaris. Please review if the parameters have been configured correctly.
+        The elasticity strateg{{ unconfirmedStrategyConfigTemplates.length > 1 ? 'ies' : 'y' }}
+        {{ unconfirmedStrategyConfigTemplatesDisplay }}
+        {{ unconfirmedStrategyConfigTemplates.length > 1 ? 'have' : 'has' }} been loaded from Polaris. Please review if
+        the parameters have been configured correctly.
       </span>
       <template #action>
-        <q-btn flat label="Review" @click="showReviewUnconfirmedStrategyTemplates = true" />
+        <q-btn flat label="Review" @click="showReviewUnconfirmedStrategyConfigTemplates = true" />
       </template>
     </q-banner>
     <WorkspaceDiagramm v-model:selectedComponent="selection" class="col" @click="showNewItemSelection = false" />
     <ReviewSloTemplateDialog v-model:show="showReviewUnconfirmedSloTemplates" />
-    <ReviewStrategyTemplateDialog v-model:show="showReviewUnconfirmedStrategyTemplates" />
+    <ReviewStrategyConfigTemplateDialog v-model:show="showReviewUnconfirmedStrategyConfigTemplates" />
     <teleport to="#main-layout">
       <q-drawer
         side="right"

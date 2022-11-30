@@ -18,7 +18,6 @@ export interface WorkspaceComponent {
 }
 
 export interface PolarisComponent extends WorkspaceComponent {
-  template: string;
   polarisControllers: PolarisController[];
   failedDeployments?: PolarisResource[];
 }
@@ -26,5 +25,6 @@ export interface PolarisComponent extends WorkspaceComponent {
 export interface PolarisController {
   type: 'SLO Controller' | 'Metrics Controller' | 'Elasticity Strategy Controller';
   name: string;
-  deployment: NamespacedObjectReference;
+  deployment?: NamespacedObjectReference;
+  containerImage?: string;
 }

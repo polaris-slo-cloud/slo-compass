@@ -1,25 +1,22 @@
-import { ElasticityStrategyConfigParameter, ElasticityStrategyParameterType } from '@/polaris-templates/parameters';
-import { PolarisController } from '@/workspace/PolarisComponent';
+import { ElasticityStrategyParameterType } from '@/polaris-templates/parameters';
+import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
+import { workspaceItemTypes } from '@/workspace/constants';
 
-export interface ElasticityStrategyTemplateMetadata {
-  elasticityStrategyKind: string;
-  elasticityStrategyKindPlural: string;
-  displayName: string;
-  description?: string;
-  controllerName: string;
-  containerImage: string;
-  sloSpecificConfig: ElasticityStrategyConfigParameter[];
-  confirmed: boolean;
-}
-
-export const templates: ElasticityStrategyTemplateMetadata[] = [
+export const defaultStrategies: ElasticityStrategy[] = [
   {
-    elasticityStrategyKind: 'HorizontalElasticityStrategy',
-    elasticityStrategyKindPlural: 'horizontalelasticitystrategies',
-    displayName: 'Horizontal Elasticity Strategy',
+    id: 'default-horizontal-elasticity-strategy',
+    name: 'Horizontal Elasticity Strategy',
+    type: workspaceItemTypes.elasticityStrategy,
     description: 'Provides a simple elasticity strategy to scale resources out and in depending on the SLO compliance',
-    controllerName: 'horizontal-elasticity-strategy-controller',
-    containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
+    kind: 'HorizontalElasticityStrategy',
+    kindPlural: 'horizontalelasticitystrategies',
+    polarisControllers: [
+      {
+        type: 'Elasticity Strategy Controller',
+        name: 'horizontal-elasticity-strategy-controller',
+        containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
+      },
+    ],
     sloSpecificConfig: [
       {
         parameter: 'minReplicas',
@@ -37,12 +34,19 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     confirmed: true,
   },
   {
-    elasticityStrategyKind: 'VerticalElasticityStrategy',
-    elasticityStrategyKindPlural: 'verticalelasticitystrategies',
-    displayName: 'Vertical Elasticity Strategy',
+    id: 'default-vertical-elasticity-strategy',
+    name: 'Vertical Elasticity Strategy',
+    type: workspaceItemTypes.elasticityStrategy,
     description: 'Provides a simple elasticity strategy to scale resources up and down depending on the SLO compliance',
-    controllerName: 'vertical-elasticity-strategy-controller',
-    containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
+    kind: 'VerticalElasticityStrategy',
+    kindPlural: 'verticalelasticitystrategies',
+    polarisControllers: [
+      {
+        type: 'Elasticity Strategy Controller',
+        name: 'vertical-elasticity-strategy-controller',
+        containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
+      },
+    ],
     sloSpecificConfig: [
       {
         parameter: 'minResources',
@@ -72,13 +76,3 @@ export const templates: ElasticityStrategyTemplateMetadata[] = [
     confirmed: true,
   },
 ];
-
-export function getPolarisControllers(template: ElasticityStrategyTemplateMetadata): PolarisController[] {
-  return [
-    {
-      type: 'Elasticity Strategy Controller',
-      name: template.controllerName,
-      deployment: null,
-    },
-  ];
-}

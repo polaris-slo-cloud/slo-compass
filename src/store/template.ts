@@ -8,17 +8,12 @@ import {
   SloMetricTemplateId,
   templates as defaultMetricSourceTemplates,
 } from '@/polaris-templates/slo-metrics/metrics-template';
-import {
-  ElasticityStrategyTemplateMetadata,
-  templates as defaultElasticityStrategyTemplates,
-} from '@/polaris-templates/strategy-template';
 
 export const useTemplateStore = defineStore('templates', () => {
   const orchestratorApi = useOrchestratorApi();
 
   const sloTemplates = ref<SloTemplateMetadata[]>(defaultSloTemplates);
   const sloMetricSourceTemplates = ref<SloMetricSourceTemplate[]>(defaultMetricSourceTemplates);
-  const elasticityStrategyTemplates = ref<ElasticityStrategyTemplateMetadata[]>(defaultElasticityStrategyTemplates);
 
   const getSloTemplate = computed(() => {
     const templateMap = new Map(sloTemplates.value.map((x) => [x.sloMappingKind, x]));
@@ -28,11 +23,6 @@ export const useTemplateStore = defineStore('templates', () => {
   const getSloMetricTemplate = computed(() => {
     const templateMap = new Map(sloMetricSourceTemplates.value.map((x) => [x.id, x]));
     return (id: SloMetricTemplateId): SloMetricSourceTemplate => templateMap.get(id);
-  });
-
-  const getElasticityStrategyTemplate = computed(() => {
-    const templateMap = new Map(elasticityStrategyTemplates.value.map((x) => [x.elasticityStrategyKind, x]));
-    return (key: string): ElasticityStrategyTemplateMetadata => templateMap.get(key);
   });
 
   async function createSloTemplate(template: SloTemplateMetadata) {
@@ -116,67 +106,11 @@ export const useTemplateStore = defineStore('templates', () => {
     sloMetricSourceTemplates.value = sloMetricSourceTemplates.value.filter((x) => x.id !== id);
   }
 
-  function saveElasticityStrategyFromPolaris(template: ElasticityStrategyTemplateMetadata) {
-    const existingTemplate = getElasticityStrategyTemplate.value(template.elasticityStrategyKind);
-    if (existingTemplate) {
-      // TODO: Set Metrics
-      if (!existingTemplate.confirmed) {
-        existingTemplate.sloSpecificConfig = template.sloSpecificConfig;
-      } else {
-        const oldPropertyKeys = existingTemplate.sloSpecificConfig.map((x) => x.parameter);
-        const newPropertyKeys = template.sloSpecificConfig.map((x) => x.parameter);
-        const newProperties = template.sloSpecificConfig.filter((x) => !oldPropertyKeys.includes(x.parameter));
-        const removedPropertyKeys = existingTemplate.sloSpecificConfig
-          .filter((x) => !newPropertyKeys.includes(x.parameter))
-          .map((x) => x.parameter);
-
-        if (newProperties.length > 0 || removedPropertyKeys.length > 0) {
-          existingTemplate.sloSpecificConfig = [...existingTemplate.sloSpecificConfig, ...newProperties].filter(
-            (x) => !removedPropertyKeys.includes(x.parameter)
-          );
-          existingTemplate.confirmed = false;
-        }
-      }
-    } else {
-      elasticityStrategyTemplates.value.push(template);
-    }
-  }
-
-  function confirmElasticityStrategyTemplate(kind: string, config: ElasticityStrategyConfigParameter[]) {
-    const existingTemplate = getElasticityStrategyTemplate.value(kind);
-    if (!existingTemplate) {
-      //TODO: This template does not exists, do we need a notification here?
-      return;
-    }
-
-    existingTemplate.sloSpecificConfig = config;
-    existingTemplate.confirmed = true;
-  }
-
-  function saveElasticityStrategyTemplate(template: ElasticityStrategyTemplateMetadata) {
-    const existingIndex = elasticityStrategyTemplates.value.findIndex(
-      (x) => x.elasticityStrategyKind === template.elasticityStrategyKind
-    );
-    if (existingIndex >= 0) {
-      elasticityStrategyTemplates.value[existingIndex] = template;
-    } else {
-      elasticityStrategyTemplates.value.push(template);
-    }
-  }
-
-  function removeElasticityStrategyTemplate(kind: string) {
-    elasticityStrategyTemplates.value = elasticityStrategyTemplates.value.filter(
-      (x) => x.elasticityStrategyKind !== kind
-    );
-  }
-
   return {
     sloTemplates,
     sloMetricSourceTemplates,
-    elasticityStrategyTemplates,
     getSloTemplate,
     getSloMetricTemplate,
-    getElasticityStrategyTemplate,
     createSloTemplate,
     saveSloTemplate,
     removeSloTemplate,
@@ -185,9 +119,5 @@ export const useTemplateStore = defineStore('templates', () => {
     removeSloMetricSourceTemplate,
     saveSloTemplateFromPolaris,
     confirmSloTemplate,
-    saveElasticityStrategyFromPolaris,
-    confirmElasticityStrategyTemplate,
-    saveElasticityStrategyTemplate,
-    removeElasticityStrategyTemplate,
   };
 });

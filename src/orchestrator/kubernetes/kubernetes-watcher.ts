@@ -132,7 +132,7 @@ export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
       name: k8sObject.metadata.name,
       namespace: k8sObject.metadata.namespace,
       labels: k8sObject.metadata.labels,
-      ownerReferences: k8sObject.metadata.ownerReferences.map(transformK8sOwnerReference),
+      ownerReferences: k8sObject.metadata.ownerReferences?.map(transformK8sOwnerReference),
       resourceVersion: k8sObject.metadata.resourceVersion,
       generation: k8sObject.metadata.generation,
     };

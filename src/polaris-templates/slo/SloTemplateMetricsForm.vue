@@ -68,10 +68,11 @@ const metrics = computed({
 });
 function removeMetric(index) {
   metrics.value.splice(index, 1);
+  emit('update:modelValue', metrics.value);
 }
 
 function addMetric(metric) {
-  metrics.value.push(metric);
+  metrics.value = [...metrics.value, metric];
 }
 
 const metricsFilterQuery = ref('');

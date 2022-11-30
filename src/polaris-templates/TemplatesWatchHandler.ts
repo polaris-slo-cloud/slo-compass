@@ -4,10 +4,12 @@ import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useTemplateStore } from '@/store/template';
 import { toSloMappingObjectKind } from '@/workspace/slo/SloMappingWatchHandler';
 import { useWorkspaceStore } from '@/store/workspace';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 export class TemplatesWatchHandler implements WatchEventsHandler {
   private readonly polarisMapper: PolarisMapper;
   private readonly templateStore = useTemplateStore();
+  private readonly elasticityStrategyStore = useElasticityStrategyStore();
   private readonly workspaceStore = useWorkspaceStore();
 
   constructor() {
@@ -24,8 +26,8 @@ export class TemplatesWatchHandler implements WatchEventsHandler {
       this.templateStore.saveSloTemplateFromPolaris(template);
       this.workspaceStore.addDeployedSloMapping(toSloMappingObjectKind(template.sloMappingKind));
     } else if (this.polarisMapper.isElasticityStrategyCrd(obj)) {
-      const template = this.polarisMapper.mapCrdToElasticityStrategyTemplate(obj);
-      this.templateStore.saveElasticityStrategyFromPolaris(template);
+      const strategy = this.polarisMapper.mapCrdToElasticityStrategy(obj);
+      this.elasticityStrategyStore.saveElasticityStrategyFromPolaris(strategy);
     }
   }
 
@@ -43,8 +45,8 @@ export class TemplatesWatchHandler implements WatchEventsHandler {
       const template = this.polarisMapper.mapCrdToSloTemplate(obj);
       this.templateStore.saveSloTemplateFromPolaris(template);
     } else if (this.polarisMapper.isElasticityStrategyCrd(obj)) {
-      const template = this.polarisMapper.mapCrdToElasticityStrategyTemplate(obj);
-      this.templateStore.saveElasticityStrategyFromPolaris(template);
+      const strategy = this.polarisMapper.mapCrdToElasticityStrategy(obj);
+      this.elasticityStrategyStore.saveElasticityStrategyFromPolaris(strategy);
     }
   }
 }

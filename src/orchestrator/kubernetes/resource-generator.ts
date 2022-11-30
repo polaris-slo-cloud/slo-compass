@@ -26,7 +26,6 @@ import {
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 import { ComposedMetricSource } from '@/polaris-templates/slo-metrics/metrics-template';
-import {ElasticityStrategyTemplateMetadata} from "@/polaris-templates/strategy-template";
 
 interface SloResources {
   staticResources: KubernetesObject[];
@@ -98,26 +97,24 @@ export default {
   },
   generateElasticityStrategyResources: async function (
     elasticityStrategy: ElasticityStrategy,
-    namespace: string,
-    template: ElasticityStrategyTemplateMetadata
+    namespace: string
   ): Promise<KubernetesObject[]> {
     const resources = [];
-    const crds = await loadCrdsForTemplate(template.elasticityStrategyKind);
+    const crds = await loadCrdsForTemplate(elasticityStrategy.kind);
 
+    const controller = elasticityStrategy.polarisControllers[0];
     resources.push(...crds);
-    resources.push(
-      ...[
-        generateNamespaceSpec(namespace),
-        generateServiceAccount(template.controllerName, namespace),
-        generateElasticityStrategyClusterRole(template.controllerName, template.elasticityStrategyKindPlural),
-        generateElasticityStrategyClusterRoleBinding(
-          template.controllerName,
-          namespace,
-          template.elasticityStrategyKindPlural
-        ),
-        generateElasticityStrategyControllerDeployment(template.controllerName, namespace, template.containerImage),
-      ]
-    );
+    resources.push(generateNamespaceSpec(namespace));
+    if (controller) {
+      resources.push(
+        ...[
+          generateServiceAccount(controller.name, namespace),
+          generateElasticityStrategyClusterRole(controller.name, elasticityStrategy.kindPlural),
+          generateElasticityStrategyClusterRoleBinding(controller.name, namespace, elasticityStrategy.kindPlural),
+          generateElasticityStrategyControllerDeployment(controller.name, namespace, controller.containerImage),
+        ]
+      );
+    }
 
     return resources;
   },
