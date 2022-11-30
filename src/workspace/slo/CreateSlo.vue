@@ -21,19 +21,16 @@
           ref="optionInputs"
         />
         <ElasticityStrategySelection class="q-mt-lg" label="Elasticity Strategy" v-model="elasticityStrategyKind" />
-        <div
-          class="text-h6 q-mt-lg q-mb-sm"
-          v-if="elasticityStrategy && elasticityStrategy.sloSpecificConfig.length > 0"
-        >
-          Elasticity Strategy Config
+        <div v-if="elasticityStrategy && elasticityStrategy.sloSpecificConfig.length > 0">
+          <div class="text-h6 q-mt-lg q-mb-sm">Elasticity Strategy Config</div>
+          <ConfigTemplateInput
+            v-for="config of elasticityStrategy.sloSpecificConfig"
+            :key="config.parameter"
+            v-model="elasticityStrategyConfig[config.parameter]"
+            :template="config"
+            ref="elasticityOptionInputs"
+          />
         </div>
-        <ConfigTemplateInput
-          v-for="config of elasticityStrategy.sloSpecificConfig"
-          :key="config.parameter"
-          v-model="elasticityStrategyConfig[config.parameter]"
-          :template="config"
-          ref="elasticityOptionInputs"
-        />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="resetModel" v-close-popup />
