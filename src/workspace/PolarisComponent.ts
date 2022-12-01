@@ -17,14 +17,18 @@ export interface WorkspaceComponent {
   description: string;
 }
 
-export interface PolarisComponent extends WorkspaceComponent {
-  polarisControllers: PolarisController[];
+export interface PolarisComponent {
   failedDeployments?: PolarisResource[];
+}
+
+export interface PolarisControllerDeploymentMetadata {
+  name: string;
+  containerImage: string;
 }
 
 export interface PolarisController {
   type: 'SLO Controller' | 'Metrics Controller' | 'Elasticity Strategy Controller';
-  name: string;
+  handlesKind: string;
   deployment?: NamespacedObjectReference;
-  containerImage?: string;
+  deploymentMetadata?: PolarisControllerDeploymentMetadata;
 }

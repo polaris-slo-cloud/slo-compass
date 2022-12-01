@@ -94,8 +94,6 @@ export class KubernetesPolarisMapper implements PolarisMapper {
       name: displayName,
       sloSpecificConfig,
       description: schema.description,
-      //TODO: Get if exists
-      polarisControllers: [],
       confirmed: false,
     };
   }

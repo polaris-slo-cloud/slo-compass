@@ -92,11 +92,12 @@ const formatIfEmpty = (value) => value || '-';
 const sloExistsInPolaris = computed(() => slo.value.deployedSloMapping && !slo.value.deployedSloMapping.deleted);
 const canBeDeployed = computed(
   () =>
+      //TODO: Fix
     !orchestratorApi.hasRunningDeployment.value(slo.value.id) && slo.value.polarisControllers.some((x) => !x.deployment)
 );
 
 function deploy() {
-  store.deploySlo(slo.value.id);
+  // TODO: Perform deployment action for SLO Controller
 }
 
 function applyConfiguration() {

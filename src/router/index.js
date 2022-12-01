@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
 import { Platform } from 'quasar';
-import DashboardView from '@/views/DashboardView.vue';
+import WorkspaceView from '@/views/WorkspaceView.vue';
 import SloDetailsView from '@/workspace/slo/SloDetailsView.vue';
 import WelcomeView from '@/views/WelcomeView.vue';
 import ConnectionsView from '@/views/ConnectionsView.vue';
@@ -8,7 +8,9 @@ import TemplatesView from '@/views/TemplatesView.vue';
 import TemplatesOverview from '@/polaris-templates/TemplatesOverview.vue';
 import SloTemplateDetails from '@/polaris-templates/slo/SloTemplateDetails.vue';
 import SloMetricSourceTemplateDetails from '@/polaris-templates/slo-metrics/SloMetricSourceTemplateDetails.vue';
-import ElasticityStrategyDetails from '@/polaris-templates/elasticity-strategy/ElasticityStrategyDetails.vue';
+import ElasticityStrategyDetails from '@/polaris-components/elasticity-strategy/ElasticityStrategyDetails.vue';
+import PolarisComponentsView from '@/views/PolaisComponentsView.vue';
+import PolarisComponentsOverview from '@/polaris-components/PolarisComponentsOverview.vue';
 import { useWorkspaceStore } from '@/store/workspace';
 
 const router = createRouter({
@@ -30,7 +32,7 @@ const router = createRouter({
     {
       path: '/workspace',
       name: 'workspace',
-      component: DashboardView,
+      component: WorkspaceView,
       beforeEnter: (to, from, next) => {
         const store = useWorkspaceStore();
         if (!store.isOpened) {
@@ -76,6 +78,17 @@ const router = createRouter({
           path: 'slo-metric-source-template/:id',
           name: 'slo-metric-source-template',
           component: SloMetricSourceTemplateDetails,
+        },
+      ],
+    },
+    {
+      path: '/polaris-components',
+      component: PolarisComponentsView,
+      children: [
+        {
+          path: '',
+          name: 'polaris-components',
+          component: PolarisComponentsOverview,
         },
         {
           path: 'elasticity-strategy/:kind',

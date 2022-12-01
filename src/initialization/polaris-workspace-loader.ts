@@ -7,11 +7,13 @@ import { useTemplateStore } from '@/store/template';
 import { useWorkspaceStore } from '@/store/workspace';
 import { toSloMappingObjectKind } from '@/workspace/slo/SloMappingWatchHandler';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
+import { usePolarisComponentStore } from '@/store/polaris-component';
 
 export async function updateWorkspaceFromOrchestrator() {
   const orchestratorApi = useOrchestratorApi();
   const sloStore = useSloStore();
   const workspaceStore = useWorkspaceStore();
+  const polarisComponentStore = usePolarisComponentStore();
   const helper = new SloHelper();
   const bookmarkManager = new WorkspaceWatchBookmarkManager();
 
@@ -45,18 +47,21 @@ export async function updateWorkspaceFromOrchestrator() {
     bookmarkManager.update(objectKind, sloCompliances.metadata.resourceVersion);
   }
 
-  for (const objectKind of workspaceStore.deployedSloMappings) {
+  for (const objectKind of polarisComponentStore.deployedSloMappings) {
     await updateSlosForObjectKind(objectKind);
   }
   for (const objectKind of workspaceStore.usedElasticityStrategyKinds) {
     await updateSloCompliancesForObjectKind(objectKind);
   }
+
+  const polarisControllers = await orchestratorApi.findPolarisControllers();
+  polarisComponentStore.initializePolarisComponents(polarisControllers);
 }
 
 export async function loadTemplatesFromOrchestrator() {
   const orchestratorApi = useOrchestratorApi();
   const store = useTemplateStore();
-  const workspaceStore = useWorkspaceStore();
+  const polarisComponentStore = usePolarisComponentStore();
   const elasticityStrategyStore = useElasticityStrategyStore();
   const bookmarkManager = new WorkspaceWatchBookmarkManager();
   const mapper = orchestratorApi.createPolarisMapper();
@@ -67,7 +72,7 @@ export async function loadTemplatesFromOrchestrator() {
       if (mapper.isSloTemplateCrd(crd)) {
         const sloTemplate = mapper.mapCrdToSloTemplate(crd);
         store.saveSloTemplateFromPolaris(sloTemplate);
-        workspaceStore.addDeployedSloMapping(toSloMappingObjectKind(sloTemplate.sloMappingKind));
+        polarisComponentStore.addDeployedSloMapping(toSloMappingObjectKind(sloTemplate.sloMappingKind));
       } else if (mapper.isElasticityStrategyCrd(crd)) {
         elasticityStrategyStore.saveElasticityStrategyFromPolaris(mapper.mapCrdToElasticityStrategy(crd));
       }

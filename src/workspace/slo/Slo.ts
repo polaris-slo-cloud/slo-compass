@@ -1,4 +1,4 @@
-import { PolarisComponent } from '@/workspace/PolarisComponent';
+import { WorkspaceComponent } from '@/workspace/PolarisComponent';
 import { NamespacedObjectReference, SloCompliance } from '@polaris-sloc/core';
 import { SloMetricSourceTemplate } from '@/polaris-templates/slo-metrics/metrics-template';
 
@@ -31,8 +31,8 @@ export interface DeployedPolarisSloMapping {
   deleted?: boolean;
 }
 
-export default interface Slo extends PolarisComponent {
-  template: string;
+export default interface Slo extends WorkspaceComponent {
+  kind: string;
   compliance?: number;
   target?: string;
   metrics: SloMetric[];

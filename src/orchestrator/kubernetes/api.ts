@@ -4,7 +4,6 @@ import {
   IDeployment,
   IPolarisOrchestratorApi,
   PolarisDeploymentResult,
-  PolarisSloDeploymentResult,
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient } from '@/orchestrator/kubernetes/client';
 import resourceGenerator from '@/orchestrator/kubernetes/resource-generator';
@@ -13,17 +12,10 @@ import Slo, {
   PolarisElasticityStrategySloOutput,
   PolarisSloMapping,
 } from '@/workspace/slo/Slo';
-import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
-import { KubernetesObject, V1CustomResourceDefinition } from '@kubernetes/client-node';
-import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
+import { KubernetesObject, V1Deployment } from '@kubernetes/client-node';
+import { PolarisController } from '@/workspace/PolarisComponent';
 import { SloTarget } from '@/workspace/targets/SloTarget';
-import {
-  ApiObject,
-  NamespacedObjectReference,
-  ObjectKind,
-  ObjectKindWatcher,
-  POLARIS_API,
-} from '@polaris-sloc/core';
+import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher, POLARIS_API } from '@polaris-sloc/core';
 import { KubernetesObjectKindWatcher } from '@/orchestrator/kubernetes/kubernetes-watcher';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
@@ -106,52 +98,6 @@ export default class Api implements IPolarisOrchestratorApi {
 
   test = async (): Promise<boolean> => await this.client.test();
 
-  async deploySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<PolarisSloDeploymentResult> {
-    const resources = await resourceGenerator.generateSloResources(
-      slo,
-      target,
-      this.connectionOptions.polarisNamespace,
-      template
-    );
-
-    const result = await this.deployControllerResources(resources.staticResources, slo.polarisControllers);
-    const sloMappingSuccessful = await this.deployResource(resources.sloMapping);
-    const mappingCrd = resources.staticResources.find(
-      (x) =>
-        x.kind === 'CustomResourceDefinition' &&
-        (x as V1CustomResourceDefinition).spec.names.kind === resources.sloMapping.kind
-    ) as V1CustomResourceDefinition;
-
-    this.cacheCustomResourceMetadata({
-      kind: {
-        group: mappingCrd.spec.group,
-        version: mappingCrd.spec.versions[0].name,
-        kind: resources.sloMapping.kind,
-      },
-      plural: mappingCrd.spec.names.plural,
-    });
-
-    return {
-      deployedControllers: result.deployedControllers,
-      failedResources: result.failedResources,
-      deployedSloMapping: sloMappingSuccessful
-        ? {
-            reference: {
-              group: mappingCrd.spec.group,
-              version: mappingCrd.spec.versions[0].name,
-              kind: resources.sloMapping.kind,
-              name: resources.sloMapping.metadata.name,
-              namespace: resources.sloMapping.metadata.namespace,
-            },
-            sloMapping: this.polarisMapper.transformToPolarisSloMapping(
-              resources.sloMapping.spec,
-              resources.sloMapping.metadata.namespace
-            ),
-          }
-        : null,
-    };
-  }
-
   async deleteSlo(slo: Slo): Promise<void> {
     if (slo.deployedSloMapping?.reference) {
       const identifier = await this.getCustomResourceIdentifier(slo.deployedSloMapping.reference);
@@ -159,30 +105,7 @@ export default class Api implements IPolarisOrchestratorApi {
     }
   }
 
-  async deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult> {
-    const resources = await resourceGenerator.generateElasticityStrategyResources(
-      elasticityStrategy,
-      this.connectionOptions.polarisNamespace
-    );
-
-    return await this.deployControllerResources(resources, elasticityStrategy.polarisControllers);
-  }
-
-  async retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult> {
-    if (item.failedDeployments && item.failedDeployments.length > 0) {
-      return await this.deployControllerResources(item.failedDeployments, item.polarisControllers);
-    }
-    return {
-      failedResources: [],
-      deployedControllers: [],
-    };
-  }
-
-  async applySloMapping(
-    slo: Slo,
-    target: SloTarget,
-    template: SloTemplateMetadata
-  ): Promise<DeployedPolarisSloMapping> {
+  async applySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping> {
     const mapping = resourceGenerator.generateSloMapping(slo, target, template.sloMappingKind);
     if (slo.deployedSloMapping?.reference) {
       mapping.metadata.name = slo.deployedSloMapping.reference.name;
@@ -316,6 +239,87 @@ export default class Api implements IPolarisOrchestratorApi {
     return await this.deployResource(crd);
   }
 
+  async findPolarisControllers(): Promise<PolarisController[]> {
+    const customResourceDefinitions = await this.client.listCustomResourceDefinitions();
+    const polarisCrdGroups: string[] = [POLARIS_API.SLO_GROUP, POLARIS_API.ELASTICITY_GROUP, POLARIS_API.METRICS_GROUP];
+    const polarisCrds = customResourceDefinitions.items.filter((x) => polarisCrdGroups.includes(x.spec.group));
+    const polarisCrdResourceNames = polarisCrds.map((x) => x.spec.names.plural);
+    const polarisCrdKindMap = new Map(polarisCrds.map((x) => [x.spec.names.plural, x.spec.names.kind]));
+
+    if (polarisCrds.length === 0) {
+      return [];
+    }
+
+    const clusterRoles = await this.client.listClusterRoles();
+    const matchingPolarisClusterRoles = clusterRoles.items
+      .map<[roleName: string, polarisResource: string]>((x) => {
+        const matchingRule = x.rules.find(
+          (rule) => rule.resources && rule.resources.length === 1 && polarisCrdResourceNames.includes(rule.resources[0])
+        );
+        return matchingRule ? [x.metadata.name, matchingRule.resources[0]] : null;
+      })
+      .filter((x) => !!x);
+    if (matchingPolarisClusterRoles.length === 0) {
+      return [];
+    }
+    const polarisClusterRoleMap = new Map(matchingPolarisClusterRoles);
+
+    const clusterRoleBindings = await this.client.listClusterRoleBindings();
+    const polarisServiceAccounts = clusterRoleBindings.items
+      .map((x) => {
+        const matchingResource = polarisClusterRoleMap.get(x.roleRef.name);
+        return matchingResource
+          ? x.subjects
+              .filter((s) => s.kind === 'ServiceAccount')
+              .map((s) => ({ name: s.name, namespace: s.namespace, resource: matchingResource }))
+          : null;
+      })
+      .flatMap((x) => x)
+      .filter((x) => !!x);
+    if (polarisServiceAccounts.length === 0) {
+      return [];
+    }
+
+    const deployments = await this.client.listAllDeployments();
+    const polarisControllers = deployments.items
+      .map<PolarisController>((x) => {
+        const matchingServiceAccount = polarisServiceAccounts.find(
+          (s) => s.name === x.spec?.template?.spec?.serviceAccountName && s.namespace === x.metadata.namespace
+        );
+        return matchingServiceAccount
+          ? {
+              handlesKind: polarisCrdKindMap.get(matchingServiceAccount.resource),
+              type: this.getControllerType(x),
+              deployment: {
+                name: x.metadata.name,
+                namespace: x.metadata.namespace,
+                kind: 'Deployment',
+                version: 'v1',
+                group: 'apps',
+              },
+            }
+          : null;
+      })
+      .filter((x) => !!x);
+    return polarisControllers;
+  }
+
+  private getControllerType(
+    deployment: V1Deployment
+  ): 'SLO Controller' | 'Metrics Controller' | 'Elasticity Strategy Controller' {
+    const controllerContrainer = deployment.spec?.template?.spec?.containers[0];
+
+    switch (controllerContrainer?.name) {
+      case 'slo-controller':
+        return 'SLO Controller';
+      case 'elasticity-controller':
+        return 'Elasticity Strategy Controller';
+      case 'metrics-controller':
+        return 'Metrics Controller';
+    }
+    return null;
+  }
+
   private async findCustomResourceMetadata(apiVersion: string, kind: string): Promise<CustomResourceMetadata> {
     const existing = this.customResourceMetadata[kind] ? this.customResourceMetadata[kind][apiVersion] : null;
 
@@ -397,7 +401,7 @@ export default class Api implements IPolarisOrchestratorApi {
     const deployedControllers = deploymentResult.successful
       .map((resource): PolarisController => {
         const controller = polarisControllers.find(
-          (x) => x.name === resource.metadata.name && resource.kind === 'Deployment'
+          (x) => x.deploymentMetadata.name === resource.metadata.name && resource.kind === 'Deployment'
         );
         if (controller) {
           const [group, version] = resource.apiVersion.split('/');

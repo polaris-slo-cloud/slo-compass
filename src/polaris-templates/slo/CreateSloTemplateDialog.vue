@@ -17,7 +17,7 @@
           <q-step
             :name="2"
             title="Configure Polaris"
-            icon="mdi-cloud-cog"
+            icon="mdi-application-cog"
             caption="Optional"
             :header-nav="maxStep >= 2"
             :done="step > 2"
@@ -66,7 +66,7 @@
               <q-btn v-if="step < 4" @click="stepper.next()" color="primary" class="q-ml-md" label="Next" />
               <q-btn
                 v-else
-                @click="create"
+                @click="showPublishDialog = true"
                 color="primary"
                 class="q-ml-md"
                 icon="mdi-plus"
@@ -78,6 +78,24 @@
         </q-stepper>
       </q-card-section>
     </q-card>
+    <q-dialog v-model="showPublishDialog" persistent>
+      <q-card>
+        <q-card-section>
+          <div class="text-h3">Publish Template?</div>
+        </q-card-section>
+        <q-card-section>
+          Do you want to publish this SLO template to the Polaris cluster? Other people in the same workspace will be
+          able to use this template to define SLOs. Once the first SLO has been created this template will also be
+          published automatically.
+        </q-card-section>
+        <q-card-actions>
+          <q-btn label="Cancel" flat color="negative" v-close-popup />
+          <q-space />
+          <q-btn label="Save Locally" flat @click="create(false)" />
+          <q-btn label="Publish" color="primary" @click="create(true)" icon="mdi-cloud-upload" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-dialog>
 </template>
 
@@ -95,7 +113,6 @@ const templateStore = useTemplateStore();
 
 const props = defineProps({
   show: Boolean,
-  skipDeployment: Boolean,
 });
 const emit = defineEmits(['update:show', 'created']);
 
@@ -152,6 +169,8 @@ function resetForm() {
   sloConfig.value = [];
   step.value = 1;
   maxStep.value = 1;
+
+  showPublishDialog.value = false;
 }
 
 function cancel() {
@@ -159,7 +178,9 @@ function cancel() {
   showDialog.value = false;
 }
 
-async function create() {
+const showPublishDialog = ref(false);
+
+async function create(publish) {
   if (!v.value.$validate()) {
     return;
   }
@@ -174,11 +195,10 @@ async function create() {
     metricTemplates: metrics.value.map((x) => x.id),
     confirmed: true,
   };
-  //TODO: Show Loading
-  if (props.skipDeployment) {
-    templateStore.saveSloTemplate(newTemplate);
-  } else {
+  if (publish) {
     await templateStore.createSloTemplate(newTemplate);
+  } else {
+    templateStore.saveSloTemplate(newTemplate);
   }
   resetForm();
   emit('created', newTemplate);

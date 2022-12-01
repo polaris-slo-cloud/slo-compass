@@ -1,4 +1,11 @@
 <template>
+  <q-banner v-if="hasMissingSloController" class="bg-warning">
+    <template #avatar>
+      <q-icon name="mdi-alert" />
+    </template>
+    The Controller for this {{ displayType }} has not yet been deployed to the Polaris Cluster. Changes made to this
+    {{ displayType }} will therefore not be evaluated and do not affect the selected target.
+  </q-banner>
   <q-banner v-if="item.deployedSloMapping?.deleted" class="bg-negative text-white">
     <template #avatar>
       <q-icon name="mdi-alert-circle" />
@@ -21,14 +28,19 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useSloStore } from '@/store/slo';
+import { useWorkspaceStore } from '@/store/workspace';
 
 const store = useSloStore();
+const workspaceStore = useWorkspaceStore();
 
 const props = defineProps({
   item: Object,
   displayType: String,
 });
+
+const hasMissingSloController = computed(() => workspaceStore.hasMissingPolarisComponent(props.item.kind));
 
 async function deleteItem() {
   await store.deleteSlo(props.itemId);

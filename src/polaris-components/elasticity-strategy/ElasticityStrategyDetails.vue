@@ -61,16 +61,17 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import EditableField from '@/crosscutting/components/EditableField.vue';
-import SloSpecificParametersConfigForm from '@/polaris-templates/elasticity-strategy/SloSpecificParametersConfigForm.vue';
+import SloSpecificParametersConfigForm from '@/polaris-components/elasticity-strategy/SloSpecificParametersConfigForm.vue';
 
 const route = useRoute();
 const store = useElasticityStrategyStore();
 
 const elasticityStrategy = ref({});
+loadTemplate(route.params.kind);
 const name = computed({
   get: () => (elasticityStrategy.value ? elasticityStrategy.value.name : ''),
   set(v) {
@@ -112,10 +113,6 @@ watch(() => route.params.kind, loadTemplate);
 function loadTemplate(kind) {
   elasticityStrategy.value = store.getElasticityStrategy(kind);
 }
-
-onMounted(() => {
-  loadTemplate(route.params.kind);
-});
 </script>
 
 <style scoped lang="scss"></style>

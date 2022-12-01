@@ -4,33 +4,47 @@ import { computed, ref } from 'vue';
 import AppIcon from '@/icons/AppIcon.vue';
 import { useQuasar } from 'quasar';
 import { initialize } from '@/initialization/initializer';
+import { useWorkspaceStore } from '@/store/workspace';
 const $q = useQuasar();
+const workspaceStore = useWorkspaceStore();
 
 initialize();
 
 const isMini = ref(true);
-const menuList = ref([
-  {
-    icon: 'dashboard',
-    label: 'Dashboard',
-    to: '/',
-  },
-  {
-    icon: 'mdi-application-brackets-outline',
-    label: 'Templates',
-    to: '/templates',
-  },
-  {
-    icon: 'mdi-connection',
-    label: 'Connections',
-    to: '/connections',
-  },
-  {
-    icon: 'settings',
-    label: 'Settings',
-    to: '/settings',
-  },
-]);
+const menuList = computed(() => {
+  const workspacePages = workspaceStore.isOpened
+    ? [
+        {
+          icon: 'mdi-cloud',
+          label: 'Polaris Components',
+          to: '/polaris-components',
+        },
+      ]
+    : [];
+  return [
+    {
+      icon: 'dashboard',
+      label: 'Workspace',
+      to: '/',
+    },
+    {
+      icon: 'mdi-application-brackets-outline',
+      label: 'Templates',
+      to: '/templates',
+    },
+    ...workspacePages,
+    {
+      icon: 'mdi-connection',
+      label: 'Connections',
+      to: '/connections',
+    },
+    {
+      icon: 'settings',
+      label: 'Settings',
+      to: '/settings',
+    },
+  ];
+});
 const isElectron = computed(() => {
   return $q.platform.is.electron;
 });

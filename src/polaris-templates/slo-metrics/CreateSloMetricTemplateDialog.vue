@@ -189,7 +189,8 @@ const v = useVuelidate(
       return validators;
     }, {}),
   },
-  { metricType, metricName, displayName, rawMetricQueries, queryResultType }
+  { metricType, metricName, displayName, rawMetricQueries, queryResultType },
+  { $stopPropagation: true }
 );
 </script>
 

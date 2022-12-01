@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { SloTemplateMetadata, templates as defaultSloTemplates } from '@/polaris-templates/slo-template';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import { ConfigParameter, ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
+import { ConfigParameter } from '@/polaris-templates/parameters';
 import {
   SloMetricSourceTemplate,
   SloMetricTemplateId,

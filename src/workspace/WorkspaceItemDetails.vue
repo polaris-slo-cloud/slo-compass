@@ -45,7 +45,6 @@ import { workspaceItemTypes } from '@/workspace/constants';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import TargetDetails from '@/workspace/targets/TargetDetails.vue';
 import SloDetails from '@/workspace/slo/SloDetails.vue';
-import ElasticityStrategyDetails from '@/workspace/elasticity-strategy/ElasticityStrategyDetails.vue';
 import WorkspaceItemDetailsBanners from '@/workspace/WorkspaceItemDetailsBanners.vue';
 
 const store = useWorkspaceStore();
@@ -94,8 +93,6 @@ const detailsComponent = computed(() => {
       return TargetDetails;
     case workspaceItemTypes.slo:
       return SloDetails;
-    case workspaceItemTypes.elasticityStrategy:
-      return ElasticityStrategyDetails;
   }
   return 'div';
 });

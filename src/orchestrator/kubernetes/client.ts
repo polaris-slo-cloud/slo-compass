@@ -2,9 +2,9 @@ import axios, { AxiosInstance } from 'axios';
 import {
   KubernetesListObject,
   KubernetesObject,
-  V1APIResource,
+  V1APIResource, V1ClusterRoleBindingList, V1ClusterRoleList,
   V1CustomResourceDefinitionList,
-  V1DeploymentList,
+  V1DeploymentList, V1ServiceAccountList,
 } from '@kubernetes/client-node';
 import K8sClientHelper, { KubernetesPatchStrategies } from '@/orchestrator/kubernetes/k8s-client-helper';
 import { ApiObjectList, CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
@@ -34,6 +34,8 @@ export interface K8sClient {
     watchCallback: (type: WatchEventType, k8sObj: KubernetesSpecObject) => Promise<void>,
     errorCallback: (error: any) => void
   ): Promise<any>;
+  listClusterRoles(): Promise<V1ClusterRoleList>;
+  listClusterRoleBindings(): Promise<V1ClusterRoleBindingList>;
 }
 interface K8sNativeClient extends K8sClient {
   connectToContext(context);
@@ -142,6 +144,16 @@ class K8sHttpClient implements K8sClient {
 
     const watch = new HttpClientWatch(this.http, watchCallback, errorCallback);
     return watch.watch(path, { params });
+  }
+
+  public async listClusterRoleBindings(): Promise<V1ClusterRoleBindingList> {
+    const { data } = await this.http.get('/apis/rbac.authorization.k8s.io/v1/clusterrolebindings');
+    return data;
+  }
+
+  public async listClusterRoles(): Promise<V1ClusterRoleList> {
+    const { data } = await this.http.get('/apis/rbac.authorization.k8s.io/v1/clusterroles');
+    return data;
   }
 }
 

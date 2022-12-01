@@ -1,6 +1,6 @@
 const k8s = require('@kubernetes/client-node');
 const request = require('request');
-const { Watch } = require('@kubernetes/client-node');
+const { Watch, V1ClusterRoleBindingList, V1ClusterRoleList} = require('@kubernetes/client-node');
 const { v4: uuidv4 } = require('uuid');
 
 const k8sConfig = new k8s.KubeConfig();
@@ -139,5 +139,15 @@ module.exports = {
       }
       throw e;
     }
+  },
+  async listClusterRoleBindings() {
+    const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+    const { body } = await k8sAuthorizationApi.listClusterRoleBinding();
+    return body;
+  },
+  async listClusterRoles() {
+    const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+    const { body } = await k8sAuthorizationApi.listClusterRole();
+    return body;
   },
 };

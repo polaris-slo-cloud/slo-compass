@@ -6,9 +6,8 @@ import Slo, {
   PolarisElasticityStrategySloOutput,
   PolarisSloMapping,
 } from '@/workspace/slo/Slo';
-import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
-import { PolarisComponent, PolarisController } from '@/workspace/PolarisComponent';
+import { PolarisController } from '@/workspace/PolarisComponent';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
@@ -55,11 +54,8 @@ export interface IOrchestratorApi {
   test(): Promise<boolean>;
   findPolarisDeployments(): Promise<IDeployment[]>;
   findDeployments(namespace?: string): Promise<IDeployment[]>;
-  deploySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<PolarisSloDeploymentResult>;
+  applySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping>;
   deleteSlo(slo: Slo): Promise<void>;
-  deployElasticityStrategy(elasticityStrategy: ElasticityStrategy): Promise<PolarisDeploymentResult>;
-  retryDeployment(item: PolarisComponent): Promise<PolarisDeploymentResult>;
-  applySloMapping(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
   findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>>;
   findSloCompliances(objectKind: ObjectKind): Promise<ApiObjectList<PolarisElasticityStrategySloOutput>>;
@@ -67,6 +63,7 @@ export interface IOrchestratorApi {
   createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher;
   createPolarisMapper(): PolarisMapper;
   listTemplateDefinitions(): Promise<ApiObjectList<any>>;
+  findPolarisControllers(): Promise<PolarisController[]>;
 }
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
@@ -111,19 +108,7 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  deploySlo(): Promise<PolarisSloDeploymentResult> {
-    throw new OrchestratorNotConnectedError();
-  }
-
-  deployElasticityStrategy(): Promise<PolarisDeploymentResult> {
-    throw new OrchestratorNotConnectedError();
-  }
-
-  retryDeployment(): Promise<PolarisDeploymentResult> {
-    throw new OrchestratorNotConnectedError();
-  }
-
-  applySloMapping(): Promise<DeployedPolarisSloMapping> {
+  applySlo(): Promise<DeployedPolarisSloMapping> {
     throw new OrchestratorNotConnectedError();
   }
 
@@ -154,6 +139,10 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   }
 
   findSloCompliances(): Promise<ApiObjectList<PolarisElasticityStrategySloOutput>> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  findPolarisControllers(): Promise<PolarisController[]> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -188,20 +177,6 @@ function clone<T>(object: T): T {
   return JSON.parse(JSON.stringify(object));
 }
 
-async function deploy(
-  component: PolarisComponent,
-  deploymentAction: () => Promise<PolarisDeploymentResult>
-): Promise<PolarisDeploymentResult> {
-  runningDeployments.value[component.id] = {
-    id: component.id,
-    name: component.name,
-    dismissed: false,
-  };
-  const result = await deploymentAction();
-  delete runningDeployments.value[component.id];
-  return result;
-}
-
 export function useOrchestratorApi(): IOrchestratorApiConnection {
   return {
     connect,
@@ -212,13 +187,8 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     findPolarisDeployments: () => api.value.findPolarisDeployments(),
     findDeployments: (namespace?) => api.value.findDeployments(namespace),
     test: () => api.value.test(),
-    deploySlo: (slo, target, template) =>
-      deploy(slo, () => api.value.deploySlo(clone(slo), clone(target), clone(template))),
     deleteSlo: (slo) => api.value.deleteSlo(clone(slo)),
-    deployElasticityStrategy: (elasticityStrategy) =>
-      deploy(elasticityStrategy, () => api.value.deployElasticityStrategy(clone(elasticityStrategy))),
-    retryDeployment: (item) => deploy(item, () => api.value.retryDeployment(clone(item))),
-    applySloMapping: (slo, target, template) => api.value.applySloMapping(clone(slo), clone(target), clone(template)),
+    applySlo: (slo, target, template) => api.value.applySlo(clone(slo), clone(target), clone(template)),
     findSloMapping: (slo) => api.value.findSloMapping(clone(slo)),
     findSloMappings: (objectKind) => api.value.findSloMappings(objectKind),
     findSloCompliances: (objectKind) => api.value.findSloCompliances(objectKind),
@@ -226,6 +196,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     createWatcher: (bookmarkManager) => api.value.createWatcher(bookmarkManager),
     createPolarisMapper: () => api.value.createPolarisMapper(),
     listTemplateDefinitions: () => api.value.listTemplateDefinitions(),
+    findPolarisControllers: () => api.value.findPolarisControllers(),
     hasRunningDeployment,
     undismissiedRunningDeployments: computed(() =>
       Object.values(runningDeployments.value).filter((x: any) => !x.dismissed)

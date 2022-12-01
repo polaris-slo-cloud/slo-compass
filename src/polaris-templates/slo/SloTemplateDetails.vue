@@ -25,6 +25,13 @@
     </q-dialog>
   </div>
   <span class="text-subtitle1 text-muted">{{ template.sloMappingKind }} ({{ template.sloMappingKindPlural }})</span>
+  <q-banner v-if="isNotDefinedInCluster" class="bg-info text-white">
+    <template #avatar>
+      <q-icon name="mdi-information" />
+    </template>
+    This template has only been defined locally! You can make it available to other people in the same workspace by
+    publishing it to the cluster. This will also be done automatically when the first SLO gets published to the cluster.
+  </q-banner>
   <EditableField label="Description" class="q-mt-lg" v-model="description">
     {{ formatIfEmpty(description) }}
     <template #edit="scope">
@@ -72,20 +79,29 @@
       <SloTemplateMetricsForm v-model="scope.value" hide-header class="q-mt-sm" />
     </template>
   </EditableField>
+  <div class="q-mt-lg flex justify-end" v-if="isNotDefinedInCluster">
+    <q-btn color="primary" label="Publish" @click="deployMapping" />
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTemplateStore } from '@/store/template';
+import { usePolarisComponentStore } from '@/store/polaris-component';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import SloParametersConfigForm from '@/polaris-templates/slo/SloParametersConfigForm.vue';
 import SloTemplateMetricsForm from '@/polaris-templates/slo/SloTemplateMetricsForm.vue';
 
 const route = useRoute();
 const store = useTemplateStore();
+const polarisComponentsStore = usePolarisComponentStore();
+const orchestratorApi = useOrchestratorApi();
 
 const template = ref({});
+loadTemplate(route.params.kind);
+
 const templateName = computed({
   get: () => (template.value ? template.value.displayName : ''),
   set(v) {
@@ -128,14 +144,18 @@ function save(changes) {
   store.saveSloTemplate({ ...template.value, ...changes });
   loadTemplate(route.params.kind);
 }
+
+const isNotDefinedInCluster = computed(
+  () => !polarisComponentsStore.sloMappingHasBeenDeployed(template.value.sloMappingKind)
+);
+async function deployMapping() {
+  await orchestratorApi.deploySloMappingCrd(template.value);
+}
+
 watch(() => route.params.kind, loadTemplate);
 function loadTemplate(kind) {
   template.value = store.getSloTemplate(kind);
 }
-
-onMounted(() => {
-  loadTemplate(route.params.kind);
-});
 </script>
 
 <style scoped lang="scss"></style>

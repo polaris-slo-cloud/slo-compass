@@ -42,7 +42,6 @@
 
 <script setup>
 import { ref, computed, nextTick, onBeforeUpdate, watch } from 'vue';
-import { getPolarisControllers } from '@/polaris-templates/slo-template';
 import TargetSelection from '@/workspace/targets/TargetSelection.vue';
 import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
@@ -124,11 +123,10 @@ function save() {
     const slo = {
       ...model.value,
       type: workspaceItemTypes.slo,
-      template: props.template.sloMappingKind,
+      kind: props.template.sloMappingKind,
       metrics: props.template.metricTemplates.map((x) => ({
         source: templateStore.getSloMetricTemplate(x),
       })),
-      polarisControllers: getPolarisControllers(props.template),
       configChanged: true,
     };
     slo.target = slo.target?.id;

@@ -18,7 +18,7 @@ const store = useElasticityStrategyStore();
 
 const props = defineProps({
   label: String,
-  modelValue: Object,
+  modelValue: String,
 });
 const emit = defineEmits(['update:modelValue']);
 

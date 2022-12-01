@@ -59,7 +59,7 @@ const configKeys = computed(() => {
 });
 
 const configTemplate = computed(() => {
-  const template = templateStore.getSloTemplate(props.slo.template);
+  const template = templateStore.getSloTemplate(props.slo.kind);
   return template
     ? template.config.reduce((map, curr) => {
         map[curr.parameter] = curr;

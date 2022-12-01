@@ -1,17 +1,16 @@
 import { defineStore } from 'pinia';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useMetricsProvider } from '@/metrics-provider/api';
-import { applyDeploymentResult } from '@/store/utils';
 import { v4 as uuidv4 } from 'uuid';
 import { computed, Ref, ref } from 'vue';
 import Slo, { DeployedPolarisSloMapping, PolarisSloMapping, SloMetric } from '@/workspace/slo/Slo';
 import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import { useTargetStore } from '@/store/target';
-import { getPolarisControllers } from '@/polaris-templates/slo-template';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { NamespacedObjectReference } from '@polaris-sloc/core';
 import { useTemplateStore } from '@/store/template';
+import { usePolarisComponentStore } from '@/store/polaris-component';
 
 export const useSloStore = defineStore('slo', () => {
   const orchestratorApi = useOrchestratorApi();
@@ -19,6 +18,7 @@ export const useSloStore = defineStore('slo', () => {
   const elasticityStrategyStore = useElasticityStrategyStore();
   const targetStore = useTargetStore();
   const templateStore = useTemplateStore();
+  const polarisComponentStore = usePolarisComponentStore();
 
   const slos: Ref<Slo[]> = ref<Slo[]>([]);
 
@@ -50,20 +50,14 @@ export const useSloStore = defineStore('slo', () => {
     removeSlo(id);
   }
 
-  async function deploySlo(id: WorkspaceComponentId): Promise<void> {
-    const slo = getSlo.value(id);
-    const target = slo.target ? targetStore.getSloTarget(slo.target) : null;
-    const template = templateStore.getSloTemplate(slo.template);
-    const result = await orchestratorApi.deploySlo(slo, target, template);
-    applyDeploymentResult(slo, result);
-    slo.deployedSloMapping = result.deployedSloMapping;
-    slo.configChanged = !result.deployedSloMapping;
-  }
   async function applySloMapping(id: WorkspaceComponentId): Promise<void> {
     const slo = getSlo.value(id);
     const target = targetStore.getSloTarget(slo.target);
-    const template = templateStore.getSloTemplate(slo.template);
-    const appliedSloMapping = await orchestratorApi.applySloMapping(slo, target, template);
+    const template = templateStore.getSloTemplate(slo.kind);
+    if (!polarisComponentStore.sloMappingHasBeenDeployed(slo.kind)) {
+      await orchestratorApi.deploySloMappingCrd(template);
+    }
+    const appliedSloMapping = await orchestratorApi.applySlo(slo, target, template);
     if (appliedSloMapping) {
       slo.configChanged = false;
       slo.deployedSloMapping = appliedSloMapping;
@@ -159,14 +153,6 @@ export const useSloStore = defineStore('slo', () => {
       target = await targetStore.ensureTargetCreated(targetReference);
     }
 
-    const polarisControllers = getPolarisControllers(template);
-    for (const controller of polarisControllers) {
-      const polarisDeployments = await orchestratorApi.findPolarisDeployments();
-      controller.deployment = polarisDeployments.find(
-        (x) => x.connectionMetadata.name === template.controllerName
-      ).connectionMetadata;
-    }
-
     const slo: Slo = {
       id: id || uuidv4(),
       name: normalizedName,
@@ -176,11 +162,10 @@ export const useSloStore = defineStore('slo', () => {
         reference,
         sloMapping: polarisSloMapping,
       },
-      template: template.sloMappingKind,
+      kind: template.sloMappingKind,
       metrics: template.metricTemplates.map<SloMetric>((x) => ({
         source: templateStore.getSloMetricTemplate(x),
       })),
-      polarisControllers,
       config: polarisSloMapping.config,
       configChanged: false,
       target,
@@ -227,7 +212,6 @@ export const useSloStore = defineStore('slo', () => {
     slos,
     getSlo,
     saveSlo,
-    deploySlo,
     applySloMapping,
     resetSloMapping,
     pollMetrics,

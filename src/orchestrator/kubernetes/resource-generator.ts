@@ -102,7 +102,8 @@ export default {
     const resources = [];
     const crds = await loadCrdsForTemplate(elasticityStrategy.kind);
 
-    const controller = elasticityStrategy.polarisControllers[0];
+    //TODO: Get Controller
+    const controller = null;
     resources.push(...crds);
     resources.push(generateNamespaceSpec(namespace));
     if (controller) {

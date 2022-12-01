@@ -1,6 +1,7 @@
 import { ElasticityStrategyParameterType } from '@/polaris-templates/parameters';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
+import { PolarisController } from '@/workspace/PolarisComponent';
 
 export const defaultStrategies: ElasticityStrategy[] = [
   {
@@ -10,13 +11,6 @@ export const defaultStrategies: ElasticityStrategy[] = [
     description: 'Provides a simple elasticity strategy to scale resources out and in depending on the SLO compliance',
     kind: 'HorizontalElasticityStrategy',
     kindPlural: 'horizontalelasticitystrategies',
-    polarisControllers: [
-      {
-        type: 'Elasticity Strategy Controller',
-        name: 'horizontal-elasticity-strategy-controller',
-        containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
-      },
-    ],
     sloSpecificConfig: [
       {
         parameter: 'minReplicas',
@@ -40,13 +34,6 @@ export const defaultStrategies: ElasticityStrategy[] = [
     description: 'Provides a simple elasticity strategy to scale resources up and down depending on the SLO compliance',
     kind: 'VerticalElasticityStrategy',
     kindPlural: 'verticalelasticitystrategies',
-    polarisControllers: [
-      {
-        type: 'Elasticity Strategy Controller',
-        name: 'vertical-elasticity-strategy-controller',
-        containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
-      },
-    ],
     sloSpecificConfig: [
       {
         parameter: 'minResources',
@@ -74,5 +61,24 @@ export const defaultStrategies: ElasticityStrategy[] = [
       },
     ],
     confirmed: true,
+  },
+];
+
+const defaultElasticityStrategyControllers: PolarisController[] = [
+  {
+    type: 'Elasticity Strategy Controller',
+    handlesKind: 'HorizontalElasticityStrategy',
+    deploymentMetadata: {
+      name: 'horizontal-elasticity-strategy-controller',
+      containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
+    },
+  },
+  {
+    type: 'Elasticity Strategy Controller',
+    handlesKind: 'VerticalElasticityStrategy',
+    deploymentMetadata: {
+      name: 'vertical-elasticity-strategy-controller',
+      containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
+    },
   },
 ];

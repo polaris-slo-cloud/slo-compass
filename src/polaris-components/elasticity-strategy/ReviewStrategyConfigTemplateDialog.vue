@@ -20,7 +20,7 @@
 import { computed, ref, watch } from 'vue';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { v4 as uuidV4 } from 'uuid';
-import SloSpecificParametersConfigForm from '@/polaris-templates/elasticity-strategy/SloSpecificParametersConfigForm.vue';
+import SloSpecificParametersConfigForm from '@/polaris-components/elasticity-strategy/SloSpecificParametersConfigForm.vue';
 
 const store = useElasticityStrategyStore();
 

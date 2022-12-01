@@ -3,13 +3,19 @@
     <div class="flex items-baseline">
       <h3 class="q-mt-none q-mr-md">SLO Templates</h3>
       <q-btn label="New" icon="mdi-plus" outline color="primary" @click="showCreateSloTemplate = true" />
-      <CreateSloTemplateDialog v-model:show="showCreateSloTemplate" skip-deployment />
+      <CreateSloTemplateDialog v-model:show="showCreateSloTemplate" />
     </div>
     <div class="row q-col-gutter-md">
       <div class="col-6 col-md-3 col-lg-2" v-for="template of sloTemplates" :key="template.sloMappingKind">
         <q-card @click="openSloTemplate(template)" class="cursor-pointer" flat bordered>
           <q-card-section>
             <span class="text-h4">{{ template.displayName }}</span>
+            <div class="flex items-center">
+              <q-icon name="mdi-circle" :color="sloTemplateStatusColor(template)" />
+              <span :class="`text-${sloTemplateStatusColor(template)}`" class="q-ml-xs">
+                {{ templateHasBeenDeployed(template) ? 'Published' : 'Local' }}
+              </span>
+            </div>
           </q-card-section>
         </q-card>
       </div>
@@ -29,16 +35,6 @@
         </q-card>
       </div>
     </div>
-    <h3>Elasticity Strategies</h3>
-    <div class="row q-col-gutter-md">
-      <div class="col-6 col-md-3 col-lg-2" v-for="strategy of elasticityStrategies" :key="strategy.kind">
-        <q-card class="cursor-pointer" @click="openElasticityStrategy(strategy)" flat bordered>
-          <q-card-section>
-            <div class="text-h4">{{ strategy.name }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -47,16 +43,15 @@ import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useTemplateStore } from '@/store/template';
+import { usePolarisComponentStore } from '@/store/polaris-component';
 import CreateSloTemplateDialog from '@/polaris-templates/slo/CreateSloTemplateDialog.vue';
 import CreateSloMetricTemplateDialog from '@/polaris-templates/slo-metrics/CreateSloMetricTemplateDialog.vue';
-import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 const router = useRouter();
 
 const store = useTemplateStore();
+const polarisComponentStore = usePolarisComponentStore();
 const { sloTemplates, sloMetricSourceTemplates } = storeToRefs(store);
-const elasticityStrategyStore = useElasticityStrategyStore();
-const { elasticityStrategies } = storeToRefs(elasticityStrategyStore);
 
 const showCreateSloTemplate = ref(false);
 const showCreateSloMetricSourceTemplate = ref(false);
@@ -67,9 +62,9 @@ function openSloTemplate(template) {
 function openSloMetricSourceTemplate(template) {
   router.push({ name: 'slo-metric-source-template', params: { id: template.id } });
 }
-function openElasticityStrategy(strategy) {
-  router.push({ name: 'elasticity-strategy', params: { kind: strategy.kind } });
-}
+
+const templateHasBeenDeployed = (template) => polarisComponentStore.sloMappingHasBeenDeployed(template.sloMappingKind);
+const sloTemplateStatusColor = (template) => (templateHasBeenDeployed(template) ? 'positive' : 'blue');
 </script>
 
 <style scoped lang="scss"></style>

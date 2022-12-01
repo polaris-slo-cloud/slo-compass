@@ -4,10 +4,7 @@
     <MetricsOverview :slo="item" class="q-mt-lg" />
     <SloConfig :slo="item" class="q-mt-lg" config-item-class="col-12 col-lg-6" />
     <ElasticityStrategyConfig :slo="item" class="q-mt-lg" config-item-class="col-12 col-lg-6" />
-    <div class="flex justify-end q-mt-lg" v-if="canBeDeployed">
-      <q-btn label="Deploy" color="primary" @click="deploy" />
-    </div>
-    <div class="flex justify-end q-mt-lg q-gutter-x-md" v-else-if="item.configChanged">
+    <div class="flex justify-end q-mt-lg q-gutter-x-md" v-if="item.configChanged">
       <q-btn label="Reset" color="negative" outline @click="resetConfiguration" v-if="sloExistsInPolaris" />
       <q-btn label="Apply" color="primary" @click="applyConfiguration" />
     </div>
@@ -18,28 +15,17 @@
 import MetricsOverview from '@/workspace/slo/MetricsOverview.vue';
 import { useSloStore } from '@/store/slo';
 import { computed } from 'vue';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import TargetStatus from '@/workspace/slo/TargetStatus.vue';
 import SloConfig from '@/workspace/slo/SloConfig.vue';
 import ElasticityStrategyConfig from '@/workspace/slo/ElasticityStrategyConfig.vue';
 
-const orchestratorApi = useOrchestratorApi();
 const store = useSloStore();
 
 const props = defineProps({
   item: Object,
 });
 
-const canBeDeployed = computed(
-  () =>
-    !orchestratorApi.hasRunningDeployment.value(props.item.id) &&
-    props.item.polarisControllers.some((x) => !x.deployment)
-);
 const sloExistsInPolaris = computed(() => props.item.deployedSloMapping && !props.item.deployedSloMapping.deleted);
-
-function deploy() {
-  store.deploySlo(props.item.id);
-}
 
 function applyConfiguration() {
   store.applySloMapping(props.item.id);

@@ -5,8 +5,6 @@ import { useSloStore } from '@/store/slo';
 import { WorkspaceComponent, WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import { useTargetStore } from '@/store/target';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import { applyDeploymentResult } from '@/store/utils';
 import Slo from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
@@ -26,7 +24,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const sloStore = useSloStore();
   const targetStore = useTargetStore();
   const elasticityStrategyStore = useElasticityStrategyStore();
-  const orchestratorApi = useOrchestratorApi();
 
   const isOpened = ref<boolean>(false);
   const workspaceId = ref<string>(null);
@@ -34,8 +31,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const location = ref<string>(null);
   const polarisOptions = ref(null);
   const watchBookmarks = ref({});
-  const deployedSloMappings = ref<ObjectKind[]>([]);
-  const deployedSloMappingKinds = computed(() => deployedSloMappings.value.map((x) => ObjectKind.stringify(x)));
 
   const usedElasticityStrategyKinds = computed<ObjectKind[]>(() =>
     slos.value
@@ -88,11 +83,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     });
   }
 
-  async function retryDeployment(item) {
-    const result = await orchestratorApi.retryDeployment(item);
-    applyDeploymentResult(item, result);
-  }
-
   function save(item: WorkspaceComponent) {
     switch (item.type) {
       case workspaceItemTypes.target.application:
@@ -119,17 +109,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     watchBookmarks.value[kind] = bookmark;
   }
 
-  function addDeployedSloMapping(kind: ObjectKind) {
-    if (!deployedSloMappingKinds.value.includes(ObjectKind.stringify(kind))) {
-      deployedSloMappings.value.push(kind);
-    }
-  }
-
-  function removeDeployedSloMapping(kind: ObjectKind) {
-    const stringifiedKind = ObjectKind.stringify(kind);
-    deployedSloMappings.value = deployedSloMappings.value.filter((x) => ObjectKind.stringify(x) !== stringifiedKind);
-  }
-
   return {
     isOpened,
     workspaceId,
@@ -141,16 +120,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     elasticityStrategies,
     getItem,
     watchBookmarks,
-    deployedSloMappings,
     usedElasticityStrategyKinds,
     usedElasticityStrategies,
     createWorkspace,
     loadWorkspace,
-    retryDeployment,
     save,
     updateWatchBookmark,
     deleteItem,
-    addDeployedSloMapping,
-    removeDeployedSloMapping,
   };
 });

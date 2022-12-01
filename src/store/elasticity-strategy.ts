@@ -2,16 +2,12 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import { applyDeploymentResult } from '@/store/utils';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import { defaultStrategies } from '@/workspace/elasticity-strategy/strategy-template';
-import {ElasticityStrategyConfigParameter} from "@/polaris-templates/parameters";
+import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
 
 export const useElasticityStrategyStore = defineStore('elasticityStrategy', () => {
-  const orchestratorApi = useOrchestratorApi();
-
   const ensureCreatedSemaphore = ref<Map<string, Promise<void>>>(new Map());
   async function lockKind(kind: string) {
     if (ensureCreatedSemaphore.value.has(kind)) {
@@ -85,12 +81,6 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     elasticityStrategy.confirmed = true;
   }
 
-  async function deployElasticityStrategy(id) {
-    const elasticityStrategy = elasticityStrategies.value.find((x) => x.id === id);
-    const result = await orchestratorApi.deployElasticityStrategy(elasticityStrategy);
-    applyDeploymentResult(elasticityStrategy, result);
-  }
-
   function removeElasticityStrategy(kind: string) {
     elasticityStrategies.value = elasticityStrategies.value.filter((x) => x.kind !== kind);
   }
@@ -102,7 +92,6 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
       unlockKind();
       return strategy.id;
     }
-    //TODO: Get matching polaris controllers
 
     // TODO: This should only happen if the elasticity strategy does not exist inside the Polaris Cluster. Display a warning to the user
     const newStrategy: ElasticityStrategy = {
@@ -114,7 +103,6 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
       kindPlural: '',
       sloSpecificConfig: [],
       confirmed: false,
-      polarisControllers: [],
     };
     saveElasticityStrategy(newStrategy);
     unlockKind();
@@ -127,7 +115,6 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     saveElasticityStrategy,
     saveElasticityStrategyFromPolaris,
     confirmElasticityStrategy,
-    deployElasticityStrategy,
     ensureElasticityStrategyCreated,
     removeElasticityStrategy,
   };

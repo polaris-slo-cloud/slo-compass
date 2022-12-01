@@ -1,7 +1,5 @@
 import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
-import { PolarisController } from '@/workspace/PolarisComponent';
 import { SloMetricTemplateId } from '@/polaris-templates/slo-metrics/metrics-template';
-import { useTemplateStore } from '@/store/template';
 
 export interface SloTemplateMetadata {
   sloMappingKind: string;
@@ -65,30 +63,3 @@ export const templates: SloTemplateMetadata[] = [
     confirmed: true,
   },
 ];
-
-//TODO: Refactor for custom templates
-export function getPolarisControllers(template: SloTemplateMetadata): PolarisController[] {
-  const result = [];
-  if (template.containerImage && template.controllerName) {
-    result.push({
-      type: 'SLO Controller',
-      name: template.controllerName,
-      deployment: null,
-    });
-  }
-  const templateStore = useTemplateStore();
-  const metricsControllers =
-    template.metricTemplates
-      .map(templateStore.getSloMetricTemplate)
-      .filter((x) => !!x.metricsController)
-      .map(
-        (x): PolarisController => ({
-          type: 'Metrics Controller',
-          name: x.metricsController.controllerName,
-          deployment: null,
-        })
-      ) ?? [];
-  result.push(...metricsControllers);
-
-  return result;
-}

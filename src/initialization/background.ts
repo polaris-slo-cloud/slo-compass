@@ -11,6 +11,7 @@ import { ObjectKindWatchHandlerPair } from '@polaris-sloc/core';
 import { useWorkspaceStore } from '@/store/workspace';
 import { SloEvaluationWatchHandler } from '@/workspace/slo/SloEvaluationWatchHandler';
 import { watch } from 'vue';
+import {usePolarisComponentStore} from "@/store/polaris-component";
 
 export async function setupBackgroundTasks() {
   const pollingIntervalMs = 30 * 1000;
@@ -22,6 +23,7 @@ export async function setupBackgroundTasks() {
   const watchManager = new OrchestratorWatchManager(bookmarkManager);
   const orchestratorApi = useOrchestratorApi();
   const templateStore = useTemplateStore();
+  const polarisComponentStore = usePolarisComponentStore();
 
   async function pollMetrics() {
     const result = [];
@@ -39,7 +41,7 @@ export async function setupBackgroundTasks() {
   const sloEvaluationWatchHandler = new SloEvaluationWatchHandler();
   const watcherKindHandlerPairs: ObjectKindWatchHandlerPair[] = [
     { kind: orchestratorApi.crdObjectKind.value, handler: new TemplatesWatchHandler() },
-    ...workspaceStore.deployedSloMappings.map((kind) => ({ kind, handler: sloMappingWatchHandler })),
+    ...polarisComponentStore.deployedSloMappings.map((kind) => ({ kind, handler: sloMappingWatchHandler })),
     ...workspaceStore.usedElasticityStrategyKinds.map((kind) => ({ kind, handler: sloEvaluationWatchHandler })),
   ];
   await watchManager.configureWatchers(watcherKindHandlerPairs);
