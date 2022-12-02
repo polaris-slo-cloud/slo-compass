@@ -14,7 +14,7 @@ import {
   generateMetricSourceClusterRole,
   generateMetricSourceClusterRoleBinding,
 } from '@/orchestrator/kubernetes/generation/composed-metrics-controller';
-import loadCrdsForTemplate from '@/orchestrator/kubernetes/crds/template-crds-mapping';
+import loadCrdForResource from '@/orchestrator/kubernetes/crds/template-crds-mapping';
 import { KubernetesObject } from '@kubernetes/client-node';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import Slo from '@/workspace/slo/Slo';
@@ -24,31 +24,8 @@ import {
   generateElasticityStrategyControllerDeployment,
 } from '@/orchestrator/kubernetes/generation/elasticity-strategy-controller';
 import { SloTarget } from '@/workspace/targets/SloTarget';
-import { KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 import { ComposedMetricSource } from '@/polaris-templates/slo-metrics/metrics-template';
-
-interface SloResources {
-  staticResources: KubernetesObject[];
-  sloMapping: KubernetesSpecObject;
-}
-
-function generateMetricsResources(metrics: ComposedMetricSource[], namespace: string): KubernetesObject[] {
-  if (!metrics) {
-    return [];
-  }
-  return metrics.flatMap((metricSource) => [
-    generateServiceAccount(metricSource.controllerName, namespace),
-    generateMetricSourceClusterRole(metricSource.controllerName, metricSource.composedMetricResources),
-    generateMetricSourceClusterRoleBinding(
-      metricSource.controllerName,
-      namespace,
-      metricSource.composedMetricResources
-    ),
-    generateComposedMetricsControllerDeployment(metricSource.controllerName, namespace, metricSource.containerImage),
-    generateComposedMetricsService(metricSource.controllerName, namespace),
-    generateComposedMetricsServiceMonitor(metricSource.controllerName, namespace),
-  ]);
-}
+import { PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 
 export default {
   generateSloMapping(slo: Slo, target: SloTarget, sloMappingKind: string) {
@@ -59,52 +36,56 @@ export default {
     }
     return null;
   },
-  async generateSloResources(
+  async generateSloControllerResources(
     slo: Slo,
-    target: SloTarget,
     namespace: string,
     template: SloTemplateMetadata
-  ): Promise<SloResources> {
-    const resources = [];
-    resources.push(
-      ...generateMetricsResources(
-        slo.metrics
-          .map((x) => x.source)
-          .filter((x) => !!x.metricsController)
-          .map((x) => x.metricsController),
-        namespace
-      )
-    );
-
-    const crds = await loadCrdsForTemplate(template.sloMappingKind);
-    resources.push(...crds);
-
-    const sloMapping = this.generateSloMapping(slo, target, template.sloMappingKind);
-    resources.push(
-      ...[
-        generateNamespaceSpec(namespace),
-        generateServiceAccount(template.controllerName, namespace),
-        generateSloClusterRole(template.controllerName, template.sloMappingKindPlural),
-        generateSloClusterRoleBinding(template.controllerName, namespace, template.sloMappingKindPlural),
-        generateSloControllerDeployment(template.controllerName, namespace, template.containerImage),
-      ]
-    );
-
-    return {
-      staticResources: resources,
-      sloMapping,
-    };
+  ): Promise<KubernetesObject[]> {
+    return [
+      generateNamespaceSpec(namespace),
+      generateServiceAccount(template.controllerName, namespace),
+      generateSloClusterRole(template.controllerName, template.sloMappingKindPlural),
+      generateSloClusterRoleBinding(template.controllerName, namespace, template.sloMappingKindPlural),
+      generateSloControllerDeployment(template.controllerName, namespace, template.containerImage),
+    ];
   },
-  generateElasticityStrategyResources: async function (
-    elasticityStrategy: ElasticityStrategy,
+  async generateMetricsControllerResources(
+    metricSource: ComposedMetricSource,
     namespace: string
   ): Promise<KubernetesObject[]> {
+    if (!metricSource) {
+      return [];
+    }
+    const metricsResoruces = [];
+    const crd = await loadCrdForResource(`${metricSource.composedMetricKindPlural}.metrics`);
+    if (crd) {
+      metricsResoruces.push(crd);
+    }
+    metricsResoruces.push(
+      generateServiceAccount(metricSource.controllerName, namespace),
+      generateMetricSourceClusterRole(metricSource.controllerName, metricSource.composedMetricKindPlural),
+      generateMetricSourceClusterRoleBinding(
+        metricSource.controllerName,
+        namespace,
+        metricSource.composedMetricKindPlural
+      ),
+      generateComposedMetricsControllerDeployment(metricSource.controllerName, namespace, metricSource.containerImage),
+      generateComposedMetricsService(metricSource.controllerName, namespace),
+      generateComposedMetricsServiceMonitor(metricSource.controllerName, namespace)
+    );
+    return metricsResoruces;
+  },
+  generateElasticityStrategyControllerResources: async function (
+    elasticityStrategy: ElasticityStrategy,
+    namespace: string,
+    controller: PolarisControllerDeploymentMetadata
+  ): Promise<KubernetesObject[]> {
     const resources = [];
-    const crds = await loadCrdsForTemplate(elasticityStrategy.kind);
+    const crd = await loadCrdForResource(`${elasticityStrategy.kindPlural}.elasticity`);
+    if (crd) {
+      resources.push(crd);
+    }
 
-    //TODO: Get Controller
-    const controller = null;
-    resources.push(...crds);
     resources.push(generateNamespaceSpec(namespace));
     if (controller) {
       resources.push(

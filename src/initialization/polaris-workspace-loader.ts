@@ -4,15 +4,14 @@ import { ObjectKind } from '@polaris-sloc/core';
 import { ownerToNamespacedObjectReference, SloHelper } from '@/workspace/slo/SloHelper';
 import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookmark-manager';
 import { useTemplateStore } from '@/store/template';
-import { useWorkspaceStore } from '@/store/workspace';
 import { toSloMappingObjectKind } from '@/workspace/slo/SloMappingWatchHandler';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { usePolarisComponentStore } from '@/store/polaris-component';
+import { toElasticityStrategyCrdObjectKind } from '@/polaris-templates/TemplatesWatchHandler';
 
 export async function updateWorkspaceFromOrchestrator() {
   const orchestratorApi = useOrchestratorApi();
   const sloStore = useSloStore();
-  const workspaceStore = useWorkspaceStore();
   const polarisComponentStore = usePolarisComponentStore();
   const helper = new SloHelper();
   const bookmarkManager = new WorkspaceWatchBookmarkManager();
@@ -50,7 +49,7 @@ export async function updateWorkspaceFromOrchestrator() {
   for (const objectKind of polarisComponentStore.deployedSloMappings) {
     await updateSlosForObjectKind(objectKind);
   }
-  for (const objectKind of workspaceStore.usedElasticityStrategyKinds) {
+  for (const objectKind of polarisComponentStore.deployedElasticityStrategyCrds) {
     await updateSloCompliancesForObjectKind(objectKind);
   }
 
@@ -74,7 +73,9 @@ export async function loadTemplatesFromOrchestrator() {
         store.saveSloTemplateFromPolaris(sloTemplate);
         polarisComponentStore.addDeployedSloMapping(toSloMappingObjectKind(sloTemplate.sloMappingKind));
       } else if (mapper.isElasticityStrategyCrd(crd)) {
-        elasticityStrategyStore.saveElasticityStrategyFromPolaris(mapper.mapCrdToElasticityStrategy(crd));
+        const strategy = mapper.mapCrdToElasticityStrategy(crd);
+        elasticityStrategyStore.saveElasticityStrategyFromPolaris(strategy);
+        polarisComponentStore.addDeployedElasticityStrategyCrd(toElasticityStrategyCrdObjectKind(strategy.kind));
       }
     }
     bookmarkManager.update(orchestratorApi.crdObjectKind.value, orchestratorCrds.metadata.resourceVersion);

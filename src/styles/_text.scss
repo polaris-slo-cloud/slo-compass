@@ -16,3 +16,8 @@
   display: flex;
   align-items: center;
 }
+
+.old-value {
+  text-decoration: line-through;
+  color: $text-muted-color;
+}

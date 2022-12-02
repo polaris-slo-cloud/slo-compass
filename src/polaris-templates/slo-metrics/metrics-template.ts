@@ -6,7 +6,8 @@ export enum SloMetricSourceType {
 export interface ComposedMetricSource {
   controllerName: string;
   containerImage: string;
-  composedMetricResources: string;
+  composedMetricKind: string;
+  composedMetricKindPlural: string;
 }
 
 export enum MetricQueryResultValueType {
@@ -48,7 +49,8 @@ export const templates: SloMetricSourceTemplate[] = [
     metricsController: {
       controllerName: 'metrics-rest-api-cost-efficiency-controller',
       containerImage: 'polarissloc/metrics-rest-api-cost-efficiency-controller:latest',
-      composedMetricResources: 'costefficiencymetricmappings',
+      composedMetricKind: 'CostEfficiencyMetricMapping',
+      composedMetricKindPlural: 'costefficiencymetricmappings',
     },
     queryResultType: {
       type: MetricQueryResultValueType.Percentage,

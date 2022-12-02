@@ -1,6 +1,6 @@
 import { WorkspaceComponent } from '@/workspace/PolarisComponent';
 import { NamespacedObjectReference, SloCompliance } from '@polaris-sloc/core';
-import { SloMetricSourceTemplate } from '@/polaris-templates/slo-metrics/metrics-template';
+import {SloMetricSourceTemplate, SloMetricTemplateId} from '@/polaris-templates/slo-metrics/metrics-template';
 
 interface SloElasticityStrategy {
   kind: string;
@@ -20,7 +20,7 @@ export interface PolarisSloMapping {
 }
 
 export interface SloMetric {
-  source: SloMetricSourceTemplate;
+  source: SloMetricTemplateId;
   value?: unknown;
   lastUpdated?: Date;
 }

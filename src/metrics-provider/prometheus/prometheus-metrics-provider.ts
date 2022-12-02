@@ -10,7 +10,7 @@ import {
 } from '@/metrics-provider/api';
 import { ObjectKind } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
-import { MetricsProviderQuery } from '@/polaris-templates/slo-metrics/metrics-template';
+import {MetricsProviderQuery, SloMetricSourceTemplate} from '@/polaris-templates/slo-metrics/metrics-template';
 import * as _ from 'lodash';
 
 interface PrometheusConfig {
@@ -63,19 +63,20 @@ export class PrometheusMetricsProvider implements MetricsProvider {
     };
   }
 
-  public async pollSloMetrics(slo: Slo, target: SloTarget): Promise<MetricQueryResult[]> {
+  public async pollSloMetrics(sloMetrics: SloMetricSourceTemplate[], target: SloTarget): Promise<MetricQueryResult[]> {
     const result = [];
-    for (const metric of slo.metrics) {
-      const values = await this.pollMetric<number>(metric.source.providerQueries.prometheus, target);
+    for (const metric of sloMetrics) {
+      const values = await this.pollMetric<number>(metric.providerQueries.prometheus, target);
       result.push({
-        metric: metric.source.displayName,
+        metricSourceId: metric.id,
+        metric: metric.displayName,
         value: _.mean(values),
       });
     }
     return result;
   }
 
-  public async pollSloMetricsHistory(slo: Slo, target: SloTarget): Promise<MetricRangeQueryResult[]> {
+  public async pollSloMetricsHistory(sloMetrics: SloMetricSourceTemplate[], target: SloTarget): Promise<MetricRangeQueryResult[]> {
     const result = [];
 
     const range = {
@@ -85,11 +86,11 @@ export class PrometheusMetricsProvider implements MetricsProvider {
       // every 30 minutes
       step: 30 * 60,
     };
-    for (const metric of slo.metrics) {
-      const values = await this.pollMetricRange<number>(metric.source.providerQueries.prometheus, target, range);
+    for (const metric of sloMetrics) {
+      const values = await this.pollMetricRange<number>(metric.providerQueries.prometheus, target, range);
       result.push({
-        metric: metric.source.displayName,
-        resultType: metric.source.queryResultType,
+        metric: metric.displayName,
+        resultType: metric.queryResultType,
         queryResult: values,
       });
     }

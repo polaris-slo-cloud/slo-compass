@@ -64,7 +64,7 @@ export const defaultStrategies: ElasticityStrategy[] = [
   },
 ];
 
-const defaultElasticityStrategyControllers: PolarisController[] = [
+export const defaultElasticityStrategyControllers: PolarisController[] = [
   {
     type: 'Elasticity Strategy Controller',
     handlesKind: 'HorizontalElasticityStrategy',

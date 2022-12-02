@@ -54,9 +54,8 @@ export const useSloStore = defineStore('slo', () => {
     const slo = getSlo.value(id);
     const target = targetStore.getSloTarget(slo.target);
     const template = templateStore.getSloTemplate(slo.kind);
-    if (!polarisComponentStore.sloMappingHasBeenDeployed(slo.kind)) {
-      await orchestratorApi.deploySloMappingCrd(template);
-    }
+
+    await polarisComponentStore.deployMissingSloResources(slo, template);
     const appliedSloMapping = await orchestratorApi.applySlo(slo, target, template);
     if (appliedSloMapping) {
       slo.configChanged = false;
@@ -109,10 +108,11 @@ export const useSloStore = defineStore('slo', () => {
   }
   async function pollMetrics(id: WorkspaceComponentId): Promise<void> {
     const slo = getSlo.value(id);
-    const metrics = await metricsProvider.pollSloMetrics(slo, targetStore.getSloTarget(slo.target));
+    const sloMetrics = slo.metrics.map((x) => templateStore.getSloMetricTemplate(x.source));
+    const metrics = await metricsProvider.pollSloMetrics(sloMetrics, targetStore.getSloTarget(slo.target));
     const lastUpdated = new Date();
     for (const prometheusMetric of metrics) {
-      const sloMetric = slo.metrics.find((x) => x.source.displayName === prometheusMetric.metric);
+      const sloMetric = slo.metrics.find((x) => x.source === prometheusMetric.metricSourceId);
       sloMetric.value = prometheusMetric.value;
       sloMetric.lastUpdated = lastUpdated;
     }
@@ -121,7 +121,7 @@ export const useSloStore = defineStore('slo', () => {
     const lastUpdated = new Date();
     for (const mapping of sloMetricMappings) {
       const slo = getSlo.value(mapping.slo);
-      const metric = slo.metrics.find((x) => x.source.displayName === mapping.metric);
+      const metric = slo.metrics.find((x) => x.source === mapping.metricSourceId);
       metric.value = mapping.value;
       metric.lastUpdated = lastUpdated;
     }
@@ -164,7 +164,7 @@ export const useSloStore = defineStore('slo', () => {
       },
       kind: template.sloMappingKind,
       metrics: template.metricTemplates.map<SloMetric>((x) => ({
-        source: templateStore.getSloMetricTemplate(x),
+        source: x,
       })),
       config: polarisSloMapping.config,
       configChanged: false,

@@ -1,24 +1,21 @@
 <template>
   <div>
-    <h3>Elasticity Strategies</h3>
-    <div class="row q-col-gutter-md">
-      <div class="col-6 col-md-3 col-lg-2" v-for="strategy of elasticityStrategies" :key="strategy.kind">
-        <q-card class="cursor-pointer" @click="openElasticityStrategy(strategy)" flat bordered>
-          <q-card-section>
-            <div class="text-h4">{{ strategy.name }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
     <h3>SLO Controllers</h3>
     <div class="row q-col-gutter-md">
       <div class="col-6 col-md-3 col-lg-2" v-for="controller of sloControllers" :key="controller.handlesKind">
-        <q-card class="cursor-pointer" @click="openSloController(controller)" flat bordered>
+        <q-card class="hover-container" flat bordered>
           <q-card-section>
-            <div class="text-h4">{{ controllerName(controller) }}</div>
+            <div class="flex no-wrap justify-between items-start">
+              <div class="text-h4">{{ controller.name }}</div>
+              <IconButton
+                icon="mdi-pencil"
+                class="show-on-hover"
+                @click="startEditSloControllerAssignment(controller)"
+              />
+            </div>
           </q-card-section>
           <q-card-section>
-            <div class="text-right text-muted">Handles {{ controller.handlesKind }}</div>
+            <div class="text-right text-muted">{{ controller.handlesDisplayName }}</div>
           </q-card-section>
         </q-card>
       </div>
@@ -26,55 +23,217 @@
     <h3>Composed Metric Controllers</h3>
     <div class="row q-col-gutter-md">
       <div class="col-6 col-md-3 col-lg-2" v-for="controller of metricControllers" :key="controller.handlesKind">
-        <q-card class="cursor-pointer" @click="openComposedMetricController(controller)" flat bordered>
+        <q-card class="hover-container" flat bordered>
           <q-card-section>
-            <div class="text-h4">{{ controllerName(controller) }}</div>
+            <div class="flex no-wrap justify-between items-start">
+              <div class="text-h4">{{ controller.name }}</div>
+              <IconButton
+                icon="mdi-pencil"
+                class="show-on-hover"
+                @click="startEditMetricControllerAssignment(controller)"
+              />
+            </div>
           </q-card-section>
           <q-card-section>
-            <div class="text-right text-muted">Handles {{ controller.handlesKind }}</div>
+            <div class="text-right text-muted">{{ controller.handlesDisplayName }}</div>
           </q-card-section>
         </q-card>
       </div>
     </div>
+    <h3>Elasticity Strategy Controllers</h3>
+    <div class="row q-col-gutter-md">
+      <div
+        class="col-6 col-md-3 col-lg-2"
+        v-for="controller of elasticityStrategyControllers"
+        :key="controller.handlesKind"
+      >
+        <q-card class="hover-container" flat bordered>
+          <q-card-section>
+            <div class="flex no-wrap justify-between items-start">
+              <div class="text-h4">{{ controller.name }}</div>
+              <IconButton
+                icon="mdi-pencil"
+                class="show-on-hover"
+                @click="startEditStrategyControllerAssignment(controller)"
+              />
+            </div>
+          </q-card-section>
+          <q-card-section>
+            <div class="text-right text-muted">{{ controller.handlesDisplayName }}</div>
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+    <div v-if="missingControllers.length > 0">
+      <h3>Missing Controllers</h3>
+      <div class="row q-col-gutter-md">
+        <div class="col-6 col-md-3 col-lg-2" v-for="controller of missingControllers" :key="controller.handlesKind">
+          <q-card flat bordered>
+            <q-card-section>
+              <div class="text-h4">{{ controller.handlesDisplayName }}</div>
+              <div class="text-muted">{{ controller.type }}</div>
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-btn flat color="primary" label="Resolve (TODO)" />
+            </q-card-actions>
+          </q-card>
+        </div>
+      </div>
+    </div>
+    <q-dialog v-model="showEditControllerAssignmentDialog">
+      <q-card class="medium-dialog">
+        <q-card-section>
+          <div class="text-h3">{{ editControllerAssignmentModel.name }}</div>
+        </q-card-section>
+        <q-card-section>
+          <div>Please select the type of {{ editControllerAssignmentModel.resourceType }} this controller handles.</div>
+          <q-select
+            label="Handles"
+            v-model="editControllerAssignmentModel.handlesKind"
+            :options="editControllerAssignmentModel.handlesKindOptions"
+            emit-value
+            map-options
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" @click="cancelEditControllerAssignment" />
+          <q-btn color="primary" label="Save" @click="saveControllerAssignment" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { usePolarisComponentStore } from '@/store/polaris-component';
+import { useTemplateStore } from '@/store/template';
+import IconButton from '@/crosscutting/components/IconButton.vue';
+import { SloMetricSourceType } from '@/polaris-templates/slo-metrics/metrics-template';
 
-const router = useRouter();
+const templateStore = useTemplateStore();
 const elasticityStrategyStore = useElasticityStrategyStore();
 const polarisComponentStore = usePolarisComponentStore();
 
-const { sloControllers, elasticityStrategyControllers, metricControllers } = storeToRefs(polarisComponentStore);
-const elasticityStrategies = computed(() =>
-  elasticityStrategyStore.elasticityStrategies.map((x) => {
-    const controller = elasticityStrategyControllers.value.find((c) => c.handlesKind === x.kind);
+const sloControllers = computed(() =>
+  polarisComponentStore.sloControllers.map((controller) => {
+    const slo = templateStore.getSloTemplate(controller.handlesKind);
     return {
-      ...x,
-      controller,
+      ...controller,
+      handlesDisplayName: slo.displayName,
+      name: controllerName(controller),
     };
   })
 );
+
+const metricControllers = computed(() =>
+  polarisComponentStore.metricControllers.map((controller) => {
+    const metric = templateStore.sloMetricSourceTemplates.find(
+      (x) => x.metricsController?.composedMetricKind === controller.handlesKind
+    );
+    return {
+      ...controller,
+      handlesDisplayName: metric?.displayName,
+      name: controllerName(controller),
+    };
+  })
+);
+
+const elasticityStrategyControllers = computed(() =>
+  polarisComponentStore.elasticityStrategyControllers.map((controller) => {
+    const elasticityStrategy = elasticityStrategyStore.getElasticityStrategy(controller.handlesKind);
+    return {
+      ...controller,
+      handlesDisplayName: elasticityStrategy.name,
+      name: controllerName(controller),
+    };
+  })
+);
+
+const missingControllers = computed(() => {
+  const missingSloControllers = templateStore.sloTemplates
+    .filter((x) => polarisComponentStore.hasMissingPolarisComponent(x.sloMappingKind))
+    .map((x) => ({
+      type: 'SLO Controller',
+      handlesKind: x.sloMappingKind,
+      handlesDisplayName: x.displayName,
+    }));
+  const missingComposedMetricControllers = templateStore.sloMetricSourceTemplates
+    .filter(
+      (x) =>
+        x.type === SloMetricSourceType.Composed &&
+        (!x.metricsController ||
+          polarisComponentStore.hasMissingPolarisComponent(x.metricsController.composedMetricKind))
+    )
+    .map((x) => ({
+      type: 'Metrics Controller',
+      handlesKind: x.metricsController?.composedMetricKind,
+      handlesDisplayName: x.displayName,
+    }));
+  const missingElasticityStrategyControllers = elasticityStrategyStore.elasticityStrategies
+    .filter((x) => polarisComponentStore.hasMissingPolarisComponent(x.kind))
+    .map((x) => ({
+      type: 'Elasticity Strategy Controller',
+      handlesKind: x.kind,
+      handlesDisplayName: x.name,
+    }));
+
+  return [...missingSloControllers, ...missingComposedMetricControllers, ...missingElasticityStrategyControllers];
+});
 
 function controllerName(controller) {
   return controller.deployment ? controller.deployment.name : controller.deploymentMetadata.name;
 }
 
-function openElasticityStrategy(strategy) {
-  router.push({ name: 'elasticity-strategy', params: { kind: strategy.kind } });
+const editControllerAssignmentModel = ref(null);
+const showEditControllerAssignmentDialog = computed({
+  get: () => editControllerAssignmentModel.value !== null,
+  set(v) {
+    if (!v) {
+      editControllerAssignmentModel.value = null;
+    }
+  },
+});
+function cancelEditControllerAssignment() {
+  showEditControllerAssignmentDialog.value = false;
+}
+function saveControllerAssignment() {
+  polarisComponentStore.correctControllerAssignment(
+    editControllerAssignmentModel.value.oldHandlesKind,
+    editControllerAssignmentModel.value.handlesKind
+  );
+  showEditControllerAssignmentDialog.value = false;
 }
 
-function openSloController(controller) {
-  // router.push({ name: 'slo-controller', params: { kind: controller.handlesKind } });
+function startEditSloControllerAssignment(controller) {
+  editControllerAssignmentModel.value = {
+    ...controller,
+    resourceType: 'SLO',
+    handlesKindOptions: templateStore.sloTemplates.map((x) => ({ value: x.sloMappingKind, label: x.displayName })),
+    oldHandlesKind: controller.handlesKind,
+  };
 }
-
-function openComposedMetricController(controller) {
-  // router.push({ name: 'composed-metric-controller', params: { kind: controller.handlesKind } });
+function startEditMetricControllerAssignment(controller) {
+  editControllerAssignmentModel.value = {
+    ...controller,
+    resourceType: 'Composed Metric',
+    handlesKindOptions: templateStore.sloMetricSourceTemplates
+      .filter((x) => !!x.metricsController)
+      .map((x) => ({
+        value: x.metricsController.composedMetricKind,
+        label: x.displayName,
+      })),
+    oldHandlesKind: controller.handlesKind,
+  };
+}
+function startEditStrategyControllerAssignment(controller) {
+  editControllerAssignmentModel.value = {
+    ...controller,
+    resourceType: 'Elasticity Strategy',
+    handlesKindOptions: elasticityStrategyStore.elasticityStrategies.map((x) => ({ value: x.kind, label: x.name })),
+    oldHandlesKind: controller.handlesKind,
+  };
 }
 </script>
 

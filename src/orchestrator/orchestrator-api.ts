@@ -7,7 +7,11 @@ import Slo, {
   PolarisSloMapping,
 } from '@/workspace/slo/Slo';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
-import { PolarisController } from '@/workspace/PolarisComponent';
+import {
+  PolarisController,
+  PolarisControllerDeploymentMetadata,
+  WorkspaceComponent,
+} from '@/workspace/PolarisComponent';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
@@ -15,6 +19,8 @@ import { ISubscribable, ISubscribableCallback } from '@/crosscutting/subscibable
 import { v4 as uuidv4 } from 'uuid';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
+import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
+import { SloMetricSourceTemplate } from '@/polaris-templates/slo-metrics/metrics-template';
 
 export interface PolarisResource {
   [key: string]: any;
@@ -42,8 +48,8 @@ export interface IDeployment {
   connectionMetadata: NamespacedObjectReference;
 }
 export interface PolarisDeploymentResult {
+  successfulResourcesCount: number;
   failedResources: PolarisResource[];
-  deployedControllers: PolarisController[];
 }
 export interface PolarisSloDeploymentResult extends PolarisDeploymentResult {
   deployedSloMapping?: DeployedPolarisSloMapping;
@@ -64,6 +70,12 @@ export interface IOrchestratorApi {
   createPolarisMapper(): PolarisMapper;
   listTemplateDefinitions(): Promise<ApiObjectList<any>>;
   findPolarisControllers(): Promise<PolarisController[]>;
+  deploySloController(slo: Slo, template: SloTemplateMetadata): Promise<PolarisDeploymentResult>;
+  deployElasticityStrategyController(
+    elasticityStrategy: ElasticityStrategy,
+    deploymentMetadata: PolarisControllerDeploymentMetadata
+  ): Promise<PolarisDeploymentResult>;
+  deployComposedMetricsController(controllerTemplate: SloMetricSourceTemplate): Promise<PolarisDeploymentResult>;
 }
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
@@ -145,6 +157,18 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   findPolarisControllers(): Promise<PolarisController[]> {
     throw new OrchestratorNotConnectedError();
   }
+
+  deployElasticityStrategyController(): Promise<PolarisDeploymentResult> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  deploySloController(): Promise<PolarisDeploymentResult> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  deployComposedMetricsController(): Promise<PolarisDeploymentResult> {
+    throw new OrchestratorNotConnectedError();
+  }
 }
 const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
 const subscribers: Ref<Map<string, Map<string, ISubscribableCallback>>> = ref(new Map());
@@ -177,6 +201,34 @@ function clone<T>(object: T): T {
   return JSON.parse(JSON.stringify(object));
 }
 
+async function deploy(
+  component: WorkspaceComponent,
+  deploymentAction: () => Promise<PolarisDeploymentResult>
+): Promise<PolarisDeploymentResult> {
+  runningDeployments.value[component.id] = {
+    id: component.id,
+    name: component.name,
+    dismissed: false,
+  };
+  const result = await deploymentAction();
+  delete runningDeployments.value[component.id];
+  return result;
+}
+
+async function deployMetricController(
+  template: SloMetricSourceTemplate,
+  deploymentAction: () => Promise<PolarisDeploymentResult>
+): Promise<PolarisDeploymentResult> {
+  runningDeployments.value[template.id] = {
+    id: template.id,
+    name: `${template.displayName} Metric`,
+    dismissed: false,
+  };
+  const result = await deploymentAction();
+  delete runningDeployments[template.id];
+  return result;
+}
+
 export function useOrchestratorApi(): IOrchestratorApiConnection {
   return {
     connect,
@@ -197,6 +249,16 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     createPolarisMapper: () => api.value.createPolarisMapper(),
     listTemplateDefinitions: () => api.value.listTemplateDefinitions(),
     findPolarisControllers: () => api.value.findPolarisControllers(),
+    deploySloController: (slo, template) =>
+      deploy(slo, () => api.value.deploySloController(clone(slo), clone(template))),
+    deployElasticityStrategyController: (elasticityStrategy, deploymentMetadata) =>
+      deploy(elasticityStrategy, () =>
+        api.value.deployElasticityStrategyController(clone(elasticityStrategy), clone(deploymentMetadata))
+      ),
+    deployComposedMetricsController: (controllerTemplate) =>
+      deployMetricController(controllerTemplate, () =>
+        api.value.deployComposedMetricsController(clone(controllerTemplate))
+      ),
     hasRunningDeployment,
     undismissiedRunningDeployments: computed(() =>
       Object.values(runningDeployments.value).filter((x: any) => !x.dismissed)

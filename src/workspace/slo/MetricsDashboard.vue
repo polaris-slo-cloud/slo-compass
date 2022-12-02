@@ -24,10 +24,12 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useMetricsProvider } from '@/metrics-provider/api';
 import { useTargetStore } from '@/store/target';
+import { useTemplateStore } from '@/store/template';
 import MetricHistoryChart from '@/workspace/slo/MetricHistoryChart.vue';
 
 const metricsProvider = useMetricsProvider();
 const targetStore = useTargetStore();
+const templateStore = useTemplateStore();
 
 const props = defineProps({
   slo: Object,
@@ -35,7 +37,8 @@ const props = defineProps({
 
 const metrics = ref([]);
 async function pollMetrics() {
-  metrics.value = await metricsProvider.pollSloMetricsHistory(props.slo, targetStore.getSloTarget(props.slo.target));
+  const sloMetrics = props.slo.metrics.map((x) => templateStore.getSloMetricTemplate(x.source));
+  metrics.value = await metricsProvider.pollSloMetricsHistory(sloMetrics, targetStore.getSloTarget(props.slo.target));
 }
 
 let pollingInterval;

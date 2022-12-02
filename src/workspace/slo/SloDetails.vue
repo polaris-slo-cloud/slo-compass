@@ -36,27 +36,4 @@ function resetConfiguration() {
 }
 </script>
 
-<style scoped lang="scss">
-.old-value {
-  text-decoration: line-through;
-  color: $text-muted-color;
-}
-.chip-strike-through-container {
-  position: relative;
-  .chip-strike-through {
-    border-top: 1px solid $text-muted-color;
-    position: absolute;
-    top: 60%;
-    left: 10px;
-    right: 10px;
-    z-index: 1000;
-  }
-  .q-chip {
-    background: $grey-3;
-    color: $text-muted-color;
-    :deep(.q-icon) {
-      color: $text-muted-color;
-    }
-  }
-}
-</style>
+<style scoped lang="scss"></style>

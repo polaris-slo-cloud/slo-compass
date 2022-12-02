@@ -8,7 +8,7 @@ import TemplatesView from '@/views/TemplatesView.vue';
 import TemplatesOverview from '@/polaris-templates/TemplatesOverview.vue';
 import SloTemplateDetails from '@/polaris-templates/slo/SloTemplateDetails.vue';
 import SloMetricSourceTemplateDetails from '@/polaris-templates/slo-metrics/SloMetricSourceTemplateDetails.vue';
-import ElasticityStrategyDetails from '@/polaris-components/elasticity-strategy/ElasticityStrategyDetails.vue';
+import ElasticityStrategyDetails from '@/polaris-templates/elasticity-strategy-config/ElasticityStrategyDetails.vue';
 import PolarisComponentsView from '@/views/PolaisComponentsView.vue';
 import PolarisComponentsOverview from '@/polaris-components/PolarisComponentsOverview.vue';
 import { useWorkspaceStore } from '@/store/workspace';
@@ -79,6 +79,11 @@ const router = createRouter({
           name: 'slo-metric-source-template',
           component: SloMetricSourceTemplateDetails,
         },
+        {
+          path: 'elasticity-strategy/:kind',
+          name: 'elasticity-strategy',
+          component: ElasticityStrategyDetails,
+        },
       ],
     },
     {
@@ -89,11 +94,6 @@ const router = createRouter({
           path: '',
           name: 'polaris-components',
           component: PolarisComponentsOverview,
-        },
-        {
-          path: 'elasticity-strategy/:kind',
-          name: 'elasticity-strategy',
-          component: ElasticityStrategyDetails,
         },
       ],
     },

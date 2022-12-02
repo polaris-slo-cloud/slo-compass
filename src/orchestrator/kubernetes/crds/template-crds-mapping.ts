@@ -1,23 +1,18 @@
 import { V1CustomResourceDefinition } from '@kubernetes/client-node';
 
-const crdsMap = {
-  CostEfficiencySloMapping: ['costefficiencymetricmappings.metrics', 'costefficiencyslomappings.slo'],
-  CPUUsageSloMapping: ['cpuusageslomappings.slo'],
-  HorizontalElasticityStrategy: ['horizontalelasticitystrategies.elasticity'],
-  VerticalElasticityStrategy: ['verticalelasticitystrategies.elasticity'],
-};
+const availableCrds = new Set([
+  'costefficiencymetricmappings.metrics',
+  'horizontalelasticitystrategies.elasticity',
+  'verticalelasticitystrategies.elasticity',
+]);
 
-export default async function loadCrdsForTemplate(templateName: string): Promise<V1CustomResourceDefinition[]> {
-  const crdNames = crdsMap[templateName];
-  if (!crdNames) {
-    return [];
+export default async function loadCrdForResource(resourceName: string): Promise<V1CustomResourceDefinition> {
+  if (!availableCrds.has(resourceName)) {
+    return null;
   }
 
   // Using a templated import to conform to static checking rules for vite: https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
-  const crds = [];
-  for (const name of crdNames) {
-    const yaml = await import(`./${name}.polaris-slo-cloud.github.io.yaml`);
-    crds.push(yaml.default);
-  }
-  return crds;
+
+  const yaml = await import(`./${resourceName}.polaris-slo-cloud.github.io.yaml`);
+  return yaml.default;
 }

@@ -30,17 +30,17 @@
 <script setup>
 import { computed } from 'vue';
 import { useSloStore } from '@/store/slo';
-import { useWorkspaceStore } from '@/store/workspace';
+import { usePolarisComponentStore } from '@/store/polaris-component';
 
 const store = useSloStore();
-const workspaceStore = useWorkspaceStore();
+const polarisComponentStore = usePolarisComponentStore();
 
 const props = defineProps({
   item: Object,
   displayType: String,
 });
 
-const hasMissingSloController = computed(() => workspaceStore.hasMissingPolarisComponent(props.item.kind));
+const hasMissingSloController = computed(() => polarisComponentStore.hasMissingPolarisComponent(props.item.kind));
 
 async function deleteItem() {
   await store.deleteSlo(props.itemId);

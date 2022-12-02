@@ -36,10 +36,7 @@
       <MetricsDashboard :slo="slo" class="q-mt-lg" />
       <SloConfig :slo="slo" class="q-mt-lg" config-item-class="col-6 col-sm-4 col-md-3 col-lg-2" />
       <ElasticityStrategyConfig :slo="slo" class="q-mt-lg" config-item-class="col-6 col-sm-4 col-md-3 col-lg-2" />
-      <div class="flex justify-end q-mt-lg" v-if="canBeDeployed">
-        <q-btn label="Deploy" color="primary" @click="deploy" />
-      </div>
-      <div class="flex justify-end q-mt-lg q-gutter-x-md" v-else-if="slo.configChanged">
+      <div class="flex justify-end q-mt-lg q-gutter-x-md" v-if="slo.configChanged">
         <q-btn label="Reset" color="negative" outline @click="resetConfiguration" v-if="sloExistsInPolaris" />
         <q-btn label="Apply" color="primary" @click="applyConfiguration" />
       </div>
@@ -50,7 +47,6 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useSloStore } from '@/store/slo';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import WorkspaceItemDetailsBanners from '@/workspace/WorkspaceItemDetailsBanners.vue';
@@ -60,7 +56,6 @@ import SloConfig from '@/workspace/slo/SloConfig.vue';
 import ElasticityStrategyConfig from '@/workspace/slo/ElasticityStrategyConfig.vue';
 
 const route = useRoute();
-const orchestratorApi = useOrchestratorApi();
 const store = useSloStore();
 
 const slo = computed(() => store.getSlo(route.params.id));
@@ -90,15 +85,6 @@ const description = computed({
 const formatIfEmpty = (value) => value || '-';
 
 const sloExistsInPolaris = computed(() => slo.value.deployedSloMapping && !slo.value.deployedSloMapping.deleted);
-const canBeDeployed = computed(
-  () =>
-      //TODO: Fix
-    !orchestratorApi.hasRunningDeployment.value(slo.value.id) && slo.value.polarisControllers.some((x) => !x.deployment)
-);
-
-function deploy() {
-  // TODO: Perform deployment action for SLO Controller
-}
 
 function applyConfiguration() {
   store.applySloMapping(slo.value.id);

@@ -125,7 +125,7 @@ function save() {
       type: workspaceItemTypes.slo,
       kind: props.template.sloMappingKind,
       metrics: props.template.metricTemplates.map((x) => ({
-        source: templateStore.getSloMetricTemplate(x),
+        source: x,
       })),
       configChanged: true,
     };

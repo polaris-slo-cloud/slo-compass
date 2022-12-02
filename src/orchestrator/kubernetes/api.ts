@@ -13,7 +13,7 @@ import Slo, {
   PolarisSloMapping,
 } from '@/workspace/slo/Slo';
 import { KubernetesObject, V1Deployment } from '@kubernetes/client-node';
-import { PolarisController } from '@/workspace/PolarisComponent';
+import { PolarisController, PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher, POLARIS_API } from '@polaris-sloc/core';
 import { KubernetesObjectKindWatcher } from '@/orchestrator/kubernetes/kubernetes-watcher';
@@ -22,6 +22,8 @@ import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { KubernetesPolarisMapper } from '@/orchestrator/kubernetes/kubernetes-polaris-mapper';
 import { transformK8sOwnerReference } from '@/orchestrator/kubernetes/helpers';
+import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
+import { SloMetricSourceTemplate } from '@/polaris-templates/slo-metrics/metrics-template';
 
 export interface K8sConnectionOptions {
   connectionString: string;
@@ -282,6 +284,7 @@ export default class Api implements IPolarisOrchestratorApi {
 
     const deployments = await this.client.listAllDeployments();
     const polarisControllers = deployments.items
+      .filter((x) => x.metadata.labels && x.metadata.labels.tier === 'control-plane')
       .map<PolarisController>((x) => {
         const matchingServiceAccount = polarisServiceAccounts.find(
           (s) => s.name === x.spec?.template?.spec?.serviceAccountName && s.namespace === x.metadata.namespace
@@ -318,6 +321,55 @@ export default class Api implements IPolarisOrchestratorApi {
         return 'Metrics Controller';
     }
     return null;
+  }
+
+  public async deploySloController(slo: Slo, template: SloTemplateMetadata): Promise<PolarisDeploymentResult> {
+    const resources = await resourceGenerator.generateSloControllerResources(
+      slo,
+      this.connectionOptions.polarisNamespace,
+      template
+    );
+
+    const result = await this.deployResources(resources);
+
+    return {
+      successfulResourcesCount: result.successful.length,
+      failedResources: result.failed,
+    };
+  }
+
+  public async deployElasticityStrategyController(
+    elasticityStrategy: ElasticityStrategy,
+    deploymentMetadata: PolarisControllerDeploymentMetadata
+  ): Promise<PolarisDeploymentResult> {
+    const resources = await resourceGenerator.generateElasticityStrategyControllerResources(
+      elasticityStrategy,
+      this.connectionOptions.polarisNamespace,
+      deploymentMetadata
+    );
+
+    const result = await this.deployResources(resources);
+
+    return {
+      successfulResourcesCount: result.successful.length,
+      failedResources: result.failed,
+    };
+  }
+
+  public async deployComposedMetricsController(
+    controllerTemplate: SloMetricSourceTemplate
+  ): Promise<PolarisDeploymentResult> {
+    const resources = await resourceGenerator.generateMetricsControllerResources(
+      controllerTemplate.metricsController,
+      this.connectionOptions.polarisNamespace
+    );
+
+    const result = await this.deployResources(resources);
+
+    return {
+      successfulResourcesCount: result.successful.length,
+      failedResources: result.failed,
+    };
   }
 
   private async findCustomResourceMetadata(apiVersion: string, kind: string): Promise<CustomResourceMetadata> {
@@ -387,41 +439,5 @@ export default class Api implements IPolarisOrchestratorApi {
     } catch (e) {
       return false;
     }
-  }
-
-  private async deployControllerResources(
-    resources: KubernetesObject[],
-    polarisControllers: PolarisController[]
-  ): Promise<PolarisDeploymentResult> {
-    const deploymentResult = await this.deployResources(resources);
-    const failedResources = deploymentResult.failed.map((resource) => ({
-      ...resource,
-      displayName: `${resource.metadata.name} (${resource.apiVersion}/${resource.kind})`,
-    }));
-    const deployedControllers = deploymentResult.successful
-      .map((resource): PolarisController => {
-        const controller = polarisControllers.find(
-          (x) => x.deploymentMetadata.name === resource.metadata.name && resource.kind === 'Deployment'
-        );
-        if (controller) {
-          const [group, version] = resource.apiVersion.split('/');
-          return {
-            ...controller,
-            deployment: {
-              kind: resource.kind,
-              version,
-              group,
-              name: resource.metadata.name,
-              namespace: resource.metadata.namespace,
-            },
-          };
-        }
-        return null;
-      })
-      .filter((x) => !!x);
-    return {
-      failedResources,
-      deployedControllers,
-    };
   }
 }

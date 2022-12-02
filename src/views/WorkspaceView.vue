@@ -7,7 +7,7 @@ import useWindowSize from '@/crosscutting/composables/window-size';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useTemplateStore } from '@/store/template';
 import ReviewSloTemplateDialog from '@/polaris-templates/slo/ReviewTemplateDialog.vue';
-import ReviewStrategyConfigTemplateDialog from '@/polaris-components/elasticity-strategy/ReviewStrategyConfigTemplateDialog.vue';
+import ReviewStrategyConfigTemplateDialog from '@/polaris-templates/elasticity-strategy-config/ReviewStrategyConfigTemplateDialog.vue';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 
 const orchestratorApi = useOrchestratorApi();

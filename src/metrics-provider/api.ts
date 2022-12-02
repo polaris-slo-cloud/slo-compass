@@ -1,11 +1,15 @@
-import Slo from '@/workspace/slo/Slo';
 import { Ref, ref } from 'vue';
 import { MetricsConnection } from '@/connections/storage';
 import { getProvider } from '@/metrics-provider/providers';
 import { SloTarget } from '@/workspace/targets/SloTarget';
-import { MetricQueryResultType } from '@/polaris-templates/slo-metrics/metrics-template';
+import {
+  MetricQueryResultType,
+  SloMetricSourceTemplate,
+  SloMetricTemplateId,
+} from '@/polaris-templates/slo-metrics/metrics-template';
 
 export interface MetricQueryResult {
+  metricSourceId: SloMetricTemplateId;
   metric: string;
   value: number;
 }
@@ -29,8 +33,8 @@ export interface MetricRangeQueryResult {
 export interface MetricsProvider {
   name: string;
   test(): Promise<boolean>;
-  pollSloMetrics(slo: Slo, target: SloTarget): Promise<MetricQueryResult[]>;
-  pollSloMetricsHistory(slo: Slo, target: SloTarget): Promise<MetricRangeQueryResult[]>;
+  pollSloMetrics(sloMetrics: SloMetricSourceTemplate[], target: SloTarget): Promise<MetricQueryResult[]>;
+  pollSloMetricsHistory(sloMetrics: SloMetricSourceTemplate[], target: SloTarget): Promise<MetricRangeQueryResult[]>;
 }
 
 export interface MetricsProviderApi extends MetricsProvider {
@@ -71,7 +75,9 @@ export function useMetricsProvider(): MetricsProviderApi {
     connect,
     testConnection,
     test: () => provider.value.test(),
-    pollSloMetrics: (slo: Slo, target: SloTarget) => provider.value.pollSloMetrics(slo, target),
-    pollSloMetricsHistory: (slo: Slo, target: SloTarget) => provider.value.pollSloMetricsHistory(slo, target),
+    pollSloMetrics: (sloMetrics: SloMetricSourceTemplate[], target: SloTarget) =>
+      provider.value.pollSloMetrics(sloMetrics, target),
+    pollSloMetricsHistory: (sloMetrics: SloMetricSourceTemplate[], target: SloTarget) =>
+      provider.value.pollSloMetricsHistory(sloMetrics, target),
   };
 }

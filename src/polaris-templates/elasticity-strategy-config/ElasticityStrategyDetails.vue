@@ -38,7 +38,7 @@
       :columns="sloSpecificConfigColumns"
       hide-selected-banner
       hide-pagination
-      no-data-label="This SLO does not have any config fields"
+      no-data-label="This Elasticity Strategy does not have any config fields"
     >
       <template #header="props">
         <q-tr :props="props">
@@ -65,7 +65,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import EditableField from '@/crosscutting/components/EditableField.vue';
-import SloSpecificParametersConfigForm from '@/polaris-components/elasticity-strategy/SloSpecificParametersConfigForm.vue';
+import SloSpecificParametersConfigForm from '@/polaris-templates/elasticity-strategy-config/SloSpecificParametersConfigForm.vue';
 
 const route = useRoute();
 const store = useElasticityStrategyStore();
