@@ -4,6 +4,7 @@
       <span class="col">Display Name</span>
       <span class="col">Type</span>
       <span class="col">Parameter Key</span>
+      <span class="col">Possible Values</span>
       <span class="col-1">Required</span>
       <span class="col-1" v-if="!reviewOnly"></span>
     </div>
@@ -29,7 +30,7 @@
             v-model="v.type.$model"
             :options="parameterTypes"
             :error="v.type.$error"
-            @blur="v.displayName.$touch"
+            @blur="v.type.$touch"
           >
             <template v-slot:error>
               <span class="text-no-wrap">{{ v.type.$errors[0] && v.type.$errors[0].$message }}</span>
@@ -42,11 +43,55 @@
             v-model="v.parameter.$model"
             :error="v.parameter.$error"
             @blur="v.parameter.$touch"
+            :disable="reviewOnly"
           >
             <template v-slot:error>
               <span class="text-no-wrap">{{ v.parameter.$errors[0] && v.parameter.$errors[0].$message }}</span>
             </template>
           </q-input>
+          <!-- ".q-field--with-bottom" Adds the same padding as for the q-input and q-select above -->
+          <div v-if="!hasValueOptions(config)" class="col flex q-field--with-bottom justify-center items-center">
+            <span v-if="reviewOnly" class="text-weight-bold">All values possible</span>
+            <q-btn
+              v-else
+              label="select possible values"
+              no-caps
+              flat
+              color="primary"
+              @click="enableValueOptions(config)"
+            />
+          </div>
+          <div v-else class="col row">
+            <q-select
+              outlined
+              dense
+              v-model="v.valueOptions.$model"
+              class="col"
+              use-input
+              use-chips
+              multiple
+              hide-dropdown-icon
+              input-debounce="0"
+              new-value-mode="add-unique"
+              @new-value="(inputValue, doneFn) => addValueOption(config, inputValue, doneFn)"
+              clearable
+              @clear="v.valueOptions.$model = []"
+              hint="Press Enter to add a new value"
+              hide-hint
+              :error="v.valueOptions.$error"
+              :error-message="v.valueOptions.$errors[0]?.$message"
+              :disable="reviewOnly"
+            />
+            <q-btn
+              v-if="!reviewOnly"
+              flat
+              icon="mdi-delete-forever"
+              color="negative"
+              @click="disableValueOptions(config)"
+              class="col-auto self-end q-ml-xs q-mb-lg"
+              padding="xs"
+            />
+          </div>
           <!-- ".q-field--with-bottom" Adds the same padding as for the q-input and q-select above -->
           <q-checkbox dense class="col-1 q-field--with-bottom" v-model="config.required" />
           <div class="col-1 flex q-field--with-bottom" v-if="!reviewOnly">
@@ -67,7 +112,22 @@ import { useVuelidate } from '@vuelidate/core';
 import { ValidateEach } from '@vuelidate/components';
 import { required, helpers } from '@vuelidate/validators';
 import { v4 as uuidV4 } from 'uuid';
-import { ParameterType } from '@/polaris-templates/parameters';
+import { convertToConfigParameterType, ParameterType } from '@/polaris-templates/parameters';
+
+function optionsValidType(value, siblingState) {
+  let validator = () => true;
+  switch (siblingState.type) {
+    case ParameterType.Integer:
+      validator = (val) => parseInt(val) === Number(val);
+      break;
+    case ParameterType.Decimal:
+    case ParameterType.Percentage:
+      validator = (val) => !isNaN(Number(val));
+      break;
+  }
+
+  return value.every(validator);
+}
 
 const props = defineProps({
   modelValue: Array,
@@ -84,6 +144,20 @@ const configParameters = computed({
 });
 
 const parameterTypes = Object.values(ParameterType);
+const hasValueOptions = (configParameter) => Array.isArray(configParameter.valueOptions);
+
+function enableValueOptions(configParameter) {
+  configParameter.valueOptions = [];
+}
+
+function disableValueOptions(configParameter) {
+  delete configParameter.valueOptions;
+}
+
+function addValueOption(configParameter, inputValue, doneFn) {
+  const converted = convertToConfigParameterType(inputValue, configParameter.type);
+  doneFn(converted);
+}
 
 function removeParameter(index) {
   configParameters.value.splice(index, 1);
@@ -108,6 +182,9 @@ const rules = {
   },
   displayName: { required },
   type: { required },
+  valueOptions: {
+    validType: helpers.withMessage('All options have to be of the selected type', optionsValidType),
+  },
 };
 
 const v$ = useVuelidate();

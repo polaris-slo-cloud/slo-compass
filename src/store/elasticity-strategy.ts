@@ -57,6 +57,13 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
           .filter((x) => !newPropertyKeys.includes(x.parameter))
           .map((x) => x.parameter);
 
+        for (const entry of existingElasticityStrategy.sloSpecificConfig) {
+          const entryInNewStrategy = strategy.sloSpecificConfig.find((x) => x.parameter === entry.parameter);
+          if (entryInNewStrategy) {
+            entry.valueOptions = entryInNewStrategy.valueOptions;
+          }
+        }
+
         if (newProperties.length > 0 || removedPropertyKeys.length > 0) {
           existingElasticityStrategy.sloSpecificConfig = [
             ...existingElasticityStrategy.sloSpecificConfig,

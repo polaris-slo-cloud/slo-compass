@@ -4,6 +4,7 @@
       <span class="col">Display Name</span>
       <span class="col">Type</span>
       <span class="col">Parameter Key</span>
+      <span class="col">Possible Values</span>
       <span class="col-1">Required</span>
       <span class="col-1" v-if="!reviewOnly"></span>
     </div>
@@ -48,6 +49,22 @@
             </template>
           </q-input>
           <!-- ".q-field--with-bottom" Adds the same padding as for the q-input and q-select above -->
+          <div v-if="!hasValueOptions(config)" class="col flex q-field--with-bottom justify-center items-center">
+            <span class="text-weight-bold">All values possible</span>
+          </div>
+          <div v-else class="col row">
+            <q-select
+              outlined
+              dense
+              :modelValue="config.valueOptions"
+              class="col"
+              use-chips
+              multiple
+              hide-dropdown-icon
+              readonly
+            />
+          </div>
+          <!-- ".q-field--with-bottom" Adds the same padding as for the q-input and q-select above -->
           <q-checkbox dense class="col-1 q-field--with-bottom" v-model="config.required" />
           <div class="col-1 flex q-field--with-bottom" v-if="!reviewOnly">
             <q-btn icon="mdi-delete" flat color="negative" @click="removeParameter(index)" />
@@ -84,6 +101,8 @@ const configParameters = computed({
 });
 
 const parameterTypes = Object.values(ElasticityStrategyParameterType);
+
+const hasValueOptions = (configParameter) => Array.isArray(configParameter.valueOptions);
 
 function removeParameter(index) {
   configParameters.value.splice(index, 1);

@@ -49,9 +49,7 @@ export default class K8sClientHelper {
     }
 
     if (this.apiVersionResourceCache[apiVersion]) {
-      const resource = this.apiVersionResourceCache[apiVersion].resources.find(
-        (r) => r.kind === kind
-      );
+      const resource = this.apiVersionResourceCache[apiVersion].resources.find((r) => r.kind === kind);
       if (resource) {
         return resource;
       }
@@ -132,10 +130,7 @@ export default class K8sClientHelper {
    * @param action HTTP action headers are being generated for.
    * @return Headers to use in request.
    */
-  public generateHeaders(
-    optionsHeaders: { [name: string]: string },
-    action = 'GET'
-  ): { [name: string]: string } {
+  public generateHeaders(optionsHeaders: { [name: string]: string }, action = 'GET'): { [name: string]: string } {
     const headers: { [name: string]: string } = Object.assign({}, this._defaultHeaders);
     headers.accept = 'application/json';
     if (action === 'PATCH') {

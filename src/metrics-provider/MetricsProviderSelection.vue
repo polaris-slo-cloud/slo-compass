@@ -9,13 +9,7 @@
         :options="providers"
         class="col-grow"
       />
-      <q-btn
-        flat
-        label="New"
-        icon="mdi-plus"
-        class="q-ml-md"
-        @click="showAddMetricsProviderDialog = true"
-      />
+      <q-btn flat label="New" icon="mdi-plus" class="q-ml-md" @click="showAddMetricsProviderDialog = true" />
     </div>
     <AddMetricsProviderDialog v-model:show="showAddMetricsProviderDialog" @added="providerAdded" />
   </div>
@@ -23,8 +17,8 @@
 
 <script setup>
 import AddMetricsProviderDialog from '@/connections/AddMetricsProviderDialog.vue';
-import {computed, onMounted, ref} from 'vue';
-import {metricsProviderStorage} from "@/connections/storage";
+import { computed, onMounted, ref } from 'vue';
+import { metricsProviderStorage } from '@/connections/storage';
 
 const props = defineProps({
   modelValue: Object,

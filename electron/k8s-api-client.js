@@ -1,6 +1,6 @@
 const k8s = require('@kubernetes/client-node');
 const request = require('request');
-const { Watch, V1ClusterRoleBindingList, V1ClusterRoleList} = require('@kubernetes/client-node');
+const { Watch } = require('@kubernetes/client-node');
 const { v4: uuidv4 } = require('uuid');
 
 const k8sConfig = new k8s.KubeConfig();

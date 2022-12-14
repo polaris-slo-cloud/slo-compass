@@ -23,10 +23,11 @@
           v-for="configKey of configKeys"
           :key="configKey"
           :class="configItemClass"
-          :title="configKey"
+          :title="configTemplate[configKey].displayName"
           :value="slo.elasticityStrategy.config[configKey]"
           :oldValue="slo.deployedSloMapping?.sloMapping?.elasticityStrategyConfig[configKey]"
           :showConfigChange="sloExistsInPolaris"
+          :valuePropertyDisplayNames="knownValuePropertyDisplayNames"
           @resetValue="resetElasticityStrategyConfig(configKey)"
         />
       </div>
@@ -34,7 +35,10 @@
         <div class="row q-col-gutter-md q-mt-none">
           <div v-for="configKey of configKeys" :key="'edit-' + configKey" :class="configItemClass">
             <div class="field-item-label">{{ configKey }}</div>
-            <ConfigTemplateInput v-model="scope.value[configKey]" :template="configTemplate[configKey]" />
+            <ElasticityStrategyConfigTemplateInput
+              v-model="scope.value[configKey]"
+              :template="configTemplate[configKey]"
+            />
           </div>
         </div>
       </template>
@@ -50,8 +54,8 @@ import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { SloHelper } from '@/workspace/slo/SloHelper';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import ConfigItemView from '@/workspace/slo/ConfigItemView.vue';
-import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
 import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
+import ElasticityStrategyConfigTemplateInput from '@/workspace/slo/ElasticityStrategyConfigTemplateInput.vue';
 
 const store = useSloStore();
 const elasticityStrategyStore = useElasticityStrategyStore();
@@ -71,6 +75,11 @@ function mergeDistinct(...lists) {
 }
 
 const formatIfEmpty = (value) => value || '-';
+
+const knownValuePropertyDisplayNames = {
+  memoryMiB: 'Memory (MiB)',
+  milliCpu: 'CPU cores (in milli CPU)',
+};
 
 const sloExistsInPolaris = computed(() => props.slo.deployedSloMapping && !props.slo.deployedSloMapping.deleted);
 

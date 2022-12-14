@@ -7,9 +7,7 @@ const k8sClient = axios.create({
 export default {
   async getDeployment(namespace, name) {
     try {
-      const { data } = await k8sClient.get(
-        `/apis/apps/v1/namespaces/${namespace}/deployments/${name}`
-      );
+      const { data } = await k8sClient.get(`/apis/apps/v1/namespaces/${namespace}/deployments/${name}`);
       return data;
     } catch (e) {
       if (e.response.status === 404) {

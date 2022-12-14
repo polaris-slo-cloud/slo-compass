@@ -1,7 +1,7 @@
 import { ApiObject, WatchEventsHandler } from '@polaris-sloc/core';
 import { useSloStore } from '@/store/slo';
 import { ownerToNamespacedObjectReference } from '@/workspace/slo/SloHelper';
-import { PolarisElasticityStrategySloOutput, PolarisSloMapping } from '@/workspace/slo/Slo';
+import { PolarisElasticityStrategySloOutput } from '@/workspace/slo/Slo';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 

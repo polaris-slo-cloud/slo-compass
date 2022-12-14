@@ -15,11 +15,7 @@
         <DeploymentSelection v-model="scope.value" />
       </template>
     </EditableField>
-    <EditableField
-      label="Components"
-      class="q-mt-lg"
-      v-model="componentsEditModel"
-    >
+    <EditableField label="Components" class="q-mt-lg" v-model="componentsEditModel">
       <q-chip v-for="component in components" :key="component.id" :icon="componentIcon(component)">
         {{ component.name }}
       </q-chip>
@@ -55,9 +51,7 @@ const deployment = computed({
     store.saveTarget({ ...props.item, deployment: v });
   },
 });
-const orchestratorIcon = computed(
-  () => orchestratorIconMap[orchestratorApi.orchestratorName.value]
-);
+const orchestratorIcon = computed(() => orchestratorIconMap[orchestratorApi.orchestratorName.value]);
 const deploymentStatusColor = computed(() => {
   if (!deployment.value) {
     return 'grey';

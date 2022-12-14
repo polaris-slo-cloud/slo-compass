@@ -34,6 +34,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const usedElasticityStrategyKinds = computed<ObjectKind[]>(() =>
     slos.value
+      .filter((x) => !!x.elasticityStrategy && !!x.elasticityStrategy.kind)
       .map((x) => ({
         kind: x.elasticityStrategy.kind,
         version: 'v1',

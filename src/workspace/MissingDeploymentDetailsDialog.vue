@@ -8,8 +8,8 @@
       </q-card-section>
       <q-card-section>
         <div>
-          The {{ itemDisplayType.toLowerCase() }} requires the following controllers to be deployed
-          in order to function correctly:
+          The {{ itemDisplayType.toLowerCase() }} requires the following controllers to be deployed in order to function
+          correctly:
         </div>
         <q-list class="q-mt-md">
           <q-item v-for="controller of item.polarisControllers" :key="controller.name">
@@ -56,9 +56,7 @@ const showDialog = computed({
 });
 
 const itemDisplayType = computed(() =>
-  props.item?.type === workspaceItemTypes.elasticityStrategy
-    ? 'Elasticity Strategy'
-    : props.item?.type
+  props.item?.type === workspaceItemTypes.elasticityStrategy ? 'Elasticity Strategy' : props.item?.type
 );
 
 const deploymentStatusColor = (controller) => (controller.deployment ? 'green' : 'grey');

@@ -1,11 +1,6 @@
 <template>
   <div class="flex">
-    <EditableField
-      label="Target"
-      v-model="targetEditModel"
-      :oldValue="oldTarget"
-      :resettable="sloExistsInPolaris"
-    >
+    <EditableField label="Target" v-model="targetEditModel" :oldValue="oldTarget" :resettable="sloExistsInPolaris">
       <span v-if="targetChanged" class="chip-strike-through-container">
         <span class="chip-strike-through"></span>
         <q-chip :icon="oldTargetComponentIcon">

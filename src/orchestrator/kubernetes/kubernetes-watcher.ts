@@ -5,15 +5,13 @@ import {
   ObjectKindPropertiesMissingError,
   ObjectKindWatcher,
   ObjectKindWatcherError,
-  OwnerReference,
   WatchAlreadyStartedError,
   WatchEventsHandler,
   WatchTerminatedError,
 } from '@polaris-sloc/core';
 import { K8sClient, KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
-import { V1OwnerReference } from '@kubernetes/client-node';
-import {transformK8sOwnerReference} from "@/orchestrator/kubernetes/helpers";
+import { transformK8sOwnerReference } from '@/orchestrator/kubernetes/helpers';
 
 const REQUIRED_OBJECT_KIND_PROPERTIES: (keyof ObjectKind)[] = ['version', 'kind'];
 export type WatchEventType = 'ADDED' | 'MODIFIED' | 'DELETED' | 'BOOKMARK';

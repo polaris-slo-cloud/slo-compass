@@ -4,11 +4,7 @@
       <q-card-section>
         <div class="text-h6">New Orchestrator Connection</div>
         <q-input autofocus label="Name" v-model="model.name" />
-        <q-select
-          label="Orchestrator"
-          v-model="model.orchestrator"
-          :options="availableOrchestrators"
-        />
+        <q-select label="Orchestrator" v-model="model.orchestrator" :options="availableOrchestrators" />
         <component :is="orchestratorSettingsComponent" v-model="model.connectionSettings" />
         <div class="q-mt-md flex items-center">
           <q-btn flat label="Test Connection" no-caps @click="testConnection" />

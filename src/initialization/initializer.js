@@ -10,7 +10,6 @@ import {
 } from '@/initialization/polaris-workspace-loader';
 import { watch } from 'vue';
 import { loadLocalTemplates, setupTemplatesAutosave } from '@/polaris-templates/store-helper';
-import {useTemplateStore} from "@/store/template";
 
 let stopBackgroundTasks;
 

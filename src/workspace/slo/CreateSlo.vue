@@ -23,7 +23,7 @@
         <ElasticityStrategySelection class="q-mt-lg" label="Elasticity Strategy" v-model="elasticityStrategyKind" />
         <div v-if="elasticityStrategy && elasticityStrategy.sloSpecificConfig.length > 0">
           <div class="text-h6 q-mt-lg q-mb-sm">Elasticity Strategy Config</div>
-          <ConfigTemplateInput
+          <ElasticityStrategyConfigTemplateInput
             v-for="config of elasticityStrategy.sloSpecificConfig"
             :key="config.parameter"
             v-model="elasticityStrategyConfig[config.parameter]"
@@ -42,16 +42,15 @@
 
 <script setup>
 import { ref, computed, nextTick, onBeforeUpdate, watch } from 'vue';
-import TargetSelection from '@/workspace/targets/TargetSelection.vue';
-import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
-import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
 import { useSloStore } from '@/store/slo';
-import { workspaceItemTypes } from '@/workspace/constants';
-import { useTemplateStore } from '@/store/template';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
+import { workspaceItemTypes } from '@/workspace/constants';
+import TargetSelection from '@/workspace/targets/TargetSelection.vue';
+import ConfigTemplateInput from '@/workspace/slo/ConfigTemplateInput.vue';
+import ElasticityStrategySelection from '@/workspace/elasticity-strategy/ElasticityStrategySelection.vue';
+import ElasticityStrategyConfigTemplateInput from '@/workspace/slo/ElasticityStrategyConfigTemplateInput.vue';
 
 const store = useSloStore();
-const templateStore = useTemplateStore();
 const elasticityStrategyStore = useElasticityStrategyStore();
 
 const props = defineProps({

@@ -1,11 +1,13 @@
 import {
   ConfigParameter,
+  convertToConfigParameterType,
+  convertToElasticityStrategyConfigParameterType,
   ElasticityStrategyConfigParameter,
   ElasticityStrategyParameterType,
-  ParameterType
+  ParameterType,
 } from '@/polaris-templates/parameters';
-import {V1JSONSchemaProps, V1OwnerReference} from '@kubernetes/client-node';
-import {OwnerReference} from "@polaris-sloc/core";
+import { V1JSONSchemaProps, V1OwnerReference } from '@kubernetes/client-node';
+import { OwnerReference } from '@polaris-sloc/core';
 
 const parameterTypeMap = Object.freeze({
   Integer: 'integer',
@@ -37,10 +39,17 @@ export function mapParameterFromSchema(
   } else if (schemaProps.minimum === 0) {
     parameterType = ParameterType.Percentage;
   }
+  let valueOptions = undefined;
+  const enumProps = schemaProps._enum || schemaProps['enum'];
+  if (enumProps && enumProps.length > 0) {
+    valueOptions = enumProps.map((x) => convertToConfigParameterType(x, parameterType));
+  }
+
   return {
     parameter: parameterKey,
     displayName,
     type: parameterType,
+    valueOptions,
     required,
   };
 }
@@ -65,10 +74,16 @@ export function mapElasticityStrategyParameterFromSchema(
   } else if (schemaProps.minimum === 0) {
     parameterType = ElasticityStrategyParameterType.Percentage;
   }
+  let valueOptions = undefined;
+  const enumProps = schemaProps._enum || schemaProps['enum'];
+  if (enumProps && enumProps.length > 0) {
+    valueOptions = enumProps.map((x) => convertToElasticityStrategyConfigParameterType(x, parameterType));
+  }
   return {
     parameter: parameterKey,
     displayName,
     type: parameterType,
+    valueOptions,
     required,
   };
 }
@@ -81,6 +96,11 @@ function mapParameter(parameter: ConfigParameter): V1JSONSchemaProps {
   if (parameter.type === ParameterType.Percentage) {
     schemaProps.minimum = 0;
   }
+  if (parameter.valueOptions) {
+    schemaProps._enum = parameter.valueOptions;
+    // Necessary for web version when k8s library is not used
+    schemaProps['enum'] = parameter.valueOptions;
+  }
 
   return schemaProps;
 }
@@ -90,6 +110,34 @@ export function convertParametersToSchemaProperties(parameters: ConfigParameter[
 } {
   return parameters.reduce((props, currentParameter) => {
     props[currentParameter.parameter] = mapParameter(currentParameter);
+    return props;
+  }, {});
+}
+
+function mapElasticityStrategyParameter(parameter: ElasticityStrategyConfigParameter): V1JSONSchemaProps {
+  const schemaProps: V1JSONSchemaProps = {
+    type: parameterTypeMap[parameter.type],
+    format: parameterFormatMap[parameter.type],
+  };
+  if (parameter.type === ElasticityStrategyParameterType.Percentage) {
+    schemaProps.minimum = 0;
+  }
+  if (parameter.valueOptions) {
+    schemaProps._enum = parameter.valueOptions;
+    // Necessary for web version when k8s library is not used
+    schemaProps['enum'] = parameter.valueOptions;
+  }
+
+  return schemaProps;
+}
+
+export function convertElasticityStrategyConfigParametersToSchemaProperties(
+  parameters: ElasticityStrategyConfigParameter[]
+): {
+  [key: string]: V1JSONSchemaProps;
+} {
+  return parameters.reduce((props, currentParameter) => {
+    props[currentParameter.parameter] = mapElasticityStrategyParameter(currentParameter);
     return props;
   }, {});
 }

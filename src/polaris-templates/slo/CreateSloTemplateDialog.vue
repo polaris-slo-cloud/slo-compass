@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="showDialog" persistent>
-    <q-card style="width: 900px; max-width: 80vw">
+    <q-card style="width: 80vw; max-width: 80vw">
       <q-card-section>
         <div class="text-h3">New SLO Template</div>
         <q-stepper v-model="step" ref="stepper" color="primary" animated flat header-nav keep-alive>

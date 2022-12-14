@@ -1,6 +1,5 @@
 import { PrometheusQueryData } from '@/metrics-provider/prometheus/metadata';
 import { InstantVector, PrometheusConnectionOptions, PrometheusDriver, RangeVector } from 'prometheus-query';
-import Slo from '@/workspace/slo/Slo';
 import {
   MetricQueryResult,
   MetricRangeQueryResult,
@@ -10,7 +9,7 @@ import {
 } from '@/metrics-provider/api';
 import { ObjectKind } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
-import {MetricsProviderQuery, SloMetricSourceTemplate} from '@/polaris-templates/slo-metrics/metrics-template';
+import { MetricsProviderQuery, SloMetricSourceTemplate } from '@/polaris-templates/slo-metrics/metrics-template';
 import * as _ from 'lodash';
 
 interface PrometheusConfig {
@@ -76,7 +75,10 @@ export class PrometheusMetricsProvider implements MetricsProvider {
     return result;
   }
 
-  public async pollSloMetricsHistory(sloMetrics: SloMetricSourceTemplate[], target: SloTarget): Promise<MetricRangeQueryResult[]> {
+  public async pollSloMetricsHistory(
+    sloMetrics: SloMetricSourceTemplate[],
+    target: SloTarget
+  ): Promise<MetricRangeQueryResult[]> {
     const result = [];
 
     const range = {

@@ -81,12 +81,7 @@
                 {{ props.row.connectionSettings }}
               </q-td>
               <q-td key="actions" :props="props">
-                <q-btn
-                  flat
-                  icon="mdi-delete"
-                  color="red"
-                  @click="deleteMetricsProvider(props.row)"
-                />
+                <q-btn flat icon="mdi-delete" color="red" @click="deleteMetricsProvider(props.row)" />
               </q-td>
             </q-tr>
           </template>
@@ -100,14 +95,8 @@
         <span class="text-muted">Not Connected</span>
       </div>
     </div>
-    <AddOrchestratorConnectionDialog
-      v-model:show="showOrchestratorDialog"
-      @added="orchestratorAdded"
-    />
-    <AddMetricsProviderDialog
-      v-model:show="showMetricsProviderDialog"
-      @added="metricsProviderAdded"
-    />
+    <AddOrchestratorConnectionDialog v-model:show="showOrchestratorDialog" @added="orchestratorAdded" />
+    <AddMetricsProviderDialog v-model:show="showMetricsProviderDialog" @added="metricsProviderAdded" />
   </q-page>
 </template>
 

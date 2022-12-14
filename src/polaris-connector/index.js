@@ -31,10 +31,7 @@ async function addReferenceToTarget(source, workspace) {
     return existing;
   }
 
-  const deployment = await k8sApi.getDeployment(
-    targetRef.namespace || source.metadata.namespace,
-    targetRef.name
-  );
+  const deployment = await k8sApi.getDeployment(targetRef.namespace || source.metadata.namespace, targetRef.name);
   const component = {
     name: normalize(targetRef.name),
     deploymentName: targetRef.name,
@@ -100,9 +97,7 @@ export default {
         };
       })
       .filter((x) => x.type);
-    polarisCrds.sort(
-      (a, b) => polarisMappingOrder.indexOf(a.type) - polarisMappingOrder.indexOf(b.type)
-    );
+    polarisCrds.sort((a, b) => polarisMappingOrder.indexOf(a.type) - polarisMappingOrder.indexOf(b.type));
 
     const workspace = {
       targets: [],

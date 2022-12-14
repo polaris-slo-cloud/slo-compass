@@ -13,12 +13,7 @@
         />
         <DeploymentSelection v-model="model.deployment" label="Deployment" />
         <q-input v-model="model.description" label="Description" type="textarea" />
-        <TargetSelection
-          v-model="model.components"
-          label="Components"
-          :hideId="model.id"
-          multiple
-        />
+        <TargetSelection v-model="model.components" label="Components" :hideId="model.id" multiple />
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="Cancel" @click="cancel" v-close-popup />

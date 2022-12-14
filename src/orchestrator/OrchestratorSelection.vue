@@ -9,19 +9,10 @@
         :options="connections"
         class="col-grow"
       />
-      <q-btn
-        flat
-        label="New"
-        icon="mdi-plus"
-        class="q-ml-md"
-        @click="showAddConnectionDialog = true"
-      />
+      <q-btn flat label="New" icon="mdi-plus" class="q-ml-md" @click="showAddConnectionDialog = true" />
     </div>
     <component :is="orchestratorPolarisSettingsComponent" v-model="polarisOptions" />
-    <AddOrchestratorConnectionDialog
-      v-model:show="showAddConnectionDialog"
-      @added="connectionAdded"
-    />
+    <AddOrchestratorConnectionDialog v-model:show="showAddConnectionDialog" @added="connectionAdded" />
   </div>
 </template>
 
@@ -40,9 +31,7 @@ const connection = computed({
   get: () => props.modelValue?.connection,
   set(v) {
     const polarisOptionsModel =
-      props.modelValue?.connection?.orchestrator === v.orchestrator
-        ? props.modelValue?.polarisOptions
-        : undefined;
+      props.modelValue?.connection?.orchestrator === v.orchestrator ? props.modelValue?.polarisOptions : undefined;
     emit('update:modelValue', { connection: v, polarisOptions: polarisOptionsModel });
   },
 });

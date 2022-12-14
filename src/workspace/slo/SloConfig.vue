@@ -5,7 +5,7 @@
         v-for="configKey of configKeys"
         :key="configKey"
         :class="configItemClass"
-        :title="configKey"
+        :title="configTemplate[configKey].displayName"
         :value="slo.config[configKey]"
         :oldValue="slo.deployedSloMapping?.sloMapping?.config[configKey]"
         :showConfigChange="sloExistsInPolaris"
@@ -31,7 +31,7 @@ import { useTemplateStore } from '@/store/template';
 import { SloHelper } from '@/workspace/slo/SloHelper';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import ConfigItemView from '@/workspace/slo/ConfigItemView.vue';
-import ConfigTemplateInput from '@/workspace/ConfigTemplateInput.vue';
+import ConfigTemplateInput from '@/workspace/slo/ConfigTemplateInput.vue';
 
 const store = useSloStore();
 const templateStore = useTemplateStore();
@@ -83,8 +83,8 @@ const configEditModel = computed({
 });
 
 function resetSloConfig(configKey) {
-  const update = { ...props.item };
-  update.config[configKey] = props.item.deployedSloMapping?.sloMapping?.config[configKey];
+  const update = { ...props.slo };
+  update.config[configKey] = props.slo.deployedSloMapping?.sloMapping?.config[configKey];
   const configChanged = helper.sloMappingChanged(update);
   if (!configChanged) {
     update.polarisConflict = null;

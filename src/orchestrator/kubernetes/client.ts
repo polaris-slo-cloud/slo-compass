@@ -2,13 +2,15 @@ import axios, { AxiosInstance } from 'axios';
 import {
   KubernetesListObject,
   KubernetesObject,
-  V1APIResource, V1ClusterRoleBindingList, V1ClusterRoleList,
+  V1APIResource,
+  V1ClusterRoleBindingList,
+  V1ClusterRoleList,
   V1CustomResourceDefinitionList,
-  V1DeploymentList, V1ServiceAccountList,
+  V1DeploymentList,
 } from '@kubernetes/client-node';
 import K8sClientHelper, { KubernetesPatchStrategies } from '@/orchestrator/kubernetes/k8s-client-helper';
 import { ApiObjectList, CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
-import { ApiObject, ObjectKind, WatchTerminatedError } from '@polaris-sloc/core';
+import { ApiObject, ObjectKind } from '@polaris-sloc/core';
 import { WatchEventType } from '@/orchestrator/kubernetes/kubernetes-watcher';
 
 export interface KubernetesSpecObject extends KubernetesObject {

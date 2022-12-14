@@ -2,13 +2,7 @@
   <q-page class="flex justify-center q-pa-lg">
     <NewWorkspace v-if="isCreatingWorkspace" @cancel="isCreatingWorkspace = false" />
     <div class="column" style="align-self: center" v-else>
-      <q-btn
-        flat
-        label="New Workspace"
-        icon="mdi-file"
-        no-caps
-        @click="isCreatingWorkspace = true"
-      ></q-btn>
+      <q-btn flat label="New Workspace" icon="mdi-file" no-caps @click="isCreatingWorkspace = true"></q-btn>
       <q-btn
         flat
         class="q-mt-md"

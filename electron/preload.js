@@ -65,7 +65,7 @@ contextBridge.exposeInMainWorld('templatesApi', {
       return [];
     }
   },
-})
+});
 
 contextBridge.exposeInMainWorld('filesApi', {
   async chooseDirectory() {

@@ -1,6 +1,13 @@
 <template>
   <div>
-    <q-input label="Name*" v-model="v$.name.$model" autofocus :error="v$.name.$error" error-message="The SLO template requires a name" @blur="v$.name.$touch" />
+    <q-input
+      label="Name*"
+      v-model="v$.name.$model"
+      autofocus
+      :error="v$.name.$error"
+      error-message="The SLO template requires a name"
+      @blur="v$.name.$touch"
+    />
     <q-input label="Description" type="textarea" v-model="description" />
   </div>
 </template>

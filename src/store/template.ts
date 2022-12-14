@@ -56,6 +56,12 @@ export const useTemplateStore = defineStore('templates', () => {
         const removedPropertyKeys = existingTemplate.config
           .filter((x) => !newPropertyKeys.includes(x.parameter))
           .map((x) => x.parameter);
+        for (const entry of existingTemplate.config) {
+          const entryInNewTemplate = template.config.find((x) => x.parameter === entry.parameter);
+          if (entryInNewTemplate) {
+            entry.valueOptions = entryInNewTemplate.valueOptions;
+          }
+        }
 
         if (newProperties.length > 0 || removedPropertyKeys.length > 0) {
           existingTemplate.config = [...existingTemplate.config, ...newProperties].filter(

@@ -54,6 +54,12 @@
           </q-th>
         </q-tr>
       </template>
+      <template #body-cell-valueOptions="{ value }">
+        <q-td v-if="value">
+          <q-chip v-for="entry of value" :key="entry" :label="entry" />
+        </q-td>
+        <q-td v-else>All values possible</q-td>
+      </template>
       <template #body-cell-required="{ value }">
         <q-td>
           <q-icon v-if="value" name="mdi-check-circle" color="positive" size="1.5em" />
@@ -62,7 +68,7 @@
       </template>
     </q-table>
     <template #edit="scope">
-      <SloParametersConfigForm v-model="scope.value" class="q-mt-sm" />
+      <SloParametersConfigForm v-model="scope.value" class="q-mt-sm" :review-only="!isNotDefinedInCluster" />
     </template>
   </EditableField>
   <EditableField label="Metrics" class="q-mt-lg" v-model="metrics">
@@ -124,6 +130,7 @@ const configColumns = [
   { name: 'displayName', align: 'left', label: 'Display Name', field: 'displayName' },
   { name: 'type', align: 'left', label: 'Type', field: 'type' },
   { name: 'parameter', align: 'left', label: 'Parameter Key', field: 'parameter' },
+  { name: 'valueOptions', align: 'left', label: 'Possible Values', field: 'valueOptions' },
   { name: 'required', align: 'left', label: 'Required', field: 'required' },
 ];
 

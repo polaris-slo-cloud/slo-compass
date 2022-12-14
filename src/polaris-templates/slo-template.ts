@@ -26,6 +26,7 @@ export const templates: SloTemplateMetadata[] = [
         parameter: 'responseTimeThresholdMs',
         displayName: 'Response Time Threshold (in ms)',
         type: ParameterType.Integer,
+        valueOptions: [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000],
         required: true,
       },
       {

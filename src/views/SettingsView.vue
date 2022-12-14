@@ -7,7 +7,7 @@
           <q-item-label>Theme</q-item-label>
         </q-item-section>
         <q-item-section side>
-          <q-select v-model="theme" :options="themeOptions"/>
+          <q-select v-model="theme" :options="themeOptions" />
         </q-item-section>
       </q-item>
     </q-list>
@@ -23,11 +23,8 @@ const theme = computed({
   },
   set(val) {
     $q.dark.set(val === 'Dark');
-  }
+  },
 });
 
-const themeOptions = [
-  'Dark',
-  'Light'
-];
+const themeOptions = ['Dark', 'Light'];
 </script>

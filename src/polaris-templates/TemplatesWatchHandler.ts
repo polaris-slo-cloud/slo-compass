@@ -1,4 +1,4 @@
-import {ApiObject, ObjectKind, POLARIS_API, WatchEventsHandler} from '@polaris-sloc/core';
+import { ApiObject, ObjectKind, POLARIS_API, WatchEventsHandler } from '@polaris-sloc/core';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useTemplateStore } from '@/store/template';
