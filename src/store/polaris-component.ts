@@ -66,12 +66,22 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
     );
   }
 
-  function initializePolarisComponents(polarisClusterComponents: PolarisController[]) {
-    sloControllers.value = polarisClusterComponents.filter((x) => x.type === 'SLO Controller');
-    elasticityStrategyControllers.value = polarisClusterComponents.filter(
-      (x) => x.type === 'Elasticity Strategy Controller'
+  function initializePolarisControllers(polarisControllers: PolarisController[]) {
+    sloControllers.value = polarisControllers.filter((x) => x.type === 'SLO Controller');
+    elasticityStrategyControllers.value = polarisControllers.filter((x) => x.type === 'Elasticity Strategy Controller');
+    metricControllers.value = polarisControllers.filter((x) => x.type === 'Metrics Controller');
+  }
+
+  function initializePolarisClusterComponents(polarisClusterComponents: PolarisController[]) {
+    const newControllers = polarisClusterComponents.filter((cluster) =>
+      allControllers.value.every((local) => local.type !== cluster.type || local.handlesKind !== cluster.handlesKind)
     );
-    metricControllers.value = polarisClusterComponents.filter((x) => x.type === 'Metrics Controller');
+
+    sloControllers.value.push(...newControllers.filter((x) => x.type === 'SLO Controller'));
+    elasticityStrategyControllers.value.push(
+      ...newControllers.filter((x) => x.type === 'Elasticity Strategy Controller')
+    );
+    metricControllers.value.push(...newControllers.filter((x) => x.type === 'Metrics Controller'));
   }
 
   async function deployMissingSloResources(slo: Slo, template: SloTemplateMetadata) {
@@ -115,11 +125,13 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
     sloControllers,
     elasticityStrategyControllers,
     metricControllers,
+    allControllers,
     addDeployedSloMapping,
     removeDeployedSloMapping,
     addDeployedElasticityStrategyCrd,
     removeDeployedElasticityStrategyCrd,
-    initializePolarisComponents,
+    initializePolarisControllers,
+    initializePolarisClusterComponents,
     deployMissingSloResources,
     correctControllerAssignment,
   };

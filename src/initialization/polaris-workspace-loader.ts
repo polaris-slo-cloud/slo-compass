@@ -54,7 +54,7 @@ export async function updateWorkspaceFromOrchestrator() {
   }
 
   const polarisControllers = await orchestratorApi.findPolarisControllers();
-  polarisComponentStore.initializePolarisComponents(polarisControllers);
+  polarisComponentStore.initializePolarisClusterComponents(polarisControllers);
 }
 
 export async function loadTemplatesFromOrchestrator() {

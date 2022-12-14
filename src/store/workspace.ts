@@ -2,9 +2,10 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useSloStore } from '@/store/slo';
-import { WorkspaceComponent, WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import { useTargetStore } from '@/store/target';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
+import { usePolarisComponentStore } from '@/store/polaris-component';
+import { PolarisController, WorkspaceComponent, WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import Slo from '@/workspace/slo/Slo';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
@@ -24,6 +25,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const sloStore = useSloStore();
   const targetStore = useTargetStore();
   const elasticityStrategyStore = useElasticityStrategyStore();
+  const polarisComponentStore = usePolarisComponentStore();
 
   const isOpened = ref<boolean>(false);
   const workspaceId = ref<string>(null);
@@ -49,6 +51,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const usedElasticityStrategies = computed<ElasticityStrategy[]>(() =>
     usedElasticityStrategyKinds.value.map((x) => elasticityStrategyStore.getElasticityStrategy(x.kind))
   );
+
+  const polarisControllers = computed<PolarisController[]>(() => polarisComponentStore.allControllers);
 
   const getItem = computed<(id: string) => WorkspaceComponent>(() => {
     const allItems = [...targets.value, ...slos.value, ...elasticityStrategies.value];
@@ -78,6 +82,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     sloStore.slos = workspace.slos;
     targetStore.targets = workspace.targets;
     elasticityStrategyStore.elasticityStrategies = workspace.elasticityStrategies;
+    polarisComponentStore.initializePolarisControllers(workspace.polarisControllers);
     this.$patch({
       ...workspace,
       isOpened: true,
@@ -123,6 +128,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     watchBookmarks,
     usedElasticityStrategyKinds,
     usedElasticityStrategies,
+    polarisControllers,
     createWorkspace,
     loadWorkspace,
     save,

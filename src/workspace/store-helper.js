@@ -59,6 +59,7 @@ async function saveWorkspaceState(state, store) {
         slos: store.slos,
         targets: store.targets,
         elasticityStrategies: store.elasticityStrategies,
+        polarisControllers: store.polarisControllers,
       })
     );
     delete workspace.isOpened;
@@ -83,6 +84,11 @@ export function setupAutosave() {
   );
   watch(
     () => store.elasticityStrategies,
+    () => saveWorkspaceState(store.$state, store),
+    { deep: true }
+  );
+  watch(
+    () => store.polarisControllers,
     () => saveWorkspaceState(store.$state, store),
     { deep: true }
   );
