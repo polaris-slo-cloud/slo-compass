@@ -12,7 +12,7 @@ import Slo, {
   PolarisElasticityStrategySloOutput,
   PolarisSloMapping,
 } from '@/workspace/slo/Slo';
-import { KubernetesObject, V1Deployment } from '@kubernetes/client-node';
+import { KubernetesObject, V1Deployment, V1DeploymentSpec } from '@kubernetes/client-node';
 import { PolarisController, PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher, POLARIS_API } from '@polaris-sloc/core';
@@ -45,6 +45,11 @@ export default class Api implements IPolarisOrchestratorApi {
   public crdObjectKind: ObjectKind = {
     kind: 'CustomResourceDefinition',
     group: 'apiextensions.k8s.io',
+    version: 'v1',
+  };
+  public deploymentObjectKind: ObjectKind = {
+    kind: 'Deployment',
+    group: 'apps',
     version: 'v1',
   };
   private readonly client: K8sClient;
@@ -292,7 +297,7 @@ export default class Api implements IPolarisOrchestratorApi {
         return matchingServiceAccount
           ? {
               handlesKind: polarisCrdKindMap.get(matchingServiceAccount.resource),
-              type: this.getControllerType(x),
+              type: this.getControllerType(x.spec),
               deployment: {
                 name: x.metadata.name,
                 namespace: x.metadata.namespace,
@@ -307,10 +312,59 @@ export default class Api implements IPolarisOrchestratorApi {
     return polarisControllers;
   }
 
+  async findPolarisControllerForDeployment(deployment: ApiObject<any>): Promise<PolarisController> {
+    const serviceAccount = deployment.spec?.template?.spec?.serviceAccountName;
+    if (!serviceAccount || deployment.metadata.labels?.tier !== 'control-plane') {
+      return null;
+    }
+
+    const clusterRoleBindings = await this.client.listClusterRoleBindings();
+    const matchingRoleBinding = clusterRoleBindings.items.find((x) =>
+      x.subjects.some((s) => s.namespace === deployment.metadata.namespace && s.name === serviceAccount)
+    );
+    if (!matchingRoleBinding) {
+      return null;
+    }
+
+    const clusterRole = await this.client.findClusterRole(matchingRoleBinding.roleRef.name);
+    if (!clusterRole) {
+      return null;
+    }
+
+    const polarisCrdGroups: string[] = [POLARIS_API.SLO_GROUP, POLARIS_API.ELASTICITY_GROUP, POLARIS_API.METRICS_GROUP];
+    const crdRule = clusterRole.rules.find(
+      (x) =>
+        x.apiGroups.length === 1 &&
+        polarisCrdGroups.includes(x.apiGroups[0]) &&
+        x.resources.length === 1 &&
+        !x.resources[0].includes('*') &&
+        !x.resources[0].includes('/')
+    );
+    if (!crdRule) {
+      return null;
+    }
+
+    const crd = await this.client.findCustomResourceDefinition(crdRule.resources[0], crdRule.apiGroups[0]);
+
+    return crd
+      ? {
+          handlesKind: crd.spec.names.kind,
+          type: this.getControllerType(deployment.spec as V1DeploymentSpec),
+          deployment: {
+            name: deployment.metadata.name,
+            namespace: deployment.metadata.namespace,
+            kind: 'Deployment',
+            version: 'v1',
+            group: 'apps',
+          },
+        }
+      : null;
+  }
+
   private getControllerType(
-    deployment: V1Deployment
+    deploymentSpec: V1DeploymentSpec
   ): 'SLO Controller' | 'Metrics Controller' | 'Elasticity Strategy Controller' {
-    const controllerContrainer = deployment.spec?.template?.spec?.containers[0];
+    const controllerContrainer = deploymentSpec?.template?.spec?.containers[0];
 
     switch (controllerContrainer?.name) {
       case 'slo-controller':

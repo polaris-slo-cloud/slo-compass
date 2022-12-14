@@ -70,6 +70,7 @@ export interface IOrchestratorApi {
   createPolarisMapper(): PolarisMapper;
   listTemplateDefinitions(): Promise<ApiObjectList<any>>;
   findPolarisControllers(): Promise<PolarisController[]>;
+  findPolarisControllerForDeployment(deployment: ApiObject<any>): Promise<PolarisController>;
   deploySloController(slo: Slo, template: SloTemplateMetadata): Promise<PolarisDeploymentResult>;
   deployElasticityStrategyController(
     elasticityStrategy: ElasticityStrategy,
@@ -80,6 +81,7 @@ export interface IOrchestratorApi {
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
   crdObjectKind: ObjectKind;
+  deploymentObjectKind: ObjectKind;
   configure(polarisOptions: unknown): void;
 }
 
@@ -88,6 +90,7 @@ export const CONNECTED_EVENT = 'connected';
 export interface IOrchestratorApiConnection extends IOrchestratorApi, ISubscribable {
   orchestratorName: ComputedRef<string>;
   crdObjectKind: ComputedRef<ObjectKind>;
+  deploymentObjectKind: ComputedRef<ObjectKind>;
   connect(connection: OrchestratorConnection, polarisOptions: unknown): void;
   testConnection(connection: OrchestratorConnection): Promise<boolean>;
   hasRunningDeployment: ComputedRef<(componentId: string) => boolean>;
@@ -104,6 +107,7 @@ class OrchestratorNotConnectedError extends Error {
 class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   public name = 'No Orchestrator';
   public crdObjectKind = new ObjectKind();
+  public deploymentObjectKind = new ObjectKind();
   test(): Promise<boolean> {
     return Promise.resolve(false);
   }
@@ -155,6 +159,10 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   }
 
   findPolarisControllers(): Promise<PolarisController[]> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  findPolarisControllerForDeployment(): Promise<PolarisController> {
     throw new OrchestratorNotConnectedError();
   }
 
@@ -236,6 +244,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     name: api.value.name,
     orchestratorName: computed(() => api.value.name),
     crdObjectKind: computed(() => api.value.crdObjectKind),
+    deploymentObjectKind: computed(() => api.value.deploymentObjectKind),
     findPolarisDeployments: () => api.value.findPolarisDeployments(),
     findDeployments: (namespace?) => api.value.findDeployments(namespace),
     test: () => api.value.test(),
@@ -249,6 +258,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     createPolarisMapper: () => api.value.createPolarisMapper(),
     listTemplateDefinitions: () => api.value.listTemplateDefinitions(),
     findPolarisControllers: () => api.value.findPolarisControllers(),
+    findPolarisControllerForDeployment: (deployment) => api.value.findPolarisControllerForDeployment(deployment),
     deploySloController: (slo, template) =>
       deploy(slo, () => api.value.deploySloController(clone(slo), clone(template))),
     deployElasticityStrategyController: (elasticityStrategy, deploymentMetadata) =>

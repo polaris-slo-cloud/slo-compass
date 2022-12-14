@@ -62,6 +62,11 @@ module.exports = {
     const { body } = await k8sApiExtensionsApi.listCustomResourceDefinition();
     return body;
   },
+  async findCustomResourceDefinition(plural, apiGroup) {
+    const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
+    const { body } = await k8sApiExtensionsApi.readCustomResourceDefinition(`${plural}.${apiGroup}`);
+    return body;
+  },
   async getCustomResourceObject(identifier) {
     const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
     const { body } = await k8sCustomObjectsApi.getNamespacedCustomObject(
@@ -148,6 +153,11 @@ module.exports = {
   async listClusterRoles() {
     const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
     const { body } = await k8sAuthorizationApi.listClusterRole();
+    return body;
+  },
+  async findClusterRole(name) {
+    const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+    const { body } = await k8sAuthorizationApi.readClusterRole(name);
     return body;
   },
 };

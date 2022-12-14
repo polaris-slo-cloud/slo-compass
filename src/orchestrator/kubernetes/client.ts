@@ -3,8 +3,11 @@ import {
   KubernetesListObject,
   KubernetesObject,
   V1APIResource,
+  V1ClusterRole,
+  V1ClusterRoleBinding,
   V1ClusterRoleBindingList,
   V1ClusterRoleList,
+  V1CustomResourceDefinition,
   V1CustomResourceDefinitionList,
   V1DeploymentList,
 } from '@kubernetes/client-node';
@@ -29,6 +32,7 @@ export interface K8sClient {
   deleteCustomResourceObject(identifier: CustomResourceObjectReference): Promise<void>;
   listCustomResourceObjects(objectKind: ObjectKind, plural: string): Promise<KubernetesListObject<any>>;
   listCustomResourceDefinitions(): Promise<V1CustomResourceDefinitionList>;
+  findCustomResourceDefinition(plural: string, apiGroup: string): Promise<V1CustomResourceDefinition>;
   findCustomResourceMetadata(apiVersion: string, kind: string): Promise<V1APIResource>;
   watch(
     path: string,
@@ -37,6 +41,7 @@ export interface K8sClient {
     errorCallback: (error: any) => void
   ): Promise<any>;
   listClusterRoles(): Promise<V1ClusterRoleList>;
+  findClusterRole(name: string): Promise<V1ClusterRole>;
   listClusterRoleBindings(): Promise<V1ClusterRoleBindingList>;
 }
 interface K8sNativeClient extends K8sClient {
@@ -111,6 +116,14 @@ class K8sHttpClient implements K8sClient {
     );
     return data;
   }
+
+  async findCustomResourceDefinition(plural: string, apiGroup: string): Promise<V1CustomResourceDefinition> {
+    const { data } = await this.http.get<V1CustomResourceDefinition>(
+      `/apis/apiextensions.k8s.io/v1/customresourcedefinitions/${plural}.${apiGroup}`
+    );
+    return data;
+  }
+
   async getCustomResourceObject(identifier: CustomResourceObjectReference): Promise<any> {
     const { data } = await this.http.get(
       `/apis/${identifier.group}/${identifier.version}/namespaces/${identifier.namespace}/${identifier.plural}/${identifier.name}`
@@ -155,6 +168,11 @@ class K8sHttpClient implements K8sClient {
 
   public async listClusterRoles(): Promise<V1ClusterRoleList> {
     const { data } = await this.http.get('/apis/rbac.authorization.k8s.io/v1/clusterroles');
+    return data;
+  }
+
+  public async findClusterRole(name: string): Promise<V1ClusterRole> {
+    const { data } = await this.http.get(`/apis/rbac.authorization.k8s.io/v1/clusterroles/${name}`);
     return data;
   }
 }
