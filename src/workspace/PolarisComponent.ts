@@ -26,9 +26,13 @@ export interface PolarisControllerDeploymentMetadata {
   containerImage: string;
 }
 
+export enum PolarisControllerType {
+  Slo = 'SLO Controller',
+  Metric = 'Metrics Controller',
+  ElasticityStrategy = 'Elasticity Strategy Controller',
+}
 export interface PolarisController {
-  type: 'SLO Controller' | 'Metrics Controller' | 'Elasticity Strategy Controller';
+  type: PolarisControllerType;
   handlesKind: string;
   deployment?: NamespacedObjectReference;
-  deploymentMetadata?: PolarisControllerDeploymentMetadata;
 }

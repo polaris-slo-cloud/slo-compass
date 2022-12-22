@@ -1,14 +1,25 @@
 <template>
   <div>
     <div class="text-h3">Polaris Controller</div>
-    <q-input label="Deployment Name" v-model="deploymentName" />
-    <q-input label="Container Image" v-model="containerImage" />
+    <q-input
+      label="Deployment Name"
+      v-model="v$.deploymentName.$model"
+      :error="v$.deploymentName.$error"
+      error-message="You need to select a name for the controller if you want to define a deployment"
+    />
+    <q-input
+      label="Container Image"
+      v-model="v$.containerImage.$model"
+      :error="v$.containerImage.$error"
+      error-message="You need to select an image for the controller if you want to define a deployment"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
+import { requiredIf } from '@vuelidate/validators';
 
 const props = defineProps({
   modelValue: Object,
@@ -29,7 +40,17 @@ const containerImage = computed({
   },
 });
 
-const v$ = useVuelidate({}, { deploymentName, containerImage });
+const v$ = useVuelidate(
+  {
+    deploymentName: {
+      requiredIf: requiredIf(containerImage),
+    },
+    containerImage: {
+      requiredIf: requiredIf(deploymentName),
+    },
+  },
+  { deploymentName, containerImage }
+);
 defineExpose({ v$ });
 </script>
 

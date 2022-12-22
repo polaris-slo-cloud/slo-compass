@@ -1,13 +1,13 @@
 import { ConfigParameter, ParameterType } from '@/polaris-templates/parameters';
 import { SloMetricTemplateId } from '@/polaris-templates/slo-metrics/metrics-template';
+import { PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 
 export interface SloTemplateMetadata {
   sloMappingKind: string;
   sloMappingKindPlural: string;
   displayName: string;
   description?: string;
-  controllerName: string;
-  containerImage: string;
+  sloController?: PolarisControllerDeploymentMetadata;
   config: ConfigParameter[];
   metricTemplates: SloMetricTemplateId[];
   confirmed: boolean;
@@ -19,8 +19,10 @@ export const templates: SloTemplateMetadata[] = [
     sloMappingKindPlural: 'costefficiencyslomappings',
     displayName: 'Cost Efficiency',
     description: 'This SLO calculates a cost efficiency using the response time and cost of the target',
-    controllerName: 'cost-efficiency-slo-controller',
-    containerImage: 'polarissloc/slo-cost-efficiency:latest',
+    sloController: {
+      name: 'cost-efficiency-slo-controller',
+      containerImage: 'polarissloc/slo-cost-efficiency:latest',
+    },
     config: [
       {
         parameter: 'responseTimeThresholdMs',
@@ -50,8 +52,10 @@ export const templates: SloTemplateMetadata[] = [
     sloMappingKindPlural: 'cpuusageslomappings',
     displayName: 'CPU Usage',
     description: 'This SLO utilizes the CPU usage metrics to calculate its compliance',
-    controllerName: 'cpu-usage-slo-controller',
-    containerImage: 'polarissloc/slo-cpu-usage:latest',
+    sloController: {
+      name: 'cpu-usage-slo-controller',
+      containerImage: 'polarissloc/slo-cpu-usage:latest',
+    },
     config: [
       {
         parameter: 'targetAvgCPUUtilizationPercentage',

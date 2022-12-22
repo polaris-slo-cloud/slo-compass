@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
-import { WorkspaceComponentId } from '@/workspace/PolarisComponent';
+import {PolarisControllerDeploymentMetadata, WorkspaceComponentId} from '@/workspace/PolarisComponent';
 import { defaultStrategies } from '@/workspace/elasticity-strategy/strategy-template';
 import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
 
@@ -116,6 +116,16 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     return newStrategy.id;
   }
 
+  function saveControllerDeploymentMetadata(kind: string, deploymentInfo: PolarisControllerDeploymentMetadata) {
+    const elasticityStrategy = getElasticityStrategy.value(kind);
+    if (!elasticityStrategy) {
+      // TODO: Notify User?
+      return;
+    }
+
+    elasticityStrategy.controllerDeploymentMetadata = deploymentInfo;
+  }
+
   return {
     elasticityStrategies,
     getElasticityStrategy,
@@ -124,5 +134,6 @@ export const useElasticityStrategyStore = defineStore('elasticityStrategy', () =
     confirmElasticityStrategy,
     ensureElasticityStrategyCreated,
     removeElasticityStrategy,
+    saveControllerDeploymentMetadata,
   };
 });

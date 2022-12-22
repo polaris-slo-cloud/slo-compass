@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { ObjectKind } from '@polaris-sloc/core';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
-import { PolarisController } from '@/workspace/PolarisComponent';
+import { IDeployment, useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import {
+  PolarisController,
+  PolarisControllerDeploymentMetadata,
+  PolarisControllerType,
+} from '@/workspace/PolarisComponent';
 import Slo from '@/workspace/slo/Slo';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
-import { defaultElasticityStrategyControllers } from '@/workspace/elasticity-strategy/strategy-template';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { useTemplateStore } from '@/store/template';
 
@@ -67,9 +70,11 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
   }
 
   function initializePolarisControllers(polarisControllers: PolarisController[]) {
-    sloControllers.value = polarisControllers.filter((x) => x.type === 'SLO Controller');
-    elasticityStrategyControllers.value = polarisControllers.filter((x) => x.type === 'Elasticity Strategy Controller');
-    metricControllers.value = polarisControllers.filter((x) => x.type === 'Metrics Controller');
+    sloControllers.value = polarisControllers.filter((x) => x.type === PolarisControllerType.Slo);
+    elasticityStrategyControllers.value = polarisControllers.filter(
+      (x) => x.type === PolarisControllerType.ElasticityStrategy
+    );
+    metricControllers.value = polarisControllers.filter((x) => x.type === PolarisControllerType.Metric);
   }
 
   function initializePolarisClusterComponents(polarisClusterComponents: PolarisController[]) {
@@ -77,11 +82,11 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
       allControllers.value.every((local) => local.type !== cluster.type || local.handlesKind !== cluster.handlesKind)
     );
 
-    sloControllers.value.push(...newControllers.filter((x) => x.type === 'SLO Controller'));
+    sloControllers.value.push(...newControllers.filter((x) => x.type === PolarisControllerType.Slo));
     elasticityStrategyControllers.value.push(
-      ...newControllers.filter((x) => x.type === 'Elasticity Strategy Controller')
+      ...newControllers.filter((x) => x.type === PolarisControllerType.ElasticityStrategy)
     );
-    metricControllers.value.push(...newControllers.filter((x) => x.type === 'Metrics Controller'));
+    metricControllers.value.push(...newControllers.filter((x) => x.type === PolarisControllerType.Metric));
   }
 
   function addPolarisControllerFromCluster(polarisController: PolarisController) {
@@ -95,13 +100,13 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
     }
 
     switch (polarisController.type) {
-      case 'SLO Controller':
+      case PolarisControllerType.Slo:
         sloControllers.value.push(polarisController);
         break;
-      case 'Elasticity Strategy Controller':
+      case PolarisControllerType.ElasticityStrategy:
         elasticityStrategyControllers.value.push(polarisController);
         break;
-      case 'Metrics Controller':
+      case PolarisControllerType.Metric:
         metricControllers.value.push(polarisController);
         break;
     }
@@ -114,13 +119,13 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
     const controllerFilter = (x) => x.deployment?.name !== name && x.deployment?.namespace !== namespace;
 
     switch (removedController?.type) {
-      case 'SLO Controller':
+      case PolarisControllerType.Slo:
         sloControllers.value = sloControllers.value.filter(controllerFilter);
         break;
-      case 'Elasticity Strategy Controller':
+      case PolarisControllerType.ElasticityStrategy:
         elasticityStrategyControllers.value = elasticityStrategyControllers.value.filter(controllerFilter);
         break;
-      case 'Metrics Controller':
+      case PolarisControllerType.Metric:
         metricControllers.value = metricControllers.value.filter(controllerFilter);
         break;
     }
@@ -130,8 +135,8 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
     if (!sloMappingHasBeenDeployed.value(slo.kind)) {
       await orchestratorApi.deploySloMappingCrd(template);
     }
-    if (hasMissingPolarisComponent.value(slo.kind) && template.controllerName && template.containerImage) {
-      await orchestratorApi.deploySloController(slo, template);
+    if (hasMissingPolarisComponent.value(slo.kind) && template.sloController) {
+      await orchestratorApi.deploySloController(template);
     }
     const metricSources = slo.metrics.map((x) => templateStore.getSloMetricTemplate(x.source));
     const missingMetricsControllers = metricSources.filter(
@@ -141,15 +146,9 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
       await orchestratorApi.deployComposedMetricsController(missingMetricsController);
     }
     if (slo.elasticityStrategy && hasMissingPolarisComponent.value(slo.elasticityStrategy.kind)) {
-      const elasticityStrategyControllerTemplate = defaultElasticityStrategyControllers.find(
-        (x) => x.handlesKind === slo.elasticityStrategy.kind
-      );
-      if (elasticityStrategyControllerTemplate) {
-        const elasticityStrategy = elasticityStrategyStore.getElasticityStrategy(slo.elasticityStrategy.kind);
-        await orchestratorApi.deployElasticityStrategyController(
-          elasticityStrategy,
-          elasticityStrategyControllerTemplate.deploymentMetadata
-        );
+      const elasticityStrategy = elasticityStrategyStore.getElasticityStrategy(slo.elasticityStrategy.kind);
+      if (elasticityStrategy.controllerDeploymentMetadata) {
+        await orchestratorApi.deployElasticityStrategyController(elasticityStrategy);
       }
     }
   }
@@ -157,6 +156,67 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
   function correctControllerAssignment(handlesKind: string, correctedKind: string) {
     const controller = allControllers.value.find((x) => x.handlesKind === handlesKind);
     controller.handlesKind = correctedKind;
+  }
+
+  async function createControllerDeployment(
+    controller: PolarisController,
+    deploymentInfo: PolarisControllerDeploymentMetadata
+  ) {
+    switch (controller.type) {
+      case PolarisControllerType.ElasticityStrategy: {
+        elasticityStrategyStore.saveControllerDeploymentMetadata(controller.handlesKind, deploymentInfo);
+        const elasticityStrategy = elasticityStrategyStore.getElasticityStrategy(controller.handlesKind);
+        await orchestratorApi.deployElasticityStrategyController(elasticityStrategy);
+        break;
+      }
+      case PolarisControllerType.Slo: {
+        templateStore.saveSloControllerDeploymentMetadata(controller.handlesKind, deploymentInfo);
+        const template = templateStore.getSloTemplate(controller.handlesKind);
+        await orchestratorApi.deploySloController(template);
+        break;
+      }
+      case PolarisControllerType.Metric: {
+        templateStore.saveMetricsControllerDeploymentMetadata(controller.handlesKind, deploymentInfo);
+        const template = templateStore.findComposedMetricTemplate(controller.handlesKind);
+        await orchestratorApi.deployComposedMetricsController(template);
+        break;
+      }
+    }
+  }
+
+  function linkControllerWithDeployment(controller: PolarisController, deployment: IDeployment) {
+    controller.deployment = deployment.connectionMetadata;
+    switch (controller.type) {
+      case PolarisControllerType.ElasticityStrategy: {
+        const existingIdx = elasticityStrategyControllers.value.findIndex(
+          (x) => x.handlesKind === controller.handlesKind
+        );
+        if (existingIdx >= 0) {
+          elasticityStrategyControllers.value[existingIdx] = controller;
+        } else {
+          elasticityStrategyControllers.value.push(controller);
+        }
+        break;
+      }
+      case PolarisControllerType.Slo: {
+        const existingIdx = sloControllers.value.findIndex((x) => x.handlesKind === controller.handlesKind);
+        if (existingIdx >= 0) {
+          sloControllers.value[existingIdx] = controller;
+        } else {
+          sloControllers.value.push(controller);
+        }
+        break;
+      }
+      case PolarisControllerType.Metric: {
+        const existingIdx = metricControllers.value.findIndex((x) => x.handlesKind === controller.handlesKind);
+        if (existingIdx >= 0) {
+          metricControllers.value[existingIdx] = controller;
+        } else {
+          metricControllers.value.push(controller);
+        }
+        break;
+      }
+    }
   }
 
   return {
@@ -178,5 +238,7 @@ export const usePolarisComponentStore = defineStore('polaris-component', () => {
     correctControllerAssignment,
     addPolarisControllerFromCluster,
     polarisControllerRemovedFromCluster,
+    createControllerDeployment,
+    linkControllerWithDeployment,
   };
 });

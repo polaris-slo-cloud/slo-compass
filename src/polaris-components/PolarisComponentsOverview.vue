@@ -74,7 +74,7 @@
               <div class="text-muted">{{ controller.type }}</div>
             </q-card-section>
             <q-card-actions align="right">
-              <q-btn flat color="primary" label="Resolve (TODO)" />
+              <q-btn flat color="primary" label="Resolve" @click="startResolveMissingController(controller)" />
             </q-card-actions>
           </q-card>
         </div>
@@ -101,6 +101,10 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    <ResolveMissingControllerDialog
+      v-model:show="showResolveMissingControllerDialog"
+      :controller="selectedControllerForResolve"
+    />
   </div>
 </template>
 
@@ -111,6 +115,8 @@ import { usePolarisComponentStore } from '@/store/polaris-component';
 import { useTemplateStore } from '@/store/template';
 import IconButton from '@/crosscutting/components/IconButton.vue';
 import { SloMetricSourceType } from '@/polaris-templates/slo-metrics/metrics-template';
+import ResolveMissingControllerDialog from '@/polaris-components/ResolveMissingControllerDialog.vue';
+import {PolarisControllerType} from "@/workspace/PolarisComponent";
 
 const templateStore = useTemplateStore();
 const elasticityStrategyStore = useElasticityStrategyStore();
@@ -155,9 +161,10 @@ const missingControllers = computed(() => {
   const missingSloControllers = templateStore.sloTemplates
     .filter((x) => polarisComponentStore.hasMissingPolarisComponent(x.sloMappingKind))
     .map((x) => ({
-      type: 'SLO Controller',
+      type: PolarisControllerType.Slo,
       handlesKind: x.sloMappingKind,
       handlesDisplayName: x.displayName,
+      deploymentInfo: x.sloController,
     }));
   const missingComposedMetricControllers = templateStore.sloMetricSourceTemplates
     .filter(
@@ -167,23 +174,31 @@ const missingControllers = computed(() => {
           polarisComponentStore.hasMissingPolarisComponent(x.metricsController.composedMetricKind))
     )
     .map((x) => ({
-      type: 'Metrics Controller',
+      type: PolarisControllerType.Metric,
       handlesKind: x.metricsController?.composedMetricKind,
       handlesDisplayName: x.displayName,
+      deploymentInfo:
+        x.metricsController?.controllerName || x.metricsController?.containerImage
+          ? {
+              name: x.metricsController?.controllerName,
+              containerImage: x.metricsController?.containerImage,
+            }
+          : undefined,
     }));
   const missingElasticityStrategyControllers = elasticityStrategyStore.elasticityStrategies
     .filter((x) => polarisComponentStore.hasMissingPolarisComponent(x.kind))
     .map((x) => ({
-      type: 'Elasticity Strategy Controller',
+      type: PolarisControllerType.ElasticityStrategy,
       handlesKind: x.kind,
       handlesDisplayName: x.name,
+      deploymentInfo: x.controllerDeploymentMetadata,
     }));
 
   return [...missingSloControllers, ...missingComposedMetricControllers, ...missingElasticityStrategyControllers];
 });
 
 function controllerName(controller) {
-  return controller.deployment ? controller.deployment.name : controller.deploymentMetadata.name;
+  return controller.deployment?.name;
 }
 
 const editControllerAssignmentModel = ref(null);
@@ -234,6 +249,20 @@ function startEditStrategyControllerAssignment(controller) {
     handlesKindOptions: elasticityStrategyStore.elasticityStrategies.map((x) => ({ value: x.kind, label: x.name })),
     oldHandlesKind: controller.handlesKind,
   };
+}
+
+const selectedControllerForResolve = ref(null);
+const showResolveMissingControllerDialog = computed({
+  get: () => selectedControllerForResolve.value !== null,
+  set(v) {
+    if (!v) {
+      selectedControllerForResolve.value = null;
+    }
+  },
+});
+
+function startResolveMissingController(controller) {
+  selectedControllerForResolve.value = controller;
 }
 </script>
 

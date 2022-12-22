@@ -2,11 +2,13 @@ import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { PolarisElasticityStrategySloOutput, PolarisSloMapping } from '@/workspace/slo/Slo';
 import { ApiObject, POLARIS_API } from '@polaris-sloc/core';
-import { V1CustomResourceDefinitionSpec } from '@kubernetes/client-node';
+import { V1CustomResourceDefinitionSpec, V1DeploymentSpec } from '@kubernetes/client-node';
 import { mapElasticityStrategyParameterFromSchema, mapParameterFromSchema } from '@/orchestrator/kubernetes/helpers';
 import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
+import { PolarisController } from '@/workspace/PolarisComponent';
+import { COMMON_LABELS, ControllerTypeMap } from '@/orchestrator/constants';
 
 export class KubernetesPolarisMapper implements PolarisMapper {
   isSloTemplateCrd(crd: ApiObject<any>): boolean {
@@ -39,10 +41,6 @@ export class KubernetesPolarisMapper implements PolarisMapper {
       description: schema.description,
       config: sloConfigProperties,
       metricTemplates: [],
-      // TODO: Get if exists
-      containerImage: '',
-      // TODO: Get if exists
-      controllerName: '',
       confirmed: false,
     };
   }
@@ -109,6 +107,22 @@ export class KubernetesPolarisMapper implements PolarisMapper {
         group: targetGroup,
         version: targetApiVersion,
         kind: spec.targetRef.kind,
+      },
+    };
+  }
+
+  mapToPolarisController(deployment: ApiObject<any>): PolarisController {
+    const labels = deployment.metadata.labels;
+    if (!labels || !labels[COMMON_LABELS.CONTROLLER_TYPE]) {
+      return null;
+    }
+    return {
+      type: ControllerTypeMap[labels[COMMON_LABELS.CONTROLLER_TYPE]],
+      handlesKind: labels[COMMON_LABELS.CRD_NAME],
+      deployment: {
+        ...deployment.objectKind,
+        name: deployment.metadata.name,
+        namespace: deployment.metadata.namespace,
       },
     };
   }

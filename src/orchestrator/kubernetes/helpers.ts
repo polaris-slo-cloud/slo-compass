@@ -7,7 +7,8 @@ import {
   ParameterType,
 } from '@/polaris-templates/parameters';
 import { V1JSONSchemaProps, V1OwnerReference } from '@kubernetes/client-node';
-import { OwnerReference } from '@polaris-sloc/core';
+import {ApiObject, ObjectKind, OwnerReference} from '@polaris-sloc/core';
+import {KubernetesSpecObject} from "@/orchestrator/kubernetes/client";
 
 const parameterTypeMap = Object.freeze({
   Integer: 'integer',
@@ -153,4 +154,21 @@ export function transformK8sOwnerReference(ownerReference: V1OwnerReference): Ow
     blockOwnerDeletion: ownerReference.blockOwnerDeletion,
     controller: ownerReference.controller,
   };
+}
+
+export function transformToApiObject(k8sObject: KubernetesSpecObject, objectKind: ObjectKind): ApiObject<any> {
+  const apiObject = new ApiObject();
+  apiObject.objectKind = objectKind;
+  apiObject.metadata = {
+    uid: k8sObject.metadata.uid,
+    name: k8sObject.metadata.name,
+    namespace: k8sObject.metadata.namespace,
+    labels: k8sObject.metadata.labels,
+    ownerReferences: k8sObject.metadata.ownerReferences?.map(transformK8sOwnerReference),
+    resourceVersion: k8sObject.metadata.resourceVersion,
+    generation: k8sObject.metadata.generation,
+  };
+  apiObject.spec = k8sObject.spec;
+
+  return apiObject;
 }

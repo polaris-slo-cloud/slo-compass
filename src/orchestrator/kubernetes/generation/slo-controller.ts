@@ -1,5 +1,6 @@
 import { V1ClusterRole, V1ClusterRoleBinding, V1CustomResourceDefinition, V1Deployment } from '@kubernetes/client-node';
-import { env } from '../constants';
+import { CONTROLLER_ENV } from '../constants';
+import { COMMON_LABELS, CONTROLLER_TYPES } from '@/orchestrator/constants';
 import { IDeployment } from '@/orchestrator/orchestrator-api';
 import Slo from '@/workspace/slo/Slo';
 import { POLARIS_API } from '@polaris-sloc/core';
@@ -63,7 +64,8 @@ export const generateSloClusterRoleBinding = (
 export const generateSloControllerDeployment = (
   name: string,
   namespace: string,
-  containerImage: string
+  containerImage: string,
+  sloMappingKind: string
 ): V1Deployment => ({
   apiVersion: 'apps/v1',
   kind: 'Deployment',
@@ -71,6 +73,9 @@ export const generateSloControllerDeployment = (
     labels: {
       component: name,
       tier: 'control-plane',
+      [COMMON_LABELS.CONTROLLER_TYPE]: CONTROLLER_TYPES.SLO,
+      [COMMON_LABELS.CRD_API_GROUP]: POLARIS_API.SLO_GROUP,
+      [COMMON_LABELS.CRD_NAME]: sloMappingKind,
     },
     name,
     namespace,
@@ -121,10 +126,10 @@ export const generateSloControllerDeployment = (
               },
             },
             env: [
-              { name: 'PROMETHEUS_HOST', value: env.prometheusHost },
-              { name: 'PROMETHEUS_PORT', value: env.prometheusPort },
+              { name: 'PROMETHEUS_HOST', value: CONTROLLER_ENV.prometheusHost },
+              { name: 'PROMETHEUS_PORT', value: CONTROLLER_ENV.prometheusPort },
               { name: 'SLO_CONTROL_LOOP_INTERVAL_MSEC', value: '20000' },
-              { name: 'KUBERNETES_SERVICE_HOST', value: env.kubernetesHost },
+              { name: 'KUBERNETES_SERVICE_HOST', value: CONTROLLER_ENV.kubernetesHost },
               { name: 'POLARIS_CONNECTION_CHECK_TIMEOUT_MS', value: '600000' },
             ],
             securityContext: {

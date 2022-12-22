@@ -189,8 +189,12 @@ async function create(publish) {
     sloMappingKindPlural: sloMappingKindPlural.value,
     displayName: generalModel.value.name,
     description: generalModel.value.description,
-    controllerName: polarisConfig.value.deploymentName,
-    containerImage: polarisConfig.value.containerImage,
+    sloController: polarisConfig.value
+      ? {
+          name: polarisConfig.value.deploymentName,
+          containerImage: polarisConfig.value.containerImage,
+        }
+      : undefined,
     config: sloConfig.value,
     metricTemplates: metrics.value.map((x) => x.id),
     confirmed: true,

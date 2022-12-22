@@ -1,7 +1,7 @@
 import { ElasticityStrategyParameterType } from '@/polaris-templates/parameters';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
-import { PolarisController } from '@/workspace/PolarisComponent';
+import { PolarisController, PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 
 export const defaultStrategies: ElasticityStrategy[] = [
   {
@@ -26,6 +26,10 @@ export const defaultStrategies: ElasticityStrategy[] = [
       },
     ],
     confirmed: true,
+    controllerDeploymentMetadata: {
+      name: 'horizontal-elasticity-strategy-controller',
+      containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
+    },
   },
   {
     id: 'default-vertical-elasticity-strategy',
@@ -61,22 +65,7 @@ export const defaultStrategies: ElasticityStrategy[] = [
       },
     ],
     confirmed: true,
-  },
-];
-
-export const defaultElasticityStrategyControllers: PolarisController[] = [
-  {
-    type: 'Elasticity Strategy Controller',
-    handlesKind: 'HorizontalElasticityStrategy',
-    deploymentMetadata: {
-      name: 'horizontal-elasticity-strategy-controller',
-      containerImage: 'polarissloc/horizontal-elasticity-strategy:latest',
-    },
-  },
-  {
-    type: 'Elasticity Strategy Controller',
-    handlesKind: 'VerticalElasticityStrategy',
-    deploymentMetadata: {
+    controllerDeploymentMetadata: {
       name: 'vertical-elasticity-strategy-controller',
       containerImage: 'polarissloc/vertical-elasticity-strategy:latest',
     },

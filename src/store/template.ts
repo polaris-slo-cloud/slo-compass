@@ -5,9 +5,11 @@ import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { ConfigParameter } from '@/polaris-templates/parameters';
 import {
   SloMetricSourceTemplate,
+  SloMetricSourceType,
   SloMetricTemplateId,
   templates as defaultMetricSourceTemplates,
 } from '@/polaris-templates/slo-metrics/metrics-template';
+import { PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 
 export const useTemplateStore = defineStore('templates', () => {
   const orchestratorApi = useOrchestratorApi();
@@ -23,6 +25,15 @@ export const useTemplateStore = defineStore('templates', () => {
   const getSloMetricTemplate = computed(() => {
     const templateMap = new Map(sloMetricSourceTemplates.value.map((x) => [x.id, x]));
     return (id: SloMetricTemplateId): SloMetricSourceTemplate => templateMap.get(id);
+  });
+
+  const findComposedMetricTemplate = computed(() => {
+    const templateMap = new Map(
+      sloMetricSourceTemplates.value
+        .filter((x) => x.type === SloMetricSourceType.Composed && x.metricsController)
+        .map((x) => [x.metricsController.composedMetricKind, x])
+    );
+    return (kind: string): SloMetricSourceTemplate => templateMap.get(kind);
   });
 
   async function createSloTemplate(template: SloTemplateMetadata) {
@@ -99,6 +110,16 @@ export const useTemplateStore = defineStore('templates', () => {
     sloTemplates.value = sloTemplates.value.filter((x) => x.sloMappingKind !== kind);
   }
 
+  function saveSloControllerDeploymentMetadata(kind: string, deploymentInfo: PolarisControllerDeploymentMetadata) {
+    const template = getSloTemplate.value(kind);
+    if (!template) {
+      // TODO: Notify User?
+      return;
+    }
+
+    template.sloController = deploymentInfo;
+  }
+
   function saveSloMetricSourceTemplate(template: SloMetricSourceTemplate) {
     const existingIndex = sloMetricSourceTemplates.value.findIndex((x) => x.id === template.id);
     if (existingIndex >= 0) {
@@ -112,11 +133,23 @@ export const useTemplateStore = defineStore('templates', () => {
     sloMetricSourceTemplates.value = sloMetricSourceTemplates.value.filter((x) => x.id !== id);
   }
 
+  function saveMetricsControllerDeploymentMetadata(kind: string, deploymentInfo: PolarisControllerDeploymentMetadata) {
+    const template = findComposedMetricTemplate.value(kind);
+    if (!template || !template.metricsController) {
+      // TODO: Notify User?
+      return;
+    }
+
+    template.metricsController.controllerName = deploymentInfo.name;
+    template.metricsController.containerImage = deploymentInfo.containerImage;
+  }
+
   return {
     sloTemplates,
     sloMetricSourceTemplates,
     getSloTemplate,
     getSloMetricTemplate,
+    findComposedMetricTemplate,
     createSloTemplate,
     saveSloTemplate,
     removeSloTemplate,
@@ -125,5 +158,7 @@ export const useTemplateStore = defineStore('templates', () => {
     removeSloMetricSourceTemplate,
     saveSloTemplateFromPolaris,
     confirmSloTemplate,
+    saveSloControllerDeploymentMetadata,
+    saveMetricsControllerDeploymentMetadata,
   };
 });

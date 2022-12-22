@@ -1,4 +1,4 @@
-import { WorkspaceComponent } from '@/workspace/PolarisComponent';
+import {PolarisControllerDeploymentMetadata, WorkspaceComponent} from '@/workspace/PolarisComponent';
 import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
 
 export default interface ElasticityStrategy extends WorkspaceComponent {
@@ -6,4 +6,5 @@ export default interface ElasticityStrategy extends WorkspaceComponent {
   kindPlural: string;
   sloSpecificConfig: ElasticityStrategyConfigParameter[];
   confirmed: boolean;
+  controllerDeploymentMetadata?: PolarisControllerDeploymentMetadata;
 }

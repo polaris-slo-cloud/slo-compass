@@ -11,7 +11,7 @@ import {
 } from '@polaris-sloc/core';
 import { K8sClient, KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
-import { transformK8sOwnerReference } from '@/orchestrator/kubernetes/helpers';
+import {transformK8sOwnerReference, transformToApiObject} from '@/orchestrator/kubernetes/helpers';
 
 const REQUIRED_OBJECT_KIND_PROPERTIES: (keyof ObjectKind)[] = ['version', 'kind'];
 export type WatchEventType = 'ADDED' | 'MODIFIED' | 'DELETED' | 'BOOKMARK';
@@ -106,7 +106,7 @@ export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
 
   private async onK8sWatchEvent(type: WatchEventType, k8sObject: KubernetesSpecObject): Promise<void> {
     this.resetRestartTimeout();
-    const apiObject = this.transform(k8sObject);
+    const apiObject = transformToApiObject(k8sObject, this._kind);
     switch (type) {
       case 'ADDED':
         await this._handler.onObjectAdded(apiObject);
@@ -120,23 +120,6 @@ export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
       case 'BOOKMARK':
         this.bookmarkManager.update(this._kind, k8sObject.metadata.resourceVersion);
     }
-  }
-
-  private transform(k8sObject: KubernetesSpecObject): ApiObject<any> {
-    const apiObject = new ApiObject();
-    apiObject.objectKind = this._kind;
-    apiObject.metadata = {
-      uid: k8sObject.metadata.uid,
-      name: k8sObject.metadata.name,
-      namespace: k8sObject.metadata.namespace,
-      labels: k8sObject.metadata.labels,
-      ownerReferences: k8sObject.metadata.ownerReferences?.map(transformK8sOwnerReference),
-      resourceVersion: k8sObject.metadata.resourceVersion,
-      generation: k8sObject.metadata.generation,
-    };
-    apiObject.spec = k8sObject.spec;
-
-    return apiObject;
   }
 
   private getWatchPath(kind: ObjectKind): string {

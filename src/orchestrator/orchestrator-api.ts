@@ -47,12 +47,9 @@ export interface IDeployment {
   status: string;
   connectionMetadata: NamespacedObjectReference;
 }
-export interface PolarisDeploymentResult {
-  successfulResourcesCount: number;
+export interface PolarisControllerDeploymentResult {
+  deployedController?: NamespacedObjectReference;
   failedResources: PolarisResource[];
-}
-export interface PolarisSloDeploymentResult extends PolarisDeploymentResult {
-  deployedSloMapping?: DeployedPolarisSloMapping;
 }
 
 export interface IOrchestratorApi {
@@ -71,12 +68,13 @@ export interface IOrchestratorApi {
   listTemplateDefinitions(): Promise<ApiObjectList<any>>;
   findPolarisControllers(): Promise<PolarisController[]>;
   findPolarisControllerForDeployment(deployment: ApiObject<any>): Promise<PolarisController>;
-  deploySloController(slo: Slo, template: SloTemplateMetadata): Promise<PolarisDeploymentResult>;
+  deploySloController(template: SloTemplateMetadata): Promise<PolarisControllerDeploymentResult>;
   deployElasticityStrategyController(
-    elasticityStrategy: ElasticityStrategy,
-    deploymentMetadata: PolarisControllerDeploymentMetadata
-  ): Promise<PolarisDeploymentResult>;
-  deployComposedMetricsController(controllerTemplate: SloMetricSourceTemplate): Promise<PolarisDeploymentResult>;
+    elasticityStrategy: ElasticityStrategy
+  ): Promise<PolarisControllerDeploymentResult>;
+  deployComposedMetricsController(
+    controllerTemplate: SloMetricSourceTemplate
+  ): Promise<PolarisControllerDeploymentResult>;
 }
 
 export interface IPolarisOrchestratorApi extends IOrchestratorApi {
@@ -166,15 +164,15 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  deployElasticityStrategyController(): Promise<PolarisDeploymentResult> {
+  deployElasticityStrategyController(): Promise<PolarisControllerDeploymentResult> {
     throw new OrchestratorNotConnectedError();
   }
 
-  deploySloController(): Promise<PolarisDeploymentResult> {
+  deploySloController(): Promise<PolarisControllerDeploymentResult> {
     throw new OrchestratorNotConnectedError();
   }
 
-  deployComposedMetricsController(): Promise<PolarisDeploymentResult> {
+  deployComposedMetricsController(): Promise<PolarisControllerDeploymentResult> {
     throw new OrchestratorNotConnectedError();
   }
 }
@@ -209,31 +207,30 @@ function clone<T>(object: T): T {
   return JSON.parse(JSON.stringify(object));
 }
 
-async function deploy(
-  component: WorkspaceComponent,
-  deploymentAction: () => Promise<PolarisDeploymentResult>
-): Promise<PolarisDeploymentResult> {
-  runningDeployments.value[component.id] = {
-    id: component.id,
-    name: component.name,
+async function deployController(
+  controller: PolarisControllerDeploymentMetadata,
+  deploymentAction: () => Promise<PolarisControllerDeploymentResult>
+): Promise<PolarisControllerDeploymentResult> {
+  runningDeployments.value[controller.name] = {
+    name: controller.name,
     dismissed: false,
   };
   const result = await deploymentAction();
-  delete runningDeployments.value[component.id];
+  delete runningDeployments.value[controller.name];
   return result;
 }
 
 async function deployMetricController(
   template: SloMetricSourceTemplate,
-  deploymentAction: () => Promise<PolarisDeploymentResult>
-): Promise<PolarisDeploymentResult> {
+  deploymentAction: () => Promise<PolarisControllerDeploymentResult>
+): Promise<PolarisControllerDeploymentResult> {
   runningDeployments.value[template.id] = {
     id: template.id,
     name: `${template.displayName} Metric`,
     dismissed: false,
   };
   const result = await deploymentAction();
-  delete runningDeployments[template.id];
+  delete runningDeployments.value[template.id];
   return result;
 }
 
@@ -259,11 +256,11 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     listTemplateDefinitions: () => api.value.listTemplateDefinitions(),
     findPolarisControllers: () => api.value.findPolarisControllers(),
     findPolarisControllerForDeployment: (deployment) => api.value.findPolarisControllerForDeployment(deployment),
-    deploySloController: (slo, template) =>
-      deploy(slo, () => api.value.deploySloController(clone(slo), clone(template))),
-    deployElasticityStrategyController: (elasticityStrategy, deploymentMetadata) =>
-      deploy(elasticityStrategy, () =>
-        api.value.deployElasticityStrategyController(clone(elasticityStrategy), clone(deploymentMetadata))
+    deploySloController: (template) =>
+      deployController(template.sloController, () => api.value.deploySloController(clone(template))),
+    deployElasticityStrategyController: (elasticityStrategy) =>
+      deployController(elasticityStrategy.controllerDeploymentMetadata, () =>
+        api.value.deployElasticityStrategyController(clone(elasticityStrategy))
       ),
     deployComposedMetricsController: (controllerTemplate) =>
       deployMetricController(controllerTemplate, () =>
