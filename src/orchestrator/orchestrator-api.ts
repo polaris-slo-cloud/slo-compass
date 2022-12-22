@@ -10,7 +10,6 @@ import { getOrchestrator } from '@/orchestrator/orchestrators';
 import {
   PolarisController,
   PolarisControllerDeploymentMetadata,
-  WorkspaceComponent,
 } from '@/workspace/PolarisComponent';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
@@ -52,12 +51,17 @@ export interface PolarisControllerDeploymentResult {
   failedResources: PolarisResource[];
 }
 
+export interface SloMappingDeploymentResult {
+  deployedMapping?: DeployedPolarisSloMapping;
+  error?: string;
+}
+
 export interface IOrchestratorApi {
   name: string;
   test(): Promise<boolean>;
   findPolarisDeployments(): Promise<IDeployment[]>;
   findDeployments(namespace?: string): Promise<IDeployment[]>;
-  applySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping>;
+  applySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<SloMappingDeploymentResult>;
   deleteSlo(slo: Slo): Promise<void>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
   findSloMappings(objectKind: ObjectKind): Promise<ApiObjectList<PolarisSloMapping>>;
@@ -122,7 +126,7 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  applySlo(): Promise<DeployedPolarisSloMapping> {
+  applySlo(): Promise<SloMappingDeploymentResult> {
     throw new OrchestratorNotConnectedError();
   }
 

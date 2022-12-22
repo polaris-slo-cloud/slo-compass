@@ -24,19 +24,27 @@ module.exports = {
     }
   },
   async create(resource) {
-    const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
-    const { body } = await k8sObjectApi.create(resource);
-    return body;
+    try {
+      const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
+      const { body } = await k8sObjectApi.create(resource);
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async patch(resource) {
-    const headers = {};
-    // The ServiceMonitor type and Polaris Custom Objects are not able to handle the default StrategicMergePatch
-    if (resource.kind === 'ServiceMonitor' || resource.apiVersion.includes('polaris')) {
-      headers['content-type'] = 'application/merge-patch+json';
+    try {
+      const headers = {};
+      // The ServiceMonitor type and Polaris Custom Objects are not able to handle the default StrategicMergePatch
+      if (resource.kind === 'ServiceMonitor' || resource.apiVersion.includes('polaris')) {
+        headers['content-type'] = 'application/merge-patch+json';
+      }
+      const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
+      const { body } = await k8sObjectApi.patch(resource, undefined, undefined, undefined, undefined, { headers });
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
     }
-    const k8sObjectApi = k8sConfig.makeApiClient(k8s.KubernetesObjectApi);
-    const { body } = await k8sObjectApi.patch(resource, undefined, undefined, undefined, undefined, { headers });
-    return body;
   },
   async test() {
     const api = k8sConfig.makeApiClient(k8s.CoreV1Api);
@@ -48,50 +56,78 @@ module.exports = {
     }
   },
   async listAllDeployments() {
-    const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
-    const { body } = await k8sAppsApi.listDeploymentForAllNamespaces();
-    return body;
+    try {
+      const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
+      const { body } = await k8sAppsApi.listDeploymentForAllNamespaces();
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async listNamespacedDeployments(namespace) {
-    const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
-    const { body } = await k8sAppsApi.listNamespacedDeployment(namespace);
-    return body;
+    try {
+      const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
+      const { body } = await k8sAppsApi.listNamespacedDeployment(namespace);
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async listCustomResourceDefinitions() {
-    const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
-    const { body } = await k8sApiExtensionsApi.listCustomResourceDefinition();
-    return body;
+    try {
+      const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
+      const { body } = await k8sApiExtensionsApi.listCustomResourceDefinition();
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async findCustomResourceDefinition(plural, apiGroup) {
-    const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
-    const { body } = await k8sApiExtensionsApi.readCustomResourceDefinition(`${plural}.${apiGroup}`);
-    return body;
+    try {
+      const k8sApiExtensionsApi = k8sConfig.makeApiClient(k8s.ApiextensionsV1Api);
+      const { body } = await k8sApiExtensionsApi.readCustomResourceDefinition(`${plural}.${apiGroup}`);
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async getCustomResourceObject(identifier) {
-    const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
-    const { body } = await k8sCustomObjectsApi.getNamespacedCustomObject(
-      identifier.group,
-      identifier.version,
-      identifier.namespace,
-      identifier.plural,
-      identifier.name
-    );
-    return body;
+    try {
+      const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
+      const { body } = await k8sCustomObjectsApi.getNamespacedCustomObject(
+        identifier.group,
+        identifier.version,
+        identifier.namespace,
+        identifier.plural,
+        identifier.name
+      );
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async listCustomResourceObjects(objectKind, plural) {
-    const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
-    const { body } = await k8sCustomObjectsApi.listClusterCustomObject(objectKind.group, objectKind.version, plural);
-    return body;
+    try {
+      const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
+      const { body } = await k8sCustomObjectsApi.listClusterCustomObject(objectKind.group, objectKind.version, plural);
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async deleteCustomResourceObject(identifier) {
-    const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
-    await k8sCustomObjectsApi.deleteNamespacedCustomObject(
-      identifier.group,
-      identifier.version,
-      identifier.namespace,
-      identifier.plural,
-      identifier.name
-    );
+    try {
+      const k8sCustomObjectsApi = k8sConfig.makeApiClient(k8s.CustomObjectsApi);
+      await k8sCustomObjectsApi.deleteNamespacedCustomObject(
+        identifier.group,
+        identifier.version,
+        identifier.namespace,
+        identifier.plural,
+        identifier.name
+      );
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async findCustomResourceMetadata(apiVersion, kind) {
     const api = apiVersion.includes('/') ? 'apis' : 'api';
@@ -142,22 +178,34 @@ module.exports = {
       if (e.statusCode === 404) {
         return null;
       }
-      throw e;
+      throw new Error(e.body.message);
     }
   },
   async listClusterRoleBindings() {
-    const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
-    const { body } = await k8sAuthorizationApi.listClusterRoleBinding();
-    return body;
+    try {
+      const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+      const { body } = await k8sAuthorizationApi.listClusterRoleBinding();
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async listClusterRoles() {
-    const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
-    const { body } = await k8sAuthorizationApi.listClusterRole();
-    return body;
+    try {
+      const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+      const { body } = await k8sAuthorizationApi.listClusterRole();
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
   async findClusterRole(name) {
-    const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
-    const { body } = await k8sAuthorizationApi.readClusterRole(name);
-    return body;
+    try {
+      const k8sAuthorizationApi = k8sConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+      const { body } = await k8sAuthorizationApi.readClusterRole(name);
+      return body;
+    } catch (e) {
+      throw new Error(e.body.message);
+    }
   },
 };

@@ -3,7 +3,7 @@ import {
   CustomResourceObjectReference,
   IDeployment,
   IPolarisOrchestratorApi,
-  PolarisControllerDeploymentResult,
+  PolarisControllerDeploymentResult, SloMappingDeploymentResult,
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient, KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 import resourceGenerator, { PolarisControllerDeploymentResources } from '@/orchestrator/kubernetes/resource-generator';
@@ -112,7 +112,7 @@ export default class Api implements IPolarisOrchestratorApi {
     }
   }
 
-  async applySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<DeployedPolarisSloMapping> {
+  async applySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<SloMappingDeploymentResult> {
     const mapping = resourceGenerator.generateSloMapping(slo, target, template.sloMappingKind);
     if (slo.deployedSloMapping?.reference) {
       mapping.metadata.name = slo.deployedSloMapping.reference.name;
@@ -132,9 +132,11 @@ export default class Api implements IPolarisOrchestratorApi {
     }
 
     const [group, version] = mapping.apiVersion.split('/');
-    const successfulDeployment = await this.deployResource(mapping);
-    return successfulDeployment
-      ? {
+
+    try {
+      await this.deployResource(mapping);
+      return {
+        deployedMapping: {
           sloMapping: this.polarisMapper.transformToPolarisSloMapping(mapping.spec, mapping.metadata.namespace),
           reference: {
             group,
@@ -143,8 +145,13 @@ export default class Api implements IPolarisOrchestratorApi {
             name: mapping.metadata.name,
             namespace: mapping.metadata.namespace,
           },
-        }
-      : null;
+        },
+      };
+    } catch (e) {
+      return {
+        error: e.response ? e.response.data.message : e.message,
+      };
+    }
   }
 
   async findSloMapping(slo: Slo): Promise<PolarisSloMapping> {
@@ -243,7 +250,12 @@ export default class Api implements IPolarisOrchestratorApi {
 
   async deploySloMappingCrd(template: SloTemplateMetadata): Promise<boolean> {
     const crd = resourceGenerator.generateCrdFromSloTemplate(template);
-    return await this.deployResource(crd);
+    try {
+      await this.deployResource(crd);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   async findPolarisControllers(): Promise<PolarisController[]> {
@@ -413,27 +425,26 @@ export default class Api implements IPolarisOrchestratorApi {
 
   private async deployControllerResources(resources: PolarisControllerDeploymentResources) {
     const resultBefore = await this.deployResources(resources.deployBefore);
-    const controllerDeploymentSuccess = await this.deployResource(resources.controllerDeployment);
-    const resultAfter = await this.deployResources(resources.deployAfter);
+    try {
+      await this.deployResource(resources.controllerDeployment);
+      const resultAfter = await this.deployResources(resources.deployAfter);
+      const failedResources = [...resultBefore.failed, ...resultAfter.failed];
 
-    const failedResources = [...resultBefore.failed];
-    if (!controllerDeploymentSuccess) {
-      failedResources.push(resources.controllerDeployment);
+      return {
+        deployedController: {
+          kind: resources.controllerDeployment.kind,
+          group: resources.controllerDeployment.apiVersion.split('/')[0],
+          version: resources.controllerDeployment.apiVersion.split('/')[1],
+          name: resources.controllerDeployment.metadata.name,
+          namespace: resources.controllerDeployment.metadata.namespace,
+        },
+        failedResources,
+      };
+    } catch (e) {
+      return {
+        failedResources: [...resultBefore.failed, resources.controllerDeployment, ...resources.deployAfter],
+      };
     }
-    failedResources.push(...resultAfter.failed);
-
-    return {
-      deployedController: controllerDeploymentSuccess
-        ? {
-            kind: resources.controllerDeployment.kind,
-            group: resources.controllerDeployment.apiVersion.split('/')[0],
-            version: resources.controllerDeployment.apiVersion.split('/')[1],
-            name: resources.controllerDeployment.metadata.name,
-            namespace: resources.controllerDeployment.metadata.namespace,
-          }
-        : null,
-      failedResources,
-    };
   }
 
   private async findCustomResourceMetadata(apiVersion: string, kind: string): Promise<CustomResourceMetadata> {
@@ -481,27 +492,22 @@ export default class Api implements IPolarisOrchestratorApi {
       failed: [],
     };
     for (const resource of resources) {
-      const success = await this.deployResource(resource);
-      if (success) {
+      try {
+        await this.deployResource(resource);
         result.successful.push(resource);
-      } else {
+      } catch (e) {
         result.failed.push(resource);
       }
     }
     return result;
   }
 
-  private async deployResource(resource: KubernetesObject): Promise<boolean> {
-    try {
-      const existing = await this.client.read(resource);
-      if (existing === null) {
-        await this.client.create(resource);
-      } else {
-        await this.client.patch(resource);
-      }
-      return true;
-    } catch (e) {
-      return false;
+  private async deployResource(resource: KubernetesObject): Promise<void> {
+    const existing = await this.client.read(resource);
+    if (existing === null) {
+      await this.client.create(resource);
+    } else {
+      await this.client.patch(resource);
     }
   }
 }

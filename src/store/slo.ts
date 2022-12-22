@@ -11,6 +11,7 @@ import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
 import { NamespacedObjectReference } from '@polaris-sloc/core';
 import { useTemplateStore } from '@/store/template';
 import { usePolarisComponentStore } from '@/store/polaris-component';
+import { useNotifications } from '@/crosscutting/composables/notification';
 
 export const useSloStore = defineStore('slo', () => {
   const orchestratorApi = useOrchestratorApi();
@@ -19,6 +20,7 @@ export const useSloStore = defineStore('slo', () => {
   const targetStore = useTargetStore();
   const templateStore = useTemplateStore();
   const polarisComponentStore = usePolarisComponentStore();
+  const notifier = useNotifications();
 
   const slos: Ref<Slo[]> = ref<Slo[]>([]);
 
@@ -56,10 +58,12 @@ export const useSloStore = defineStore('slo', () => {
     const template = templateStore.getSloTemplate(slo.kind);
 
     await polarisComponentStore.deployMissingSloResources(slo, template);
-    const appliedSloMapping = await orchestratorApi.applySlo(slo, target, template);
-    if (appliedSloMapping) {
+    const result = await orchestratorApi.applySlo(slo, target, template);
+    if (result.deployedMapping) {
       slo.configChanged = false;
-      slo.deployedSloMapping = appliedSloMapping;
+      slo.deployedSloMapping = result.deployedMapping;
+    } else {
+      notifier.notifyError(result.error);
     }
   }
   async function resetSloMapping(id: WorkspaceComponentId): Promise<void> {
