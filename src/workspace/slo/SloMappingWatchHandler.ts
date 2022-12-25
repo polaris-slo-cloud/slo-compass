@@ -1,9 +1,11 @@
-import { ApiObject, ObjectKind, POLARIS_API, WatchEventsHandler } from '@polaris-sloc/core';
+import { ApiObject, ObjectKind, POLARIS_API } from '@polaris-sloc/core';
 import { useSloStore } from '@/store/slo';
 import { PolarisSloMapping } from '@/workspace/slo/Slo';
 import { SloHelper, sloMappingMatches } from '@/workspace/slo/SloHelper';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { ChangeTrackingWatchEventsHandler } from '@/orchestrator/WatchEventsHandler';
+import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
 
 export function toSloMappingObjectKind(mappingKind: string): ObjectKind {
   return {
@@ -13,14 +15,14 @@ export function toSloMappingObjectKind(mappingKind: string): ObjectKind {
   };
 }
 
-export class SloMappingWatchHandler implements WatchEventsHandler {
-  private sloStore = useSloStore();
-  private helper = new SloHelper();
+export class SloMappingWatchHandler implements ChangeTrackingWatchEventsHandler {
+  private readonly orchestratorApi = useOrchestratorApi();
+  private readonly sloStore = useSloStore();
+  private readonly helper = new SloHelper();
   private readonly polarisMapper: PolarisMapper;
 
-  constructor() {
-    const orchestratorApi = useOrchestratorApi();
-    this.polarisMapper = orchestratorApi.createPolarisMapper();
+  constructor(private bookmarkManager: WatchBookmarkManager) {
+    this.polarisMapper = this.orchestratorApi.createPolarisMapper();
   }
 
   onError(error: Error): void {
@@ -50,5 +52,26 @@ export class SloMappingWatchHandler implements WatchEventsHandler {
   async onObjectModified(obj: ApiObject<any>): Promise<void> {
     const sloMapping = this.transform(obj);
     await this.helper.createOrUpdateSlo(sloMapping);
+  }
+
+  async loadLatestResourceVersion(objectKind: ObjectKind): Promise<void> {
+    const sloMappings = await this.orchestratorApi.findSloMappings(objectKind);
+    const mappedSlos = [];
+    for (const sloMapping of sloMappings.items) {
+      const sloId = await this.helper.createOrUpdateSlo(sloMapping);
+      mappedSlos.push(sloId);
+    }
+    const deletedSlos = this.sloStore.slos
+      .filter(
+        (x) =>
+          !!x.deployedSloMapping?.reference &&
+          x.deployedSloMapping.reference.kind === objectKind.kind &&
+          !mappedSlos.includes(x.id)
+      )
+      .map((x) => x.id);
+    if (deletedSlos.length > 0) {
+      this.sloStore.polarisMappingRemoved(deletedSlos);
+    }
+    this.bookmarkManager.update(objectKind, sloMappings.metadata.resourceVersion);
   }
 }

@@ -7,10 +7,7 @@ import Slo, {
   PolarisSloMapping,
 } from '@/workspace/slo/Slo';
 import { getOrchestrator } from '@/orchestrator/orchestrators';
-import {
-  PolarisController,
-  PolarisControllerDeploymentMetadata,
-} from '@/workspace/PolarisComponent';
+import { PolarisController, PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher } from '@polaris-sloc/core';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
@@ -31,6 +28,11 @@ export interface CustomResourceObjectReference extends NamespacedObjectReference
 export interface ApiObjectListMetadata {
   resourceVersion: string;
   [key: string]: any;
+}
+
+export interface ItemsWithResourceVersion<T> {
+  items: T[];
+  resourceVersion: string;
 }
 
 export interface ApiObjectList<T> {
@@ -70,7 +72,7 @@ export interface IOrchestratorApi {
   createWatcher(bookmarkManager: WatchBookmarkManager): ObjectKindWatcher;
   createPolarisMapper(): PolarisMapper;
   listTemplateDefinitions(): Promise<ApiObjectList<any>>;
-  findPolarisControllers(): Promise<PolarisController[]>;
+  findPolarisControllers(): Promise<ItemsWithResourceVersion<PolarisController>>;
   findPolarisControllerForDeployment(deployment: ApiObject<any>): Promise<PolarisController>;
   deploySloController(template: SloTemplateMetadata): Promise<PolarisControllerDeploymentResult>;
   deployElasticityStrategyController(
@@ -160,7 +162,7 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
     throw new OrchestratorNotConnectedError();
   }
 
-  findPolarisControllers(): Promise<PolarisController[]> {
+  findPolarisControllers(): Promise<ItemsWithResourceVersion<PolarisController>> {
     throw new OrchestratorNotConnectedError();
   }
 

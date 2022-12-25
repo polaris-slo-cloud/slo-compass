@@ -2,7 +2,7 @@ import { PolarisMapper } from '@/orchestrator/PolarisMapper';
 import { SloTemplateMetadata } from '@/polaris-templates/slo-template';
 import { PolarisElasticityStrategySloOutput, PolarisSloMapping } from '@/workspace/slo/Slo';
 import { ApiObject, POLARIS_API } from '@polaris-sloc/core';
-import { V1CustomResourceDefinitionSpec, V1DeploymentSpec } from '@kubernetes/client-node';
+import { V1CustomResourceDefinitionSpec } from '@kubernetes/client-node';
 import { mapElasticityStrategyParameterFromSchema, mapParameterFromSchema } from '@/orchestrator/kubernetes/helpers';
 import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';

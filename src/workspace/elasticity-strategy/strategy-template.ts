@@ -1,7 +1,6 @@
 import { ElasticityStrategyParameterType } from '@/polaris-templates/parameters';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
-import { PolarisController, PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 
 export const defaultStrategies: ElasticityStrategy[] = [
   {

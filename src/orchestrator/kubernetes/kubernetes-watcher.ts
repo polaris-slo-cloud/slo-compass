@@ -1,5 +1,4 @@
 import {
-  ApiObject,
   ObjectKind,
   ObjectKindNotFoundError,
   ObjectKindPropertiesMissingError,
@@ -9,9 +8,12 @@ import {
   WatchEventsHandler,
   WatchTerminatedError,
 } from '@polaris-sloc/core';
-import { K8sClient, KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
+import { K8sClient, KubernetesSpecObject, ResourceQueryOptions } from '@/orchestrator/kubernetes/client';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
-import {transformK8sOwnerReference, transformToApiObject} from '@/orchestrator/kubernetes/helpers';
+import { transformToApiObject } from '@/orchestrator/kubernetes/helpers';
+import { ResourceGoneError } from '@/orchestrator/errors';
+import { hasWatchQueryOptions, isChangeTrackingWatchEventsHandler } from '@/orchestrator/WatchEventsHandler';
+import { LabelFilterOperator, ObjectKindQueryOptions } from '@/orchestrator/ObjectKindQueryOptions';
 
 const REQUIRED_OBJECT_KIND_PROPERTIES: (keyof ObjectKind)[] = ['version', 'kind'];
 export type WatchEventType = 'ADDED' | 'MODIFIED' | 'DELETED' | 'BOOKMARK';
@@ -39,6 +41,11 @@ export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
   private onWatchError(error): void {
     let watchError: ObjectKindWatcherError;
     if (error) {
+      if (error instanceof ResourceGoneError && isChangeTrackingWatchEventsHandler(this.handler)) {
+        this._watchRequest = null;
+        this.startWatch(this._kind, this._handler);
+        return;
+      }
       if ((error as Error)?.message === 'Not Found') {
         watchError = new ObjectKindNotFoundError(this, this._kind);
       } else {
@@ -66,15 +73,42 @@ export class KubernetesObjectKindWatcher implements ObjectKindWatcher {
 
     this._kind = kind;
     this._handler = handler;
+    let queryOptions: ResourceQueryOptions = undefined;
+    if (isChangeTrackingWatchEventsHandler(handler)) {
+      await handler.loadLatestResourceVersion(this._kind);
+    }
+    if (hasWatchQueryOptions(handler)) {
+      queryOptions = this.transformQueryOptions(handler.watchQueryOptions);
+    }
     const resourceVersion = this.bookmarkManager.find(kind);
     const path = this.getWatchPath(kind);
     const watch = await this.client.watch(
       path,
       resourceVersion,
       async (type: WatchEventType, k8sObj: KubernetesSpecObject) => await this.onK8sWatchEvent(type, k8sObj),
-      this.onWatchError.bind(this)
+      this.onWatchError.bind(this),
+      queryOptions
     );
     this._watchRequest = watch;
+  }
+
+  private transformQueryOptions(options: ObjectKindQueryOptions): ResourceQueryOptions {
+    const queryOptions: ResourceQueryOptions = {};
+    if (options.labelFilter) {
+      queryOptions.labelSelector = options.labelFilter
+        .map((x) => {
+          switch (x.operator) {
+            case LabelFilterOperator.Equal:
+              return `${x.label}=${x.value}`;
+            case LabelFilterOperator.In:
+              return `${x.label} in (${(x.value as string[]).join(',')})`;
+          }
+          return null;
+        })
+        .filter((x) => !!x)
+        .join(',');
+    }
+    return queryOptions;
   }
 
   stopWatch(): void {

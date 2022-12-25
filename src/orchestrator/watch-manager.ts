@@ -1,4 +1,4 @@
-import { CONNECTED_EVENT, useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import {
   ObjectKind,
   ObjectKindsAlreadyWatchedError,
@@ -8,30 +8,16 @@ import {
   WatchManager,
 } from '@polaris-sloc/core';
 import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
-import { IUnsubscribe } from '@/crosscutting/subscibable';
 
 const orchestratorApi = useOrchestratorApi();
 
 export class OrchestratorWatchManager implements WatchManager {
   private watchers: Map<string, ObjectKindWatcher> = new Map();
-  private unsubscribeOrchestrator: IUnsubscribe;
 
   constructor(private bookmarkManager: WatchBookmarkManager) {}
 
   get activeWatchers(): ObjectKindWatcher[] {
     return Array.from(this.watchers.values());
-  }
-
-  public async configureWatchers(kindHandlerPairs: ObjectKindWatchHandlerPair[]): Promise<void> {
-    if (await orchestratorApi.test()) {
-      await this.startWatchers(kindHandlerPairs);
-    }
-    this.unsubscribeOrchestrator = orchestratorApi
-      .on(CONNECTED_EVENT, async () => {
-        this.stopWatchersInternal([...this.watchers.keys()]);
-        await this.startWatchers(kindHandlerPairs);
-      })
-      .bind(this);
   }
 
   startWatchers(kinds: ObjectKind[], handler: WatchEventsHandler): Promise<ObjectKindWatcher[]>;
@@ -54,10 +40,6 @@ export class OrchestratorWatchManager implements WatchManager {
       watcher.stopWatch();
     });
     this.watchers.clear();
-    if (this.unsubscribeOrchestrator) {
-      this.unsubscribeOrchestrator();
-      this.unsubscribeOrchestrator = null;
-    }
   }
 
   stopWatchers(kinds: ObjectKind[]): void {

@@ -7,8 +7,8 @@ import {
   ParameterType,
 } from '@/polaris-templates/parameters';
 import { V1JSONSchemaProps, V1OwnerReference } from '@kubernetes/client-node';
-import {ApiObject, ObjectKind, OwnerReference} from '@polaris-sloc/core';
-import {KubernetesSpecObject} from "@/orchestrator/kubernetes/client";
+import { ApiObject, ObjectKind, OwnerReference } from '@polaris-sloc/core';
+import { KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 
 const parameterTypeMap = Object.freeze({
   Integer: 'integer',

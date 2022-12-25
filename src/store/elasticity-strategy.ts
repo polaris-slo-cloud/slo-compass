@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import ElasticityStrategy from '@/workspace/elasticity-strategy/ElasticityStrategy';
 import { workspaceItemTypes } from '@/workspace/constants';
-import {PolarisControllerDeploymentMetadata, WorkspaceComponentId} from '@/workspace/PolarisComponent';
+import { PolarisControllerDeploymentMetadata, WorkspaceComponentId } from '@/workspace/PolarisComponent';
 import { defaultStrategies } from '@/workspace/elasticity-strategy/strategy-template';
 import { ElasticityStrategyConfigParameter } from '@/polaris-templates/parameters';
 

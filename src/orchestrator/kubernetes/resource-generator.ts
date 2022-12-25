@@ -56,7 +56,7 @@ export default {
         template.sloController.name,
         namespace,
         template.sloController.containerImage,
-        template.sloMappingKind,
+        template.sloMappingKind
       ),
       deployAfter: [],
     };

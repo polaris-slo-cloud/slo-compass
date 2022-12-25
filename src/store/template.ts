@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { SloTemplateMetadata, templates as defaultSloTemplates } from '@/polaris-templates/slo-template';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { ConfigParameter } from '@/polaris-templates/parameters';
 import {
   SloMetricSourceTemplate,
@@ -12,8 +11,6 @@ import {
 import { PolarisControllerDeploymentMetadata } from '@/workspace/PolarisComponent';
 
 export const useTemplateStore = defineStore('templates', () => {
-  const orchestratorApi = useOrchestratorApi();
-
   const sloTemplates = ref<SloTemplateMetadata[]>(defaultSloTemplates);
   const sloMetricSourceTemplates = ref<SloMetricSourceTemplate[]>(defaultMetricSourceTemplates);
 
@@ -35,16 +32,6 @@ export const useTemplateStore = defineStore('templates', () => {
     );
     return (kind: string): SloMetricSourceTemplate => templateMap.get(kind);
   });
-
-  async function createSloTemplate(template: SloTemplateMetadata) {
-    if (getSloTemplate.value(template.sloMappingKind)) {
-      //TODO: This template already exists, do we need a notification here?
-      return;
-    }
-
-    sloTemplates.value.push(template);
-    await orchestratorApi.deploySloMappingCrd(template);
-  }
 
   function addSloMetricSourceTemplate(template: SloMetricSourceTemplate) {
     if (sloMetricSourceTemplates.value.find((x) => x.id === template.id)) {
@@ -150,7 +137,6 @@ export const useTemplateStore = defineStore('templates', () => {
     getSloTemplate,
     getSloMetricTemplate,
     findComposedMetricTemplate,
-    createSloTemplate,
     saveSloTemplate,
     removeSloTemplate,
     addSloMetricSourceTemplate,

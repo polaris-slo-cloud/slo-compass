@@ -4,7 +4,6 @@ import {
   KubernetesObject,
   V1APIResource,
   V1ClusterRole,
-  V1ClusterRoleBinding,
   V1ClusterRoleBindingList,
   V1ClusterRoleList,
   V1CustomResourceDefinition,
@@ -15,14 +14,18 @@ import K8sClientHelper, { KubernetesPatchStrategies } from '@/orchestrator/kuber
 import { ApiObjectList, CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
 import { ApiObject, ObjectKind } from '@polaris-sloc/core';
 import { WatchEventType } from '@/orchestrator/kubernetes/kubernetes-watcher';
+import { ResourceGoneError } from '@/orchestrator/errors';
 
 export interface KubernetesSpecObject extends KubernetesObject {
   spec: any;
 }
 
+export interface ResourceQueryOptions {
+  labelSelector?: string;
+}
 export interface K8sClient {
   listNamespacedDeployments(namespace: string): Promise<V1DeploymentList>;
-  listAllDeployments(): Promise<V1DeploymentList>;
+  listAllDeployments(queryOptions?: ResourceQueryOptions): Promise<V1DeploymentList>;
   read<TResource extends KubernetesObject>(spec: TResource): Promise<TResource>;
   create<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   patch<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
@@ -38,7 +41,8 @@ export interface K8sClient {
     path: string,
     resourceVersion: string,
     watchCallback: (type: WatchEventType, k8sObj: KubernetesSpecObject) => Promise<void>,
-    errorCallback: (error: any) => void
+    errorCallback: (error: any) => void,
+    watchQueryOptions?: ResourceQueryOptions
   ): Promise<any>;
   listClusterRoles(): Promise<V1ClusterRoleList>;
   findClusterRole(name: string): Promise<V1ClusterRole>;
@@ -67,8 +71,12 @@ class K8sHttpClient implements K8sClient {
     const { data } = await this.http.get<V1DeploymentList>(`/apis/apps/v1/namespaces/${namespace}/deployments`);
     return data;
   }
-  public async listAllDeployments(): Promise<V1DeploymentList> {
-    const { data } = await this.http.get<V1DeploymentList>('/apis/apps/v1/deployments');
+  public async listAllDeployments(queryOptions?: ResourceQueryOptions): Promise<V1DeploymentList> {
+    const query = {};
+    if (queryOptions?.labelSelector) {
+      query['labelSelector'] = queryOptions.labelSelector;
+    }
+    const { data } = await this.http.get<V1DeploymentList>('/apis/apps/v1/deployments', { params: query });
     return data;
   }
 
@@ -150,9 +158,10 @@ class K8sHttpClient implements K8sClient {
     path: string,
     resourceVersion: string,
     watchCallback: (type: WatchEventType, k8sObj: KubernetesSpecObject) => Promise<void>,
-    errorCallback: (error: any) => void
+    errorCallback: (error: any) => void,
+    watchQueryOptions?: ResourceQueryOptions
   ): Promise<any> {
-    const params: Record<string, any> = { watch: true, allowWatchBookmarks: true };
+    const params: Record<string, any> = watchQueryOptions ?? {};
     if (resourceVersion) {
       params.resourceVersion = resourceVersion;
     }
@@ -200,9 +209,11 @@ function tryJsonParse(data) {
     return null;
   }
 }
-
+const watchTimeoutMs = 30 * 1000;
 class HttpClientWatch {
   private watchIndex = 0;
+  private watchUrl: string;
+  private watchOptions: Record<string, string>;
 
   constructor(
     private http: AxiosInstance,
@@ -211,18 +222,37 @@ class HttpClientWatch {
   ) {}
 
   public async watch(url, options): Promise<AbortController> {
+    const controller = new AbortController();
+    this.watchIndex = 0;
+    const optionParams = options?.params ?? {};
+    this.watchOptions = {
+      signal: controller.signal,
+      ...options,
+      params: {
+        watch: true,
+        allowWatchBookmarks: true,
+        timeoutSeconds: 1,
+        ...optionParams,
+      },
+    };
+    this.watchUrl = url;
+    const pollingInterval = setInterval(this.pollWatchEvents.bind(this), watchTimeoutMs);
+
+    controller.signal.addEventListener('abort', () => {
+      clearInterval(pollingInterval);
+    });
+    return controller;
+  }
+
+  private async pollWatchEvents() {
     try {
-      const controller = new AbortController();
-      this.http
-        .get(url, {
-          signal: controller.signal,
-          onDownloadProgress: this.processWatchEvent.bind(this),
-          ...options,
-        })
-        // The watch has been terminated if the request finishes
-        .then(() => this.errorCallback(null));
-      return controller;
+      const result = await this.http.get(this.watchUrl, this.watchOptions);
+      await this.processWatchEvent(result);
     } catch (e) {
+      // This means that the requested resourceVersion is too old
+      if (e.response.status === 410) {
+        this.errorCallback(new ResourceGoneError(e));
+      }
       this.errorCallback(e);
     }
   }

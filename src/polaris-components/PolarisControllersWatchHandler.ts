@@ -1,16 +1,28 @@
-import { ApiObject, WatchEventsHandler } from '@polaris-sloc/core';
+import { ApiObject, ObjectKind } from '@polaris-sloc/core';
 import { usePolarisComponentStore } from '@/store/polaris-component';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { PolarisMapper } from '@/orchestrator/PolarisMapper';
+import {
+  ChangeTrackingWatchEventsHandler,
+  WatchEventsHandlerWithQueryOptions,
+} from '@/orchestrator/WatchEventsHandler';
+import { WatchBookmarkManager } from '@/orchestrator/watch-bookmark-manager';
+import { OrchestratorLabelFilters } from '@/orchestrator/ObjectKindQueryOptions';
 
-export class PolarisControllersWatchHandler implements WatchEventsHandler {
+export class PolarisControllersWatchHandler
+  implements ChangeTrackingWatchEventsHandler, WatchEventsHandlerWithQueryOptions
+{
   private readonly orchestratorApi = useOrchestratorApi();
   private readonly polarisComponentStore = usePolarisComponentStore();
   private readonly polarisMapper: PolarisMapper;
 
-  constructor() {
+  constructor(private bookmarkManager: WatchBookmarkManager) {
     this.polarisMapper = this.orchestratorApi.createPolarisMapper();
   }
+
+  public watchQueryOptions = {
+    labelFilter: [OrchestratorLabelFilters.equals('tier', 'control-plane')],
+  };
 
   onError(error: Error): void {
     //TODO
@@ -32,5 +44,11 @@ export class PolarisControllersWatchHandler implements WatchEventsHandler {
 
   onObjectModified(obj: ApiObject<any>): void {
     // Do nothing
+  }
+
+  async loadLatestResourceVersion(objectKind: ObjectKind): Promise<void> {
+    const polarisControllers = await this.orchestratorApi.findPolarisControllers();
+    this.polarisComponentStore.initializePolarisClusterComponents(polarisControllers.items);
+    this.bookmarkManager.update(objectKind, polarisControllers.resourceVersion);
   }
 }

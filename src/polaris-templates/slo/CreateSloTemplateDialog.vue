@@ -108,8 +108,10 @@ import EditableField from '@/crosscutting/components/EditableField.vue';
 import { useVuelidate } from '@vuelidate/core';
 import { useTemplateStore } from '@/store/template';
 import SloTemplateMetricsForm from '@/polaris-templates/slo/SloTemplateMetricsForm.vue';
+import { usePolarisComponentStore } from '@/store/polaris-component';
 
 const templateStore = useTemplateStore();
+const polarisComponentStore = usePolarisComponentStore();
 
 const props = defineProps({
   show: Boolean,
@@ -199,10 +201,9 @@ async function create(publish) {
     metricTemplates: metrics.value.map((x) => x.id),
     confirmed: true,
   };
+  templateStore.saveSloTemplate(newTemplate);
   if (publish) {
-    await templateStore.createSloTemplate(newTemplate);
-  } else {
-    templateStore.saveSloTemplate(newTemplate);
+    await polarisComponentStore.deploySloMapping(newTemplate);
   }
   resetForm();
   emit('created', newTemplate);

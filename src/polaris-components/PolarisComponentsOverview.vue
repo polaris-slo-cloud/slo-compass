@@ -116,7 +116,7 @@ import { useTemplateStore } from '@/store/template';
 import IconButton from '@/crosscutting/components/IconButton.vue';
 import { SloMetricSourceType } from '@/polaris-templates/slo-metrics/metrics-template';
 import ResolveMissingControllerDialog from '@/polaris-components/ResolveMissingControllerDialog.vue';
-import {PolarisControllerType} from "@/workspace/PolarisComponent";
+import { PolarisControllerType } from '@/workspace/PolarisComponent';
 
 const templateStore = useTemplateStore();
 const elasticityStrategyStore = useElasticityStrategyStore();

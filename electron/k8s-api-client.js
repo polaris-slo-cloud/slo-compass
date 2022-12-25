@@ -55,10 +55,10 @@ module.exports = {
       return false;
     }
   },
-  async listAllDeployments() {
+  async listAllDeployments(queryOptions) {
     try {
       const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
-      const { body } = await k8sAppsApi.listDeploymentForAllNamespaces();
+      const { body } = await k8sAppsApi.listDeploymentForAllNamespaces(null, null, null, queryOptions.labelSelector);
       return body;
     } catch (e) {
       throw new Error(e.body.message);

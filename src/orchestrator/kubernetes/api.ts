@@ -3,15 +3,13 @@ import {
   CustomResourceObjectReference,
   IDeployment,
   IPolarisOrchestratorApi,
-  PolarisControllerDeploymentResult, SloMappingDeploymentResult,
+  ItemsWithResourceVersion,
+  PolarisControllerDeploymentResult,
+  SloMappingDeploymentResult,
 } from '@/orchestrator/orchestrator-api';
 import createClient, { K8sClient, KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 import resourceGenerator, { PolarisControllerDeploymentResources } from '@/orchestrator/kubernetes/resource-generator';
-import Slo, {
-  DeployedPolarisSloMapping,
-  PolarisElasticityStrategySloOutput,
-  PolarisSloMapping,
-} from '@/workspace/slo/Slo';
+import Slo, { PolarisElasticityStrategySloOutput, PolarisSloMapping } from '@/workspace/slo/Slo';
 import { KubernetesObject, V1DeploymentSpec } from '@kubernetes/client-node';
 import { PolarisController, PolarisControllerType } from '@/workspace/PolarisComponent';
 import { SloTarget } from '@/workspace/targets/SloTarget';
@@ -258,15 +256,19 @@ export default class Api implements IPolarisOrchestratorApi {
     }
   }
 
-  async findPolarisControllers(): Promise<PolarisController[]> {
+  async findPolarisControllers(): Promise<ItemsWithResourceVersion<PolarisController>> {
     const customResourceDefinitions = await this.client.listCustomResourceDefinitions();
     const polarisCrdGroups: string[] = [POLARIS_API.SLO_GROUP, POLARIS_API.ELASTICITY_GROUP, POLARIS_API.METRICS_GROUP];
     const polarisCrds = customResourceDefinitions.items.filter((x) => polarisCrdGroups.includes(x.spec.group));
     const polarisCrdResourceNames = polarisCrds.map((x) => x.spec.names.plural);
     const polarisCrdKindMap = new Map(polarisCrds.map((x) => [x.spec.names.plural, x.spec.names.kind]));
 
+    const emptyResult: ItemsWithResourceVersion<PolarisController> = {
+      resourceVersion: undefined,
+      items: [],
+    };
     if (polarisCrds.length === 0) {
-      return [];
+      return emptyResult;
     }
 
     const clusterRoles = await this.client.listClusterRoles();
@@ -279,7 +281,7 @@ export default class Api implements IPolarisOrchestratorApi {
       })
       .filter((x) => !!x);
     if (matchingPolarisClusterRoles.length === 0) {
-      return [];
+      return emptyResult;
     }
     const polarisClusterRoleMap = new Map(matchingPolarisClusterRoles);
 
@@ -296,12 +298,11 @@ export default class Api implements IPolarisOrchestratorApi {
       .flatMap((x) => x)
       .filter((x) => !!x);
     if (polarisServiceAccounts.length === 0) {
-      return [];
+      return emptyResult;
     }
 
-    const deployments = await this.client.listAllDeployments();
+    const deployments = await this.client.listAllDeployments({ labelSelector: 'tier=control-plane' });
     const polarisControllers = deployments.items
-      .filter((x) => x.metadata.labels && x.metadata.labels.tier === 'control-plane')
       .map<PolarisController>((x) => {
         const apiObject = transformToApiObject(x as KubernetesSpecObject, this.deploymentObjectKind);
         const mappedController = this.polarisMapper.mapToPolarisController(apiObject);
@@ -326,7 +327,10 @@ export default class Api implements IPolarisOrchestratorApi {
           : null;
       })
       .filter((x) => !!x);
-    return polarisControllers;
+    return {
+      resourceVersion: deployments.metadata.resourceVersion,
+      items: polarisControllers,
+    };
   }
 
   async findPolarisControllerForDeployment(deployment: ApiObject<any>): Promise<PolarisController> {

@@ -95,7 +95,6 @@ import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTemplateStore } from '@/store/template';
 import { usePolarisComponentStore } from '@/store/polaris-component';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import SloParametersConfigForm from '@/polaris-templates/slo/SloParametersConfigForm.vue';
 import SloTemplateMetricsForm from '@/polaris-templates/slo/SloTemplateMetricsForm.vue';
@@ -103,7 +102,6 @@ import SloTemplateMetricsForm from '@/polaris-templates/slo/SloTemplateMetricsFo
 const route = useRoute();
 const store = useTemplateStore();
 const polarisComponentsStore = usePolarisComponentStore();
-const orchestratorApi = useOrchestratorApi();
 
 const template = ref({});
 loadTemplate(route.params.kind);
@@ -156,7 +154,7 @@ const isNotDefinedInCluster = computed(
   () => !polarisComponentsStore.sloMappingHasBeenDeployed(template.value.sloMappingKind)
 );
 async function deployMapping() {
-  await orchestratorApi.deploySloMappingCrd(template.value);
+  await polarisComponentsStore.deploySloMapping(template.value);
 }
 
 watch(() => route.params.kind, loadTemplate);

@@ -8,20 +8,16 @@ import { useTemplateStore } from '@/store/template';
 import { OrchestratorWatchManager } from '@/orchestrator/watch-manager';
 import { SloMappingWatchHandler } from '@/workspace/slo/SloMappingWatchHandler';
 import { WorkspaceWatchBookmarkManager } from '@/workspace/workspace-watch-bookmark-manager';
-import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
+import { CONNECTED_EVENT, IOrchestratorApiConnection, useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { TemplatesWatchHandler } from '@/polaris-templates/TemplatesWatchHandler';
 import { SloEvaluationWatchHandler } from '@/workspace/slo/SloEvaluationWatchHandler';
 import { PolarisControllersWatchHandler } from '@/polaris-components/PolarisControllersWatchHandler';
 
-export async function setupBackgroundTasks() {
+async function setupMetricPolling(): Promise<NodeJS.Timer> {
   const pollingIntervalMs = 30 * 1000;
   const sloStore = useSloStore();
   const targetStore = useTargetStore();
   const metricsProvider = useMetricsProvider();
-  const bookmarkManager = new WorkspaceWatchBookmarkManager();
-  const watchManager = new OrchestratorWatchManager(bookmarkManager);
-  const orchestratorApi = useOrchestratorApi();
-  const polarisComponentStore = usePolarisComponentStore();
   const templateStore = useTemplateStore();
 
   async function pollMetrics() {
@@ -35,26 +31,39 @@ export async function setupBackgroundTasks() {
 
     sloStore.updateSloMetrics(result);
   }
-  const pollingInterval = setInterval(pollMetrics, pollingIntervalMs);
+  return setInterval(pollMetrics, pollingIntervalMs);
+}
 
-  const sloMappingWatchHandler = new SloMappingWatchHandler();
-  const sloEvaluationWatchHandler = new SloEvaluationWatchHandler();
+async function setupOrchestratorWatches(orchestratorApi: IOrchestratorApiConnection) {
+  const bookmarkManager = new WorkspaceWatchBookmarkManager();
+  const watchManager = new OrchestratorWatchManager(bookmarkManager);
+  const polarisComponentStore = usePolarisComponentStore();
+
+  const sloMappingWatchHandler = new SloMappingWatchHandler(bookmarkManager);
+  const sloEvaluationWatchHandler = new SloEvaluationWatchHandler(bookmarkManager);
   const watcherKindHandlerPairs: ObjectKindWatchHandlerPair[] = [
-    { kind: orchestratorApi.crdObjectKind.value, handler: new TemplatesWatchHandler() },
-    { kind: orchestratorApi.deploymentObjectKind.value, handler: new PolarisControllersWatchHandler() },
-    ...polarisComponentStore.deployedSloMappings.map((kind) => ({ kind, handler: sloMappingWatchHandler })),
+    { kind: orchestratorApi.crdObjectKind.value, handler: new TemplatesWatchHandler(bookmarkManager) },
+    { kind: orchestratorApi.deploymentObjectKind.value, handler: new PolarisControllersWatchHandler(bookmarkManager) },
+  ];
+  // First load all templates
+  await watchManager.startWatchers(watcherKindHandlerPairs);
+
+  // Afterwards we load the mappings that depend on the templates
+  await watchManager.startWatchers([
+    ...polarisComponentStore.deployedSloMappings.map((kind) => ({
+      kind,
+      handler: sloMappingWatchHandler,
+    })),
     ...polarisComponentStore.deployedElasticityStrategyCrds.map((kind) => ({
       kind,
       handler: sloEvaluationWatchHandler,
     })),
-  ];
-  await watchManager.configureWatchers(watcherKindHandlerPairs);
-
+  ]);
   const unsubscribeFromDeployedSloMappingKindsWatch = watch(
     () => polarisComponentStore.deployedSloMappings,
     (value, oldValue) => {
       watchManager.stopWatchers(oldValue);
-      watchManager.startWatchers(value, new SloMappingWatchHandler());
+      watchManager.startWatchers(value, new SloMappingWatchHandler(bookmarkManager));
     },
     { deep: true }
   );
@@ -62,14 +71,44 @@ export async function setupBackgroundTasks() {
     () => polarisComponentStore.deployedElasticityStrategyCrds,
     (value, oldValue) => {
       watchManager.stopWatchers(oldValue);
-      watchManager.startWatchers(value, new SloEvaluationWatchHandler());
+      watchManager.startWatchers(value, new SloEvaluationWatchHandler(bookmarkManager));
     },
     { deep: true }
   );
+
   return () => {
-    clearInterval(pollingInterval);
     watchManager.stopAllWatchers();
     unsubscribeFromDeployedSloMappingKindsWatch();
     unsubscribeFromDeployedElasticityStrategyCrdsWatch();
   };
+}
+export async function setupBackgroundTasks() {
+  const orchestratorApi = useOrchestratorApi();
+  const pollingInterval = await setupMetricPolling();
+
+  const unsubscribeOrchestratorWatches = new OrchestratorUnsubscriber();
+  if (await orchestratorApi.test()) {
+    unsubscribeOrchestratorWatches.addUnsubscribeAction(await setupOrchestratorWatches(orchestratorApi));
+  } else {
+    const orchestratorUnsubscriber = orchestratorApi.on(CONNECTED_EVENT, async () => {
+      const unsubscriber = await setupOrchestratorWatches(orchestratorApi);
+      unsubscribeOrchestratorWatches.addUnsubscribeAction(unsubscriber);
+    });
+    unsubscribeOrchestratorWatches.addUnsubscribeAction(orchestratorUnsubscriber);
+  }
+  return () => {
+    clearInterval(pollingInterval);
+    unsubscribeOrchestratorWatches.unsubscribe();
+  };
+}
+
+class OrchestratorUnsubscriber {
+  private unsubscribeActions: (() => void)[] = [];
+
+  public addUnsubscribeAction(action: () => void) {
+    this.unsubscribeActions.push(action);
+  }
+  public unsubscribe() {
+    this.unsubscribeActions.forEach((x) => x());
+  }
 }
