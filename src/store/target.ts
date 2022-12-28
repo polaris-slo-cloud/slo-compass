@@ -88,6 +88,12 @@ export const useTargetStore = defineStore('target', () => {
     return newTarget.id;
   }
 
+  async function pollAllTargetsStatus(): Promise<void> {
+    for (const target of targets.value) {
+      target.deployment.status = await orchestratorApi.getDeploymentStatus(target.deployment.connectionMetadata);
+    }
+  }
+
   return {
     targets,
     getSloTarget,
@@ -95,5 +101,6 @@ export const useTargetStore = defineStore('target', () => {
     findTargetByReference,
     saveTarget,
     ensureTargetCreated,
+    pollAllTargetsStatus,
   };
 });

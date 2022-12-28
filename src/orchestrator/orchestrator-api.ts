@@ -42,10 +42,17 @@ export interface ApiObjectList<T> {
   metadata: ApiObjectListMetadata;
 }
 
+export enum DeploymentStatus {
+  Available = 'Available',
+  PartiallyAvailable = 'Partially Available',
+  Unavailable = 'Unavailable',
+  Unknown = 'Unknown',
+}
+
 export interface IDeployment {
   id: string;
   name: string;
-  status: string;
+  status: DeploymentStatus;
   connectionMetadata: NamespacedObjectReference;
 }
 export interface PolarisControllerDeploymentResult {
@@ -63,6 +70,7 @@ export interface IOrchestratorApi {
   test(): Promise<boolean>;
   findPolarisDeployments(): Promise<IDeployment[]>;
   findDeployments(namespace?: string): Promise<IDeployment[]>;
+  getDeploymentStatus(deployment: NamespacedObjectReference): Promise<DeploymentStatus>;
   applySlo(slo: Slo, target: SloTarget, template: SloTemplateMetadata): Promise<SloMappingDeploymentResult>;
   deleteSlo(slo: Slo): Promise<void>;
   findSloMapping(slo: Slo): Promise<PolarisSloMapping>;
@@ -125,6 +133,10 @@ class OrchestratorNotConnected implements IPolarisOrchestratorApi {
   }
 
   findDeployments(): Promise<IDeployment[]> {
+    throw new OrchestratorNotConnectedError();
+  }
+
+  getDeploymentStatus(): Promise<DeploymentStatus> {
     throw new OrchestratorNotConnectedError();
   }
 
@@ -250,6 +262,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     deploymentObjectKind: computed(() => api.value.deploymentObjectKind),
     findPolarisDeployments: () => api.value.findPolarisDeployments(),
     findDeployments: (namespace?) => api.value.findDeployments(namespace),
+    getDeploymentStatus: (deployment) => api.value.getDeploymentStatus(deployment),
     test: () => api.value.test(),
     deleteSlo: (slo) => api.value.deleteSlo(clone(slo)),
     applySlo: (slo, target, template) => api.value.applySlo(clone(slo), clone(target), clone(template)),

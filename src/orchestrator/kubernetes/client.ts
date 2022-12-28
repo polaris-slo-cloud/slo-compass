@@ -8,11 +8,13 @@ import {
   V1ClusterRoleList,
   V1CustomResourceDefinition,
   V1CustomResourceDefinitionList,
+  V1Deployment,
   V1DeploymentList,
+  V1DeploymentStatus,
 } from '@kubernetes/client-node';
 import K8sClientHelper, { KubernetesPatchStrategies } from '@/orchestrator/kubernetes/k8s-client-helper';
 import { ApiObjectList, CustomResourceObjectReference } from '@/orchestrator/orchestrator-api';
-import { ApiObject, ObjectKind } from '@polaris-sloc/core';
+import { ApiObject, NamespacedObjectReference, ObjectKind } from '@polaris-sloc/core';
 import { WatchEventType } from '@/orchestrator/kubernetes/kubernetes-watcher';
 import { ResourceGoneError } from '@/orchestrator/errors';
 
@@ -26,6 +28,7 @@ export interface ResourceQueryOptions {
 export interface K8sClient {
   listNamespacedDeployments(namespace: string): Promise<V1DeploymentList>;
   listAllDeployments(queryOptions?: ResourceQueryOptions): Promise<V1DeploymentList>;
+  getDeploymentStatus(deployment: NamespacedObjectReference): Promise<V1DeploymentStatus>;
   read<TResource extends KubernetesObject>(spec: TResource): Promise<TResource>;
   create<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
   patch<TResource extends KubernetesObject>(resource: TResource): Promise<TResource>;
@@ -78,6 +81,17 @@ class K8sHttpClient implements K8sClient {
     }
     const { data } = await this.http.get<V1DeploymentList>('/apis/apps/v1/deployments', { params: query });
     return data;
+  }
+
+  public async getDeploymentStatus(deployment: NamespacedObjectReference): Promise<V1DeploymentStatus> {
+    try {
+      const { data } = await this.http.get<V1Deployment>(
+        `/apis/apps/v1/namespaces/${deployment.namespace}/deployments/${deployment.name}/status`
+      );
+      return data.status;
+    } catch (e) {
+      return null;
+    }
   }
 
   public async read<TResource extends KubernetesObject>(spec: TResource): Promise<TResource> {

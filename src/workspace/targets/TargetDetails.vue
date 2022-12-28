@@ -35,6 +35,7 @@ import orchestratorIconMap from '@/orchestrator/orchestrator-icon-map';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import componentIcon from '@/workspace/targets/component-icon';
 import { useTargetStore } from '@/store/target';
+import { getStatusColor } from '@/workspace/targets/status-color';
 
 const store = useTargetStore();
 const orchestratorApi = useOrchestratorApi();
@@ -52,16 +53,7 @@ const deployment = computed({
   },
 });
 const orchestratorIcon = computed(() => orchestratorIconMap[orchestratorApi.orchestratorName.value]);
-const deploymentStatusColor = computed(() => {
-  if (!deployment.value) {
-    return 'grey';
-  }
-  const map = {
-    Available: 'green',
-    NotFound: 'red',
-  };
-  return map[deployment.value.status] ?? 'orange';
-});
+const deploymentStatusColor = computed(() => getStatusColor(deployment.value?.status));
 
 const components = computed(() => (props.item?.id ? store.getComponents(props.item.id) : []));
 const componentsEditModel = computed({

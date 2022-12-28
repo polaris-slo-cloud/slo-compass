@@ -1,6 +1,7 @@
 import {
   ApiObjectList,
   CustomResourceObjectReference,
+  DeploymentStatus,
   IDeployment,
   IPolarisOrchestratorApi,
   ItemsWithResourceVersion,
@@ -10,7 +11,7 @@ import {
 import createClient, { K8sClient, KubernetesSpecObject } from '@/orchestrator/kubernetes/client';
 import resourceGenerator, { PolarisControllerDeploymentResources } from '@/orchestrator/kubernetes/resource-generator';
 import Slo, { PolarisElasticityStrategySloOutput, PolarisSloMapping } from '@/workspace/slo/Slo';
-import { KubernetesObject, V1DeploymentSpec } from '@kubernetes/client-node';
+import { KubernetesObject, V1DeploymentSpec, V1DeploymentStatus } from '@kubernetes/client-node';
 import { PolarisController, PolarisControllerType } from '@/workspace/PolarisComponent';
 import { SloTarget } from '@/workspace/targets/SloTarget';
 import { ApiObject, NamespacedObjectReference, ObjectKind, ObjectKindWatcher, POLARIS_API } from '@polaris-sloc/core';
@@ -36,6 +37,19 @@ interface KubernetesDeploymentResult {
 interface CustomResourceMetadata {
   kind: ObjectKind;
   plural: string;
+}
+
+function mapDeploymentStatus(status: V1DeploymentStatus): DeploymentStatus {
+  if (!status) {
+    return DeploymentStatus.Unknown;
+  }
+  if (status.availableReplicas === status.replicas) {
+    return DeploymentStatus.Available;
+  }
+  if (status.availableReplicas > 0) {
+    return DeploymentStatus.PartiallyAvailable;
+  }
+  return DeploymentStatus.Unavailable;
 }
 
 export default class Api implements IPolarisOrchestratorApi {
@@ -85,7 +99,7 @@ export default class Api implements IPolarisOrchestratorApi {
       const items = data.items.map((x) => ({
         id: x.metadata.uid,
         name: x.metadata.name,
-        status: x.status.conditions[x.status.conditions.length - 1].type,
+        status: mapDeploymentStatus(x.status),
         connectionMetadata: {
           kind: 'Deployment',
           // Remove group from apiVersion
@@ -99,6 +113,11 @@ export default class Api implements IPolarisOrchestratorApi {
     } catch (e) {
       return [];
     }
+  }
+
+  async getDeploymentStatus(deployment: NamespacedObjectReference): Promise<DeploymentStatus> {
+    const status = await this.client.getDeploymentStatus(deployment);
+    return mapDeploymentStatus(status);
   }
 
   test = async (): Promise<boolean> => await this.client.test();

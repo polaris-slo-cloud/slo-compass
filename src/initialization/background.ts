@@ -34,6 +34,11 @@ async function setupMetricPolling(): Promise<NodeJS.Timer> {
   return setInterval(pollMetrics, pollingIntervalMs);
 }
 
+async function pollTargetsStatus() {
+  const targetStore = useTargetStore();
+  await targetStore.pollAllTargetsStatus();
+}
+
 async function setupOrchestratorWatches(orchestratorApi: IOrchestratorApiConnection) {
   const bookmarkManager = new WorkspaceWatchBookmarkManager();
   const watchManager = new OrchestratorWatchManager(bookmarkManager);
@@ -76,10 +81,14 @@ async function setupOrchestratorWatches(orchestratorApi: IOrchestratorApiConnect
     { deep: true }
   );
 
+  const pollingIntervalMs = 30 * 1000;
+  const targetWatchTimer = setInterval(pollTargetsStatus, pollingIntervalMs);
+
   return () => {
     watchManager.stopAllWatchers();
     unsubscribeFromDeployedSloMappingKindsWatch();
     unsubscribeFromDeployedElasticityStrategyCrdsWatch();
+    clearInterval(targetWatchTimer);
   };
 }
 export async function setupBackgroundTasks() {

@@ -2,6 +2,7 @@ const k8s = require('@kubernetes/client-node');
 const request = require('request');
 const { Watch } = require('@kubernetes/client-node');
 const { v4: uuidv4 } = require('uuid');
+const {NamespacedObjectReference} = require("@polaris-sloc/core");
 
 const k8sConfig = new k8s.KubeConfig();
 k8sConfig.loadFromDefault();
@@ -71,6 +72,15 @@ module.exports = {
       return body;
     } catch (e) {
       throw new Error(e.body.message);
+    }
+  },
+  async getDeploymentStatus(deployment) {
+    try {
+      const k8sAppsApi = k8sConfig.makeApiClient(k8s.AppsV1Api);
+      const { body } = await k8sAppsApi.readNamespacedDeploymentStatus(deployment.name, deployment.namespace);
+      return body.status;
+    } catch (e) {
+      return null;
     }
   },
   async listCustomResourceDefinitions() {

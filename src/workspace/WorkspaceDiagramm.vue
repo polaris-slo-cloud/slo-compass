@@ -73,6 +73,7 @@ import WorkspaceFilter from '@/workspace/WorkspaceFilter.vue';
 import { workspaceItemTypes } from '@/workspace/constants';
 import { getComplianceColor } from '@/workspace/slo/Slo';
 import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
+import { getStatusColor } from '@/workspace/targets/status-color';
 
 const store = useWorkspaceStore();
 const elasticityStrategyStore = useElasticityStrategyStore();
@@ -115,16 +116,6 @@ function fitToContents() {
   if (graph.value) {
     graph.value.fitToContents();
   }
-}
-
-function getStatusColor(status) {
-  const map = {
-    Available: 'green',
-    Processing: 'orange',
-    NotFound: 'red',
-  };
-  const colorName = map[status] ?? 'grey';
-  return colors.getPaletteColor(colorName);
 }
 
 function onForceLayoutEnd() {
@@ -236,7 +227,7 @@ const data = computed(() => {
       type: target.type,
       color: colors.getPaletteColor('white'),
       textColor: colors.getPaletteColor('black'),
-      statusColor: getStatusColor(target.deployment?.status),
+      statusColor: colors.getPaletteColor(getStatusColor(target.deployment?.status)),
       polarisComponent: target,
     };
     if (target.components) {
