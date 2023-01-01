@@ -1,14 +1,15 @@
 <script setup>
-import WorkspaceDiagramm from '@/workspace/WorkspaceDiagramm.vue';
-import NewWorkspaceItemSelector from '@/workspace/NewWorkspaceItemSelector.vue';
-import WorkspaceItemDetails from '@/workspace/WorkspaceItemDetails.vue';
 import { computed, ref, watch } from 'vue';
 import useWindowSize from '@/crosscutting/composables/window-size';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useTemplateStore } from '@/store/template';
+import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
+import WorkspaceDiagramm from '@/workspace/WorkspaceDiagramm.vue';
+import NewWorkspaceItemSelector from '@/workspace/NewWorkspaceItemSelector.vue';
+import WorkspaceItemDetails from '@/workspace/WorkspaceItemDetails.vue';
 import ReviewSloTemplateDialog from '@/polaris-templates/slo/ReviewTemplateDialog.vue';
 import ReviewStrategyConfigTemplateDialog from '@/polaris-templates/elasticity-strategy-config/ReviewStrategyConfigTemplateDialog.vue';
-import { useElasticityStrategyStore } from '@/store/elasticity-strategy';
+import ConnectionMissingBanners from '@/connections/ConnectionMissingBanners.vue';
 
 const orchestratorApi = useOrchestratorApi();
 const templateStore = useTemplateStore();
@@ -68,6 +69,7 @@ function openNewItemSelection() {
       <q-toolbar-title>Workspace</q-toolbar-title>
       <q-btn flat label="Add" icon="mdi-plus" @click="openNewItemSelection" />
     </q-toolbar>
+    <ConnectionMissingBanners />
     <q-banner inline-actions class="bg-secondary text-white" v-if="hasUndismissedDeploymentAction">
       <q-spinner-gears size="2em" />
       <span class="q-ml-md">A Deployment for {{ deploymentNames }} is currently running</span>

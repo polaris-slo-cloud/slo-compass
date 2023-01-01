@@ -103,6 +103,7 @@ export interface IOrchestratorApiConnection extends IOrchestratorApi, ISubscriba
   orchestratorName: ComputedRef<string>;
   crdObjectKind: ComputedRef<ObjectKind>;
   deploymentObjectKind: ComputedRef<ObjectKind>;
+  isConnected: Ref<boolean>;
   connect(connection: OrchestratorConnection, polarisOptions: unknown): void;
   testConnection(connection: OrchestratorConnection): Promise<boolean>;
   hasRunningDeployment: ComputedRef<(componentId: string) => boolean>;
@@ -198,6 +199,10 @@ const api: Ref<IPolarisOrchestratorApi> = ref(new OrchestratorNotConnected());
 const subscribers: Ref<Map<string, Map<string, ISubscribableCallback>>> = ref(new Map());
 const runningDeployments = ref({});
 const hasRunningDeployment = computed(() => (componentId: string) => !!runningDeployments.value[componentId]);
+const isConnected = ref(false);
+setInterval(async () => {
+  isConnected.value = await api.value.test();
+}, 60 * 1000);
 
 function createOrchestratorApi(connection: OrchestratorConnection): IPolarisOrchestratorApi {
   const orchestratorConfig = getOrchestrator(connection.orchestrator);
@@ -207,6 +212,9 @@ function createOrchestratorApi(connection: OrchestratorConnection): IPolarisOrch
 function connect(connection: OrchestratorConnection, polarisOptions: unknown): void {
   api.value = createOrchestratorApi(connection);
   api.value.configure(polarisOptions);
+  api.value.test().then((connected) => {
+    isConnected.value = connected;
+  });
   runningDeployments.value = {};
   const connectedSubscribers = subscribers.value.get(CONNECTED_EVENT);
   if (connectedSubscribers) {
@@ -256,6 +264,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
   return {
     connect,
     testConnection,
+    isConnected,
     name: api.value.name,
     orchestratorName: computed(() => api.value.name),
     crdObjectKind: computed(() => api.value.crdObjectKind),

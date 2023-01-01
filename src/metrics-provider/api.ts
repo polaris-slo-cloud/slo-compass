@@ -38,6 +38,7 @@ export interface MetricsProvider {
 }
 
 export interface MetricsProviderApi extends MetricsProvider {
+  isConnected: Ref<boolean>;
   connect(connection: MetricsConnection): void;
   testConnection(connection: MetricsConnection): Promise<boolean>;
 }
@@ -56,6 +57,11 @@ class NotConnectedProvider implements MetricsProvider {
 }
 
 const provider: Ref<MetricsProvider> = ref(new NotConnectedProvider());
+const isConnected = ref(false);
+
+setInterval(async () => {
+  isConnected.value = await provider.value.test();
+}, 60 * 1000);
 
 function createMetricsProvider(connection: MetricsConnection): MetricsProvider {
   const providerConfig = getProvider(connection.metricsProvider);
@@ -64,6 +70,9 @@ function createMetricsProvider(connection: MetricsConnection): MetricsProvider {
 
 function connect(connection: MetricsConnection): void {
   provider.value = createMetricsProvider(connection);
+  provider.value.test().then((connected) => {
+    isConnected.value = connected;
+  });
 }
 async function testConnection(connection: MetricsConnection): Promise<boolean> {
   const providerConnection = createMetricsProvider(connection);
@@ -74,6 +83,7 @@ export function useMetricsProvider(): MetricsProviderApi {
     name: provider.value.name,
     connect,
     testConnection,
+    isConnected,
     test: () => provider.value.test(),
     pollSloMetrics: (sloMetrics: SloMetricSourceTemplate[], target: SloTarget) =>
       provider.value.pollSloMetrics(sloMetrics, target),

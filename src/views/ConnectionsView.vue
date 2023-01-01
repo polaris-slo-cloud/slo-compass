@@ -29,7 +29,7 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="active" :props="props">
-                <q-badge v-if="props.row.active" color="green" label="Active" />
+                <q-badge v-if="props.row.active" color="cyan" label="Active" />
               </q-td>
               <q-td key="name" :props="props">
                 {{ props.row.name }}
@@ -38,6 +38,14 @@
                 {{ props.row.connectionSettings }}
               </q-td>
               <q-td key="actions" :props="props">
+                <q-btn
+                  v-if="!props.row.active && workspaceOpen"
+                  flat
+                  icon="mdi-connection"
+                  label="connect"
+                  color="primary"
+                  @click="connectToOrchestrator(props.row)"
+                />
                 <q-btn flat icon="mdi-delete" color="red" @click="deleteOrchestrator(props.row)" />
               </q-td>
             </q-tr>
@@ -72,7 +80,7 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="active" :props="props">
-                <q-badge v-if="props.row.active" color="green" label="Active" />
+                <q-badge v-if="props.row.active" color="cyan" label="Active" />
               </q-td>
               <q-td key="name" :props="props">
                 {{ props.row.name }}
@@ -81,6 +89,14 @@
                 {{ props.row.connectionSettings }}
               </q-td>
               <q-td key="actions" :props="props">
+                <q-btn
+                  v-if="!props.row.active && workspaceOpen"
+                  flat
+                  icon="mdi-connection"
+                  label="connect"
+                  color="primary"
+                  @click="connectToMetricsProvider(props.row)"
+                />
                 <q-btn flat icon="mdi-delete" color="red" @click="deleteMetricsProvider(props.row)" />
               </q-td>
             </q-tr>
@@ -97,6 +113,21 @@
     </div>
     <AddOrchestratorConnectionDialog v-model:show="showOrchestratorDialog" @added="orchestratorAdded" />
     <AddMetricsProviderDialog v-model:show="showMetricsProviderDialog" @added="metricsProviderAdded" />
+    <q-dialog v-model="showConfirmConnectOrchestratorDialog">
+      <q-card>
+        <q-card-section>
+          <div class="text-h2">Warning</div>
+        </q-card-section>
+        <q-card-section>
+          <div>Changing the orchestrator of a workspace may lead to undefined behaviour!</div>
+          <div class="q-mt-sm">Do you want to continue?</div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" @click="showConfirmConnectOrchestratorDialog = false" />
+          <q-btn icon="mdi-connection" label="Connect" color="primary" @click="confirmConnectToOrchestrator" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -104,14 +135,17 @@
 import { onMounted, ref, computed } from 'vue';
 import AddOrchestratorConnectionDialog from '@/connections/AddOrchestratorConnectionDialog.vue';
 import AddMetricsProviderDialog from '@/connections/AddMetricsProviderDialog.vue';
-import { orchestratorStorage, metricsProviderStorage } from '@/connections/storage';
+import { orchestratorStorage, metricsProviderStorage, workspaceConnectionStorage } from '@/connections/storage';
 import { useOrchestratorApi } from '@/orchestrator/orchestrator-api';
 import { useQuasar } from 'quasar';
 import { useMetricsProvider } from '@/metrics-provider/api';
+import { useWorkspaceStore } from '@/store/workspace';
 
+const workspaceStore = useWorkspaceStore();
 const orchestratorApi = useOrchestratorApi();
 const metricsProvider = useMetricsProvider();
 const $q = useQuasar();
+const workspaceOpen = computed(() => workspaceStore.isOpened);
 
 const orchestratorConnectionColumns = [
   { name: 'active', field: 'active' },
@@ -127,21 +161,57 @@ const orchestratorConnectionColumns = [
 ];
 const orchestratorConnections = ref([]);
 const showOrchestratorDialog = ref(false);
-const orchestratorConnected = ref(false);
+const orchestratorConnected = computed(() => orchestratorApi.isConnected.value);
 const currentOrchestratorName = computed(() => orchestratorApi.orchestratorName.value);
 
 function openAddOrchestratorDialog() {
   showOrchestratorDialog.value = true;
 }
-async function orchestratorAdded(conn) {
+function orchestratorAdded(conn) {
   orchestratorConnections.value.push(conn);
-  orchestratorConnected.value = await orchestratorApi.test();
 }
 function deleteOrchestrator(conn) {
   orchestratorConnections.value = orchestratorConnections.value.filter((x) => x.id !== conn.id);
   orchestratorStorage.saveConnectionSettings(orchestratorConnections.value);
 }
 
+const confirmOrchestrator = ref(null);
+const showConfirmConnectOrchestratorDialog = computed({
+  get: () => !!confirmOrchestrator.value,
+  set(v) {
+    if (v === false) {
+      confirmOrchestrator.value = null;
+    }
+  },
+});
+
+function connectToOrchestrator(orchestratorConnection) {
+  confirmOrchestrator.value = orchestratorConnection;
+}
+
+function confirmConnectToOrchestrator() {
+  orchestratorApi.connect(confirmOrchestrator.value, workspaceStore.polarisOptions);
+  setConnections({ orchestrator: confirmOrchestrator.value });
+  orchestratorConnections.value.forEach((conn) => (conn.active = conn.id === confirmOrchestrator.value.id));
+  showConfirmConnectOrchestratorDialog.value = false;
+}
+
+function connectToMetricsProvider(metricsConnection) {
+  metricsProvider.connect(metricsConnection);
+  setConnections({ metrics: metricsConnection });
+  metricsProviders.value.forEach((conn) => (conn.active = conn.id === metricsConnection.value.id));
+}
+
+function setConnections(connections) {
+  const saved = workspaceConnectionStorage.getConnectionsForWorkspace(workspaceStore.workspaceId);
+  const newConnections = {
+    ...saved,
+    ...connections,
+  };
+  delete newConnections.orchestrator.active;
+  delete newConnections.metrics.active;
+  workspaceConnectionStorage.setConnectionsForWorkspace(workspaceStore.workspaceId, newConnections);
+}
 const metricsProviderColumns = [
   { name: 'active', field: 'active' },
   { name: 'name', required: true, label: 'Name', align: 'left', field: 'name' },
@@ -156,15 +226,14 @@ const metricsProviderColumns = [
 ];
 const metricsProviders = ref([]);
 const showMetricsProviderDialog = ref(false);
-const metricsProviderConnected = ref(false);
+const metricsProviderConnected = computed(() => metricsProvider.isConnected.value);
 const currentMetricsProviderName = computed(() => metricsProvider.name);
 
 function openAddMetricsProviderDialog() {
   showMetricsProviderDialog.value = true;
 }
-async function metricsProviderAdded(conn) {
+function metricsProviderAdded(conn) {
   metricsProviders.value.push(conn);
-  metricsProviderConnected.value = await metricsProvider.test();
 }
 function deleteMetricsProvider(conn) {
   metricsProviders.value = metricsProviders.value.filter((x) => x.id !== conn.id);
@@ -172,14 +241,21 @@ function deleteMetricsProvider(conn) {
 }
 
 function loadConnections() {
-  orchestratorConnections.value = orchestratorStorage.getConnectionSettings();
-  metricsProviders.value = metricsProviderStorage.getConnectionSettings();
+  const workspaceConnections = workspaceStore.isOpened
+    ? workspaceConnectionStorage.getConnectionsForWorkspace(workspaceStore.workspaceId)
+    : {};
+  orchestratorConnections.value = orchestratorStorage.getConnectionSettings().map((x) => ({
+    ...x,
+    active: workspaceConnections.orchestrator?.id === x.id,
+  }));
+  metricsProviders.value = metricsProviderStorage.getConnectionSettings().map((x) => ({
+    ...x,
+    active: workspaceConnections.metrics?.id === x.id,
+  }));
 }
 
 onMounted(async () => {
   loadConnections();
-  orchestratorConnected.value = await orchestratorApi.test();
-  metricsProviderConnected.value = await metricsProvider.test();
 });
 </script>
 <style lang="scss">
