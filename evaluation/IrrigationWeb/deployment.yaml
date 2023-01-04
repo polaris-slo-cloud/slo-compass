@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: irrigation-web
+  namespace: smart-irrigation
+  labels:
+      app: irrigation-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+        app: irrigation-web
+  template:
+    metadata:
+      labels:
+          app: irrigation-web
+    spec:
+      containers:
+        - name: smart-irrigation-web
+          image: localhost:5000/smart-irrigation-web:latest
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: irrigation-web
+  namespace: smart-irrigation
+spec:
+  selector:
+    app: irrigation-web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

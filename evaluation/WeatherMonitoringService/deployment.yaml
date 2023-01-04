@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-monitoring
+  namespace: smart-irrigation
+  labels:
+      app: weather-monitoring
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: weather-monitoring
+  template:
+    metadata:
+      labels:
+        app: weather-monitoring
+    spec:
+      containers:
+        - name: smart-irrigation-weather-monitoring
+          image: localhost:5000/smart-irrigation-weather-monitoring:latest
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-monitoring
+  namespace: smart-irrigation
+spec:
+  selector:
+    app: weather-monitoring
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

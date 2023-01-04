@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: irrigation-service
+  namespace: smart-irrigation
+  labels:
+      app: irrigation-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: irrigation-service
+  template:
+    metadata:
+      labels:
+        app: irrigation-service
+    spec:
+      containers:
+        - name: smart-irrigation-service
+          image: localhost:5000/smart-irrigation-service:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: WeatherMonitorService__BaseUrl
+              value: "http://weather-monitoring"
+            - name: WeatherPredictionService__BaseUrl
+              value: "http://weather-prediction"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: irrigation-service
+  namespace: smart-irrigation
+spec:
+  selector:
+    app: irrigation-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

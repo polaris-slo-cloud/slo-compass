@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smart-irrigation
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: smart-irrigation-ingress
+    namespace: smart-irrigation
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: irrigation-web
+                port:
+                  number: 80
