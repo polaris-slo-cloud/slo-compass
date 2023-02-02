@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: smart-irrigation-web
-          image: localhost:5000/smart-irrigation-web:latest
+          image: localhost:32000/smart-irrigation-web:latest
           ports:
             - containerPort: 80
 

@@ -17,14 +17,16 @@ spec:
     spec:
       containers:
         - name: smart-irrigation-api-gateway
-          image: localhost:5000/smart-irrigation-api-gateway:latest
+          image: localhost:32000/smart-irrigation-api-gateway:latest
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           env:
             - name: WeatherMonitorService__BaseUrl
               value: "http://weather-monitoring"
             - name: IrrigationService__BaseUrl
               value: "http://irrigation-service"
+            - name: ASPNETCORE_URLS
+              value: "http://[::]:8080"
 
 ---
 
@@ -39,4 +41,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 80
+      targetPort: 8080

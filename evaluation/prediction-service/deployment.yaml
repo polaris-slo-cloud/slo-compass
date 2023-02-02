@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: smart-irrigation-weather-prediction
-          image: localhost:5000/smart-irrigation-weather-prediction:latest
+          image: localhost:32000/smart-irrigation-weather-prediction:latest
           ports:
             - containerPort: 80
           env:
