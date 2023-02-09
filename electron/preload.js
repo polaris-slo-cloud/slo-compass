@@ -1,83 +1,81 @@
-const { contextBridge } = require('electron');
-const { BrowserWindow, dialog, app } = require('@electron/remote');
-const fs = require('fs/promises');
-const k8sApiClient = require('./k8s-api-client');
-const path = require('path');
+const { contextBridge, ipcRenderer } = require('electron');
 
+const apis = {
+  polarisWindowAPI: {
+    apiPrefix: 'window',
+    features: ['minimize', 'toggleMaximize', 'close'],
+  },
+  workspaceApi: {
+    apiPrefix: 'workspace',
+    features: ['openWorkspaceFile', 'save', 'load'],
+  },
+  templatesApi: {
+    apiPrefix: 'templates',
+    features: ['saveTemplates', 'loadTemplates'],
+  },
+  filesApi: {
+    apiPrefix: 'files',
+    features: ['chooseDirectory', 'combinePaths'],
+  },
+  k8sApi: {
+    apiPrefix: 'k8s',
+    features: [
+      'connectToContext',
+      'getContexts',
+      'read',
+      'create',
+      'patch',
+      'test',
+      'listAllDeployments',
+      'listNamespacedDeployments',
+      'getDeploymentStatus',
+      'listCustomResourceDefinitions',
+      'findCustomResourceDefinition',
+      'getCustomResourceObject',
+      'listCustomResourceObjects',
+      'deleteCustomResourceObject',
+      'findCustomResourceMetadata',
+      'watch',
+      'abortWatch',
+      'getDeployment',
+      'listClusterRoleBindings',
+      'listClusterRoles',
+      'findClusterRole',
+    ],
+  },
+};
+
+for (const apiKey of Object.keys(apis)) {
+  const api = {};
+  for (const feature of apis[apiKey].features) {
+    api[feature] = (...params) => ipcRenderer.invoke(`${apis[apiKey].apiPrefix}-${feature}`, ...params);
+  }
+  contextBridge.exposeInMainWorld(apiKey, api);
+}
+
+/*
 contextBridge.exposeInMainWorld('polarisWindowAPI', {
-  minimize() {
-    BrowserWindow.getFocusedWindow().minimize();
-  },
-
-  toggleMaximize() {
-    const win = BrowserWindow.getFocusedWindow();
-
-    if (win.isMaximized()) {
-      win.unmaximize();
-    } else {
-      win.maximize();
-    }
-  },
-
-  close() {
-    BrowserWindow.getFocusedWindow().close();
-  },
+  minimize: () => ipcRenderer.invoke('window-minimize'),
+  toggleMaximize: () => ipcRenderer.invoke('window-toggleMaximize'),
+  close: () => ipcRenderer.invoke('window-close'),
 });
 
 contextBridge.exposeInMainWorld('workspaceApi', {
-  async openWorkspaceFile() {
-    const files = await dialog.showOpenDialog({
-      properties: ['openFile'],
-      filters: [{ name: 'Workspace Configuration', extensions: ['json'] }],
-    });
-    if (!files) {
-      return null;
-    }
-    const workspaceConfig = await fs.readFile(files[0], 'utf8');
-    return JSON.parse(workspaceConfig);
-  },
-  async save(workspace) {
-    const workspaceJson = JSON.stringify(workspace);
-    await fs.writeFile(workspace.location, workspaceJson);
-  },
-  async load(location) {
-    const workspace = await fs.readFile(location, 'utf8');
-    return JSON.parse(workspace);
-  },
+  openWorkspaceFile: async () => ipcRenderer.invoke('workspace-openWorkspaceFile'),
+  save: async (workspace) => ipcRenderer.invoke('workspace-save', workspace),
+  load: async (location) => ipcRenderer.invoke('workspace-load', location),
 });
 
-contextBridge.exposeInMainWorld('k8sApi', k8sApiClient);
-
 contextBridge.exposeInMainWorld('templatesApi', {
-  async saveTemplates(templates) {
-    const appDataDirectory = app.getPath('userData');
-    const templatesFile = path.join(appDataDirectory, 'polaris-templates.json');
-    const data = JSON.stringify(templates);
-    await fs.writeFile(templatesFile, data);
-  },
-  async loadTemplates() {
-    const appDataDirectory = app.getPath('userData');
-    const templatesFile = path.join(appDataDirectory, 'polaris-templates.json');
-    try {
-      const templates = await fs.readFile(templatesFile, 'utf8');
-      return JSON.parse(templates);
-    } catch (e) {
-      return [];
-    }
-  },
+  saveTemplates: async (templates) => ipcRenderer.invoke('templates-saveTemplates', templates),
+  loadTemplates: async () => ipcRenderer.invoke('templates-loadTemplates'),
 });
 
 contextBridge.exposeInMainWorld('filesApi', {
-  async chooseDirectory() {
-    const directory = await dialog.showOpenDialog({
-      properties: ['openDirectory'],
-    });
-    if (directory.filePaths.length > 0) {
-      return directory.filePaths[0];
-    }
-    return null;
-  },
-  combinePaths(...paths) {
-    return path.join(...paths);
-  },
+  chooseDirectory: async () => ipcRenderer.invoke('files-chooseDirectory'),
+  combinePaths: (...paths) => ipcRenderer.invoke('files-combinePaths', ...paths),
 });
+
+contextBridge.exposeInMainWorld('k8sApi', {
+
+});*/

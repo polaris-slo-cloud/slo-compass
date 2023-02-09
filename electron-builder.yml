@@ -5,7 +5,7 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 npmRebuild: false
-files: 
+files:
   - "dist/**/*"
   - "electron/**/*"
 directories:

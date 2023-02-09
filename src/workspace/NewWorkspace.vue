@@ -50,8 +50,8 @@ function connect(workspaceConnections) {
   }
 }
 
-function createWorkspace() {
-  store.createWorkspace(model.value);
+async function createWorkspace() {
+  await store.createWorkspace(model.value);
   markWorkspaceAsUsed(store.$state);
   const workspaceConnections = {
     orchestrator: model.value.orchestrator.connection,

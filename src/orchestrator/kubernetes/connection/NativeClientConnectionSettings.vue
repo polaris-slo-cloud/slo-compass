@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import {computed, onBeforeMount, ref} from 'vue';
 
 const props = defineProps({
   modelValue: Object,
@@ -21,7 +21,12 @@ const context = computed({
   },
 });
 
-const contextOptions = computed(() => {
-  return window.k8sApi ? window.k8sApi.getContexts().map((x) => x.name) : [];
+const contextOptions = ref([]);
+
+onBeforeMount(async () => {
+  if (window.k8sApi) {
+    const contexts = await window.k8sApi.getContexts();
+    contextOptions.value = contexts.map((x) => x.name);
+  }
 });
 </script>

@@ -2,6 +2,12 @@ const { app, BrowserWindow } = require('electron');
 const { initialize, enable } = require('@electron/remote/main');
 const path = require('path');
 
+require('./apis/files');
+require('./apis/k8s-api-client');
+require('./apis/templates');
+require('./apis/window');
+require('./apis/workspace');
+
 const createWindow = () => {
   initialize();
   const win = new BrowserWindow({
@@ -11,7 +17,6 @@ const createWindow = () => {
     icon: path.join(__dirname, 'icons', 'favicon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: true,
     },
     frame: false,
     title: 'Polaris UI',

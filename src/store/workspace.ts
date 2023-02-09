@@ -65,10 +65,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return (id: WorkspaceComponentId) => sloActions.get(id);
   });
 
-  function createWorkspace(config) {
+  async function createWorkspace(config) {
     let location = null;
     if (config.workspaceDirectory && window.filesApi) {
-      location = window.filesApi.combinePaths(config.workspaceDirectory, 'workspace.pui');
+      location = await window.filesApi.combinePaths(config.workspaceDirectory, 'workspace.pui');
     }
     this.$patch({
       isOpened: true,
