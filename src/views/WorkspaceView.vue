@@ -61,6 +61,10 @@ function openNewItemSelection() {
   selection.value = null;
   showNewItemSelection.value = true;
 }
+
+function selectItem(workspaceItemId) {
+  selection.value = { id: workspaceItemId };
+}
 </script>
 
 <template>
@@ -116,7 +120,7 @@ function openNewItemSelection() {
         class="q-pa-md"
       >
         <WorkspaceItemDetails v-if="selection" class="q-pa-sm" :itemId="selection.id" />
-        <NewWorkspaceItemSelector v-if="showNewItemSelection" />
+        <NewWorkspaceItemSelector v-if="showNewItemSelection" @item-created="selectItem" />
       </q-drawer>
     </teleport>
   </q-page>

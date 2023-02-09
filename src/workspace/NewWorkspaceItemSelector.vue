@@ -55,6 +55,7 @@
       v-model:show="showAddItemDialog"
       :type="newItemType"
       :template="newItemTemplate"
+      @created="onItemCreated"
     />
     <CreateSloTemplateDialog v-model:show="showCreateSloTemplate" @created="showAddSlo" />
   </div>
@@ -68,6 +69,8 @@ import AddSloTarget from '@/workspace/targets/CreateSloTarget.vue';
 import AddSlo from '@/workspace/slo/CreateSlo.vue';
 import CreateSloTemplateDialog from '@/polaris-templates/slo/CreateSloTemplateDialog.vue';
 import { useTemplateStore } from '@/store/template';
+
+const emit = defineEmits(['itemCreated']);
 
 const templateStore = useTemplateStore();
 const sloTemplates = computed(() => templateStore.sloTemplates);
@@ -98,4 +101,8 @@ const workspaceItemDialog = computed(() => {
   }
   return 'div';
 });
+
+function onItemCreated(workspaceItemId) {
+  emit('itemCreated', workspaceItemId);
+}
 </script>

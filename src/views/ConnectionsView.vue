@@ -106,10 +106,6 @@
           </template>
         </q-table>
       </div>
-      <div class="q-mt-xl">
-        <div class="text-h4">Polaris Workspace</div>
-        <span class="text-muted">Not Connected</span>
-      </div>
     </div>
     <AddOrchestratorConnectionDialog v-model:show="showOrchestratorDialog" @added="orchestratorAdded" />
     <AddMetricsProviderDialog v-model:show="showMetricsProviderDialog" @added="metricsProviderAdded" />

@@ -58,7 +58,7 @@ const props = defineProps({
   template: Object,
 });
 
-const emit = defineEmits(['update:show']);
+const emit = defineEmits(['update:show', 'created']);
 const showDialog = computed({
   get() {
     return props.show;
@@ -135,9 +135,10 @@ function save() {
         config: elasticityStrategyConfig.value,
       };
     }
-    store.saveSlo(slo);
+    const sloId = store.saveSlo(slo);
     showDialog.value = false;
     resetModel();
+    emit('created', sloId);
   } else {
     nextTick(() => {
       nameInput.value.focus();

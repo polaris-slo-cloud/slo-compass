@@ -29,7 +29,7 @@ export const useSloStore = defineStore('slo', () => {
     return (id: WorkspaceComponentId) => sloMap.get(id);
   });
 
-  function saveSlo(slo: Slo): void {
+  function saveSlo(slo: Slo): WorkspaceComponentId {
     if (!slo.id) {
       slo.id = uuidv4();
     }
@@ -39,6 +39,7 @@ export const useSloStore = defineStore('slo', () => {
     } else {
       slos.value.push(slo);
     }
+    return slo.id;
   }
   function removeSlo(id: WorkspaceComponentId): void {
     slos.value = slos.value.filter((x) => x.id !== id);
