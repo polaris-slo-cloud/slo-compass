@@ -139,7 +139,7 @@ mv dist_electron/ polaris-ui/
 11. Setup Port Forwarding to the Prometheus Service
 > **NOTE:** Has to be setup after every restart or after the console session has been closed
 ``` sh
-kubectl port-forward svc/prometheus-proxy 8080:80
+kubectl port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
 
 # Evaluation Minikube setup - OBSOLETE
