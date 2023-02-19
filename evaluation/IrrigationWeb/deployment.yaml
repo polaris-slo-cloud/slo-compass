@@ -5,6 +5,7 @@ metadata:
   namespace: smart-irrigation
   labels:
       app: irrigation-web
+      application: smart-irrigation
 spec:
   replicas: 2
   selector:
@@ -20,6 +21,9 @@ spec:
           image: localhost:32000/smart-irrigation-web:latest
           ports:
             - containerPort: 80
+          env:
+            - name: FLASK_PORT
+              value: "80"
 
 ---
 
@@ -28,6 +32,8 @@ kind: Service
 metadata:
   name: irrigation-web
   namespace: smart-irrigation
+  labels:
+      application: smart-irrigation
 spec:
   selector:
     app: irrigation-web

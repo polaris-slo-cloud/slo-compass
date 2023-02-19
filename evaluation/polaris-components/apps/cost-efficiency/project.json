@@ -1,0 +1,82 @@
+{
+  "name": "cost-efficiency",
+  "sourceRoot": "apps/cost-efficiency/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/node:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/cost-efficiency",
+        "main": "apps/cost-efficiency/src/main.ts",
+        "tsConfig": "apps/cost-efficiency/tsconfig.app.json",
+        "assets": ["apps/cost-efficiency/src/assets"],
+        "externalDependencies": "none"
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/cost-efficiency/src/environments/environment.ts",
+              "with": "apps/cost-efficiency/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/js:node",
+      "options": {
+        "buildTarget": "cost-efficiency:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "cost-efficiency:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/cost-efficiency/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/cost-efficiency/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    },
+    "docker-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "docker build -f ./apps/cost-efficiency/Dockerfile --build-arg POLARIS_APP_TYPE=slo --build-arg POLARIS_APP_NAME=cost-efficiency -t polarissloc/cost-efficiency:latest ."
+        ],
+        "parallel": false
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "kubectl apply -f ./apps/cost-efficiency/manifests/kubernetes"
+        ],
+        "parallel": false
+      }
+    }
+  },
+  "tags": []
+}

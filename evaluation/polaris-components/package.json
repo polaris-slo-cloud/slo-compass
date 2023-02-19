@@ -1,0 +1,41 @@
+{
+  "name": "polaris-components",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {},
+  "private": true,
+  "devDependencies": {
+    "@nrwl/esbuild": "15.6.3",
+    "@nrwl/eslint-plugin-nx": "15.6.3",
+    "@nrwl/jest": "15.6.3",
+    "@nrwl/linter": "15.6.3",
+    "@nrwl/node": "15.6.3",
+    "@nrwl/workspace": "15.6.3",
+    "@polaris-sloc/cli": "^0.4.1",
+    "@polaris-sloc/polaris-nx": "^0.4.1",
+    "@types/jest": "28.1.1",
+    "@types/node": "18.7.1",
+    "@typescript-eslint/eslint-plugin": "^5.36.1",
+    "@typescript-eslint/parser": "^5.36.1",
+    "esbuild": "^0.15.7",
+    "eslint": "~8.15.0",
+    "eslint-config-prettier": "8.1.0",
+    "jest": "28.1.1",
+    "jest-environment-jsdom": "28.1.1",
+    "nx": "15.6.3",
+    "prettier": "^2.6.2",
+    "ts-jest": "28.0.5",
+    "ts-node": "10.9.1",
+    "tsconfig-paths": "^3.14.1",
+    "typescript": "~4.8.2"
+  },
+  "dependencies": {
+    "@polaris-sloc/common-mappings": "0.4.1",
+    "@polaris-sloc/core": "0.4.1",
+    "@polaris-sloc/kubernetes": "0.4.1",
+    "@polaris-sloc/prometheus": "0.4.1",
+    "axios": "^1.0.0",
+    "rxjs": "^6.6.7",
+    "tslib": "^2.3.0"
+  }
+}

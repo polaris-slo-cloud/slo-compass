@@ -26,3 +26,24 @@ spec:
                 name: irrigation-web
                 port:
                   number: 80
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: smart-irrigation-monitor
+  labels:
+    k8s-app: smart-irrigation-monitor
+    # Needed because of https://github.com/prometheus-operator/prometheus-operator/issues/1470#issuecomment-397500048
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - smart-irrigation
+  selector:
+    matchLabels:
+      application: smart-irrigation
+  endpoints:
+    - targetPort: 80
+      interval: 20s
+    - targetPort: 8080
+      interval: 20s

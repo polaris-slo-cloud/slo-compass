@@ -10,7 +10,7 @@
     "build": "vite build",
     "build:electron": "cross-env ELECTRON=true vite build",
     "preview": "vite preview --port 5050",
-    "lint": "eslint . --ignore-path .gitignore",
+    "lint": "eslint . --ignore-path .gitignore --ignore-pattern evaluation/",
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "electron:start": "electron .",

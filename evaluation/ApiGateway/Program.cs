@@ -1,6 +1,7 @@
 using ApiGateway.Features.Irrigation;
 using ApiGateway.Features.Weather;
 using Carter;
+using Prometheus;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +36,8 @@ app.UseCors(options =>
 });
 
 app.UseSerilogRequestLogging();
+app.UseMetricServer();
+app.UseHttpMetrics();
 
 app.MapCarter();
 

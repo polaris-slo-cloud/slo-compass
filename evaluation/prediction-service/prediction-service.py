@@ -1,4 +1,5 @@
 from flask import Flask
+from prometheus_flask_exporter import PrometheusMetrics, NO_PREFIX
 import time
 import random
 import os
@@ -7,6 +8,7 @@ min_request_duration_ms = 5
 max_request_duration_ms = 50
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app, defaults_prefix=NO_PREFIX)
 
 @app.get("/api/rain-prediction")
 def get_rain_prediction():
@@ -19,6 +21,8 @@ def get_rain_prediction():
 
     # Else we return no precipation
     return 0
+
+metrics.register_default()
 
 if __name__ == "__main__":
     port = int(os.environ.get('FLASK_PORT', 5000))

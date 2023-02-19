@@ -1,4 +1,5 @@
 using IrrigationService;
+using Prometheus;
 using Serilog;
 using SmartIrrigation.Domain;
 using WeatherMonitoringServiceClient;
@@ -26,6 +27,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
+app.UseMetricServer();
+app.UseHttpMetrics();
 
 app.MapGet("/api/recommendation",
   async (WeatherMonitoringClient weatherService, WeatherPredictionService predictionService) =>

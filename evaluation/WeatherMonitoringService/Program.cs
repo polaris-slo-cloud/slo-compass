@@ -1,3 +1,4 @@
+using Prometheus;
 using Serilog;
 using WeatherMonitoringService;
 
@@ -22,6 +23,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
+app.UseMetricServer();
+app.UseHttpMetrics();
 
 app.MapGet("/api/current-weather", (CurrentWeatherService service) =>
 {

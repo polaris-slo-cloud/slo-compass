@@ -4,7 +4,12 @@ cd "$(dirname "$0")"
 BLUE_BOLD='\033[1;34m'
 NO_COLOR='\033[0m'
 
-cd ApiGateway
+cd polaris-components
+printf "${BLUE_BOLD}Building Cost Efficiency Metric Controller...${NO_COLOR}\n"
+docker build -f ./apps/cost-efficiency/Dockerfile --build-arg POLARIS_APP_TYPE=slo --build-arg POLARIS_APP_NAME=cost-efficiency -t localhost:32000/cost-efficiency:latest .
+docker push localhost:32000/cost-efficiency:latest
+
+cd ../ApiGateway
 printf "${BLUE_BOLD}Building Api Gateway...${NO_COLOR}\n"
 dotnet publish --os linux --arch x64 -p:PublishProfile=DefaultContainer -c Release --self-contained true
 docker tag smart-irrigation-api-gateway:1.0.0 localhost:32000/smart-irrigation-api-gateway:latest

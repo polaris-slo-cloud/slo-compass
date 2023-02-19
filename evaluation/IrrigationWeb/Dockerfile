@@ -7,7 +7,14 @@ COPY . .
 RUN npm run build
 
 # production stage
-FROM nginx:stable-alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+FROM python:3.8-alpine
+WORKDIR /app
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
+
+COPY http-server.py /app
+COPY --from=build-stage /app/dist /app/http
+
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT [ "python" ]
+CMD ["http-server.py"]

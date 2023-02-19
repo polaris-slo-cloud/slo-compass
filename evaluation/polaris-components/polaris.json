@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "projects": {
+    "cost-efficiency": {
+      "projectType": "composed-metric-controller",
+      "tsEntryPoint": "apps/cost-efficiency/src/main.ts"
+    },
+    "kube-cost": {
+      "projectType": "composed-metric-controller",
+      "tsEntryPoint": "apps/kube-cost/src/main.ts"
+    }
+  }
+}

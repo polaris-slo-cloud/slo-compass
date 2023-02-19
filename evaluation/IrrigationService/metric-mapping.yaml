@@ -1,0 +1,12 @@
+apiVersion: metrics.polaris-slo-cloud.github.io/v1
+kind: CostEfficiencyMetricMapping
+metadata:
+  namespace: smart-irrigation
+  name: irrigation-service-cost-efficiency
+spec:
+  targetRef:
+    kind: Deployment
+    name: irrigation-service
+    apiVersion: apps/v1
+  metricConfig:
+    targetThreshold: 64

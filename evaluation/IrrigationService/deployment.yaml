@@ -5,6 +5,7 @@ metadata:
   namespace: smart-irrigation
   labels:
       app: irrigation-service
+      application: smart-irrigation
 spec:
   replicas: 2
   selector:
@@ -35,6 +36,8 @@ kind: Service
 metadata:
   name: irrigation-service
   namespace: smart-irrigation
+  labels:
+      application: smart-irrigation
 spec:
   selector:
     app: irrigation-service
