@@ -7,4 +7,16 @@ kubectl get customresourcedefinitions.apiextensions.k8s.io -o custom-columns=":m
     kubectl delete --all $crd
     kubectl delete customresourcedefinitions.apiextensions.k8s.io $crd
 done
+
+echo "Resetting Polaris UI"
+cd /home/user/evaluation-workspaces
+$i=0
+while [[ -e workspace-$i.pui ]] ; do
+    let i++
+done
+
+mv ../polaris-ui-workspace/workspace.pui ./workspace-$i.pui
+mv /home/user/.config/polaris-ui/polaris-templates.json ./polaris-templates-$i.json
+cd ..
+cp evaluation/workspace.pui polaris-ui-workspace/workspace.pui
 ## TODO: Delete Resources for Polaris CLI Demo
