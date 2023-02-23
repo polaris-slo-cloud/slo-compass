@@ -61,6 +61,12 @@ Increase Screensaver Timeout so VNC doesn't lock the user out
 gsettings set org.gnome.desktop.session idle-delay 3600
 gsettings set org.gnome.desktop.screensaver lock-delay 0
 ```
+
+Install the Desktop Icons Extension
+``` sh
+sudo apt-get install gnome-shell-extensions gnome-shell-extension-desktop-icons-ng
+```
+Open the Extensions application and enable the desktop icons
 ## OBSOLETE (Enable RDP through CLI)
 ``` sh
 grdctl rdp enable
