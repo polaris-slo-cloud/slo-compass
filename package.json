@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@electron/remote": "^2.0.9",
-    "@kubernetes/client-node": "^0.17.1",
+    "@kubernetes/client-node": "^0.18.1",
     "@polaris-sloc/core": "^0.4.1",
     "@quasar/extras": "^1.15.6",
     "@vuelidate/components": "^1.2.3",

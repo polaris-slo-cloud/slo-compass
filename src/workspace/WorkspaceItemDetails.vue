@@ -7,7 +7,7 @@
         </template>
       </InlineEdit>
       <div class="q-gutter-x-sm">
-        <q-btn v-if="itemDetailsLink" icon="mdi-open-in-new" flat color="primary" :to="itemDetailsLink">
+        <q-btn v-if="itemDetailsLink" icon="mdi-open-in-new" flat color="primary" :to="itemDetailsLink" label="Details">
           <q-tooltip>Open Details</q-tooltip>
         </q-btn>
         <q-btn v-if="canBeDeleted" @click="confirmDelete = true" icon="mdi-delete" outline color="negative" />

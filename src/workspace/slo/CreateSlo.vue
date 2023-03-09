@@ -10,7 +10,11 @@
           label="Name *"
           :rules="[(val) => (!!val && val.trim().length > 0) || 'You need to provide a name']"
         />
-        <TargetSelection label="Target" v-model="model.target" />
+        <TargetSelection
+          label="Target *"
+          v-model="model.target"
+          :rules="[(val) => !!val || 'You need to select an SLO target']"
+        />
         <q-input v-model="model.description" label="Description" autogrow />
         <div class="text-h6 q-mt-lg q-mb-sm" v-if="template.config.length > 0">Config</div>
         <ConfigTemplateInput
@@ -111,7 +115,8 @@ const isValid = computed(
   () =>
     !nameInput.value?.hasError &&
     !optionInputs.value.some((x) => x.hasError) &&
-    !elasticityOptionInputs.value.some((x) => x.hasError)
+    !elasticityOptionInputs.value.some((x) => x.hasError) &&
+    !!model.value.target
 );
 
 function save() {

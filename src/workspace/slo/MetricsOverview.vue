@@ -5,8 +5,8 @@
       <q-btn icon="mdi-reload" flat padding="sm" @click="pollMetrics" />
     </div>
     <div class="row q-col-gutter-md">
-      <div class="col-12 col-lg-6 col-xl-4">
-        <q-card v-for="metric of sloMetrics" :key="metric.source">
+      <div class="col-12 col-lg-6 col-xl-4" v-for="metric of sloMetrics" :key="metric.source">
+        <q-card>
           <q-card-section>
             <div class="field-item-label">{{ metric.displayName }}</div>
             <div class="metric-value-text text-right">

@@ -8,6 +8,7 @@
     option-label="name"
     option-value="id"
     use-input
+    :rules="rules"
   >
     <template v-slot:option="scope">
       <q-item v-bind="scope.itemProps">
@@ -42,6 +43,10 @@ const props = defineProps({
   label: String,
   hideId: String,
   multiple: Boolean,
+  rules: {
+    type: Array,
+    required: false,
+  },
 });
 const emit = defineEmits(['update:modelValue']);
 

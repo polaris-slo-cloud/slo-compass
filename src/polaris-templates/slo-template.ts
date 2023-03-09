@@ -44,7 +44,11 @@ export const templates: SloTemplateMetadata[] = [
         required: false,
       },
     ],
-    metricTemplates: ['cost_efficiency_composed_metric'],
+    metricTemplates: [
+      'cost_efficiency_composed_metric',
+      'cost_efficiency_total_cost_per_hour_metric',
+      'cost_efficiency_percentile_better_than_threshold_metric',
+    ],
     confirmed: true,
   },
   {

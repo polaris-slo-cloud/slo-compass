@@ -17,3 +17,4 @@ mv ../polaris-ui-workspace/workspace.pui ./workspace-$i.pui
 mv /home/user/.config/polaris-ui/polaris-templates.json ./polaris-templates-$i.json
 cd ..
 cp evaluation/workspace.pui polaris-ui-workspace/workspace.pui
+rm -rf polaris-cli-demo/smart-irrigation/

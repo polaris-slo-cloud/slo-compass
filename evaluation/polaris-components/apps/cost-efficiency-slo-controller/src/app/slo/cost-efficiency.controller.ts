@@ -25,6 +25,7 @@ export class CostEfficiencySlo
 
   private costEffMetricSource: ComposedMetricSource<CostEfficiency>;
   private minRequestsPercentile: number;
+  private targetCostEfficiency: number;
 
   configure(
     sloMapping: SloMapping<CostEfficiencySloConfig, SloCompliance>,
@@ -47,6 +48,7 @@ export class CostEfficiencySlo
     } else {
       this.minRequestsPercentile = 0.9;
     }
+    this.targetCostEfficiency = this.sloMapping.spec.sloConfig.targetCostEfficiency / 100;
 
     return observableOf(null);
   }
@@ -73,7 +75,7 @@ export class CostEfficiencySlo
       return 200;
     }
 
-    const compliance = (this.sloMapping.spec.sloConfig.targetCostEfficiency / costEff.value.costEfficiency) * 100
+    const compliance = (this.targetCostEfficiency / costEff.value.costEfficiency) * 100;
     return Math.ceil(compliance);
   }
 }

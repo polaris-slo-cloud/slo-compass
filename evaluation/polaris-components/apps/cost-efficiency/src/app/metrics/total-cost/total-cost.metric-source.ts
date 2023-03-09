@@ -12,8 +12,8 @@ import {
 import { Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
-const MEMORY_HOURLY_COST = 0.21;
-const CPU_HOURLY_COST = 10.51;
+const MEMORY_HOURLY_COST = 0.07;
+const CPU_HOURLY_COST = 3.28;
 
 /**
 * Provides the total cost of a `SloTarget` using KubeCost.
