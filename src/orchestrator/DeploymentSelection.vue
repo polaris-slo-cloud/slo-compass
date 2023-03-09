@@ -12,6 +12,14 @@
     <template #prepend v-if="orchestratorConnected">
       <q-icon v-bind="orchestratorIcon" />
     </template>
+    <template v-slot:option="scope">
+      <q-item v-bind="scope.itemProps">
+        <q-item-section>
+          <q-item-label>{{ scope.opt.name }}</q-item-label>
+          <q-item-label caption>{{ scope.opt.connectionMetadata.namespace }}</q-item-label>
+        </q-item-section>
+      </q-item>
+    </template>
     <q-tooltip v-if="!orchestratorConnected" class="bg-red text-body2">
       <q-icon name="mdi-alert-circle" />
       Please connect to an orchestrator in order to select a Deployment!

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-prediction
+  namespace: smart-irrigation
+  labels:
+      app: weather-prediction
+      application: smart-irrigation
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+        app: weather-prediction
+  template:
+    metadata:
+      labels:
+          app: weather-prediction
+    spec:
+      containers:
+        - name: smart-irrigation-weather-prediction
+          image: localhost:5000/smart-irrigation-weather-prediction:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: FLASK_PORT
+              value: "80"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-prediction
+  namespace: smart-irrigation
+  labels:
+      application: smart-irrigation
+spec:
+  selector:
+    app: weather-prediction
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

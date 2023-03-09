@@ -9,4 +9,4 @@ spec:
     name: weather-prediction
     apiVersion: apps/v1
   metricConfig:
-    targetThreshold: 50
+    targetThreshold: 100

@@ -126,7 +126,7 @@ function optionsValidType(value, siblingState) {
       break;
   }
 
-  return value.every(validator);
+  return !Array.isArray(value) || value.every(validator);
 }
 
 const props = defineProps({

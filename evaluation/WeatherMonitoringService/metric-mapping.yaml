@@ -9,4 +9,4 @@ spec:
     name: weather-monitoring
     apiVersion: apps/v1
   metricConfig:
-    targetThreshold: 64
+    targetThreshold: 100

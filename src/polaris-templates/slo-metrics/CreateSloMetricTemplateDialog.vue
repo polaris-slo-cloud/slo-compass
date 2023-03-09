@@ -51,15 +51,21 @@
             </q-tooltip>
           </q-icon>
         </div>
-        <q-input
-          v-if="isSimpleQuery"
-          :prefix="metricNamePrefix"
-          label="Metric Name*"
-          v-model="v.metricName.$model"
-          :error="v.metricName.$error"
-          error-message="You need to define a metric name"
-          @blur="v.metricName.$touch"
-        />
+        <div v-if="isSimpleQuery">
+          <q-input
+            :prefix="metricNamePrefix"
+            label="Metric Name*"
+            v-model="v.metricName.$model"
+            :error="v.metricName.$error"
+            error-message="You need to define a metric name"
+            @blur="v.metricName.$touch"
+          />
+          <div>
+            <span class="text-subtitle1">Label Filters</span>
+            <span class="q-ml-xs text-muted text-italic">(Optional)</span>
+          </div>
+          <MetricLabelFilterConfigForm v-model="labelFilters" />
+        </div>
         <div v-else>
           <q-input
             v-for="provider of availableProviders"
@@ -89,6 +95,7 @@ import { useTemplateStore } from '@/store/template';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import MetricQueryLabelDefinitions from '@/polaris-templates/slo-metrics/MetricQueryLabelDefinitions.vue';
+import MetricLabelFilterConfigForm from '@/polaris-templates/slo-metrics/MetricLabelFilterConfigForm.vue';
 
 const store = useTemplateStore();
 
@@ -106,6 +113,7 @@ const displayName = ref('');
 const description = ref('');
 const metricType = ref(SloMetricSourceType.Composed);
 const metricTypes = Object.values(SloMetricSourceType);
+const labelFilters = ref([]);
 
 const queryResultType = ref({
   type: MetricQueryResultValueType.Integer,
@@ -144,6 +152,7 @@ function resetModel() {
     type: MetricQueryResultValueType.Integer,
     unit: '',
   };
+  labelFilters.value = [];
 }
 function cancel() {
   resetModel();
@@ -151,6 +160,10 @@ function cancel() {
 }
 
 function createMetricDefinition() {
+  const labelFiltersRecord = labelFilters.value.reduce((filters, filter) => {
+    filters[filter.label] = filter.filterValue;
+    return filters;
+  }, {});
   const metricTemplate = {
     id: uuidV4(),
     displayName: displayName.value,
@@ -159,6 +172,7 @@ function createMetricDefinition() {
     queryResultType: queryResultType.value,
     isSimpleQuery: isSimpleQuery.value,
     providerQueries: {},
+    labelFilters: labelFiltersRecord,
   };
   if (isSimpleQuery.value) {
     metricTemplate.metricName = metricName.value;

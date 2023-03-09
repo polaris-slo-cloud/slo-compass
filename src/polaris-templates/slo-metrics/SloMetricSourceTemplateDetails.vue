@@ -56,6 +56,31 @@
       <div v-if="template.isSimpleQuery">
         <span class="field-item-label">Metric Name</span>
         <span>{{ metricName }}</span>
+        <q-icon
+          name="mdi-information"
+          color="primary"
+          v-if="availableProvidersWithLabelFilters.length > 0"
+          size="2em"
+          class="q-ml-md"
+        >
+          <q-tooltip anchor="center right" self="center left" class="bg-transparent text-black">
+            <q-card>
+              <q-card-section>
+                <MetricQueryLabelDefinitions />
+              </q-card-section>
+            </q-card>
+          </q-tooltip>
+        </q-icon>
+        <div
+          class="q-col"
+          v-for="provider of availableProvidersWithLabelFilters"
+          :key="provider.metricSourceTemplateKey"
+        >
+          <span class="field-item-label">{{ provider.name }} Label Filters</span>
+          <div v-for="{ label, filterValue } of labelFilters(provider.metricSourceTemplateKey)" :key="label">
+            {{ label }}: {{ filterValue }}
+          </div>
+        </div>
       </div>
       <div v-else-if="template.providerQueries" class="row q-col-gutter-md">
         <div class="q-col" v-for="provider of availableProviders" :key="provider.metricSourceTemplateKey">
@@ -65,14 +90,20 @@
       </div>
       <template #edit="{ value }">
         <q-btn-toggle v-model="value.metricQueryType" :options="metricQueryTypes" />
-        <q-input
-          v-if="value.metricQueryType === 'simple'"
-          :prefix="metricNamePrefix"
-          label="Metric Name*"
-          v-model="value.metricName"
-          :error="!value.metricName"
-          error-message="You need to define a metric name"
-        />
+        <div v-if="value.metricQueryType === 'simple'">
+          <q-input
+            :prefix="metricNamePrefix"
+            label="Metric Name*"
+            v-model="value.metricName"
+            :error="!value.metricName"
+            error-message="You need to define a metric name"
+          />
+          <div>
+            <span class="text-subtitle1">Label Filters</span>
+            <span class="q-ml-xs text-muted text-italic">(Optional)</span>
+          </div>
+          <MetricLabelFilterConfigForm v-model="value.labelFilters" />
+        </div>
         <div v-else>
           <q-input
             v-for="provider of availableProviders"
@@ -95,6 +126,8 @@ import { computed, onMounted, ref, watch } from 'vue';
 import EditableField from '@/crosscutting/components/EditableField.vue';
 import { MetricQueryResultValueType, SloMetricSourceType } from '@/polaris-templates/slo-metrics/metrics-template';
 import { availableProviders } from '@/metrics-provider/providers';
+import MetricQueryLabelDefinitions from '@/polaris-templates/slo-metrics/MetricQueryLabelDefinitions.vue';
+import MetricLabelFilterConfigForm from '@/polaris-templates/slo-metrics/MetricLabelFilterConfigForm.vue';
 
 const route = useRoute();
 const store = useTemplateStore();
@@ -146,17 +179,28 @@ const queryDefinition = computed({
   get: () => ({
     metricQueryType: template.value.isSimpleQuery ? 'simple' : 'raw',
     metricName: template.value.metricName,
+    labelFilters: template.value.labelFilters
+      ? Object.entries(template.value.labelFilters).map(([label, filterValue]) => ({
+          label,
+          filterValue,
+        }))
+      : [],
     rawMetricQueries:
       template.value.isSimpleQuery && template.value.providerQueries
         ? {}
         : mapProviderRawQueries(template.value.providerQueries),
   }),
   set(v) {
+    const labelFiltersRecord = v.labelFilters.reduce((filters, filter) => {
+      filters[filter.label] = filter.filterValue;
+      return filters;
+    }, {});
     const isSimpleQuery = v.metricQueryType === 'simple';
     const newTemplate = {
       ...template.value,
       isSimpleQuery,
       metricName: isSimpleQuery ? v.metricName : undefined,
+      labelFilters: labelFiltersRecord,
       providerQueries: {},
     };
     const rawQueries = isSimpleQuery.value ? undefined : v.rawMetricQueries;
@@ -165,6 +209,19 @@ const queryDefinition = computed({
   },
 });
 
+const labelFilters = (providerSource) =>
+  Object.entries(template.value.providerQueries[providerSource].queryData.labelFilters).map(([label, filterValue]) => ({
+    label,
+    filterValue,
+  }));
+
+const availableProvidersWithLabelFilters = computed(() =>
+  template.value.isSimpleQuery
+    ? availableProviders
+        .map((x) => (template.value.providerQueries[x.metricSourceTemplateKey].queryData.labelFilters ? x : null))
+        .filter((x) => !!x)
+    : []
+);
 const formatIfEmpty = (text) => text || '-';
 
 const confirmDelete = ref(false);

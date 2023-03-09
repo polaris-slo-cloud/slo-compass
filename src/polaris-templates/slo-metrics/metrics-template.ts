@@ -35,6 +35,7 @@ export interface SloMetricSourceTemplate {
   metricsController?: ComposedMetricSource;
   queryResultType: MetricQueryResultType;
   isSimpleQuery: boolean;
+  labelFilters?: Record<string, string>;
   providerQueries: Record<string, MetricsProviderQuery>;
 }
 
@@ -57,6 +58,9 @@ export const templates: SloMetricSourceTemplate[] = [
       unit: '%',
     },
     isSimpleQuery: true,
+    labelFilters: {
+      metric_prop_key: 'costEfficiency',
+    },
     providerQueries: {
       prometheus: {
         queryData: {
@@ -66,6 +70,7 @@ export const templates: SloMetricSourceTemplate[] = [
             target_gvk: '${targetGvk}',
             target_namespace: '${targetNamespace}',
             target_name: '${targetName}',
+            metric_prop_key: 'costEfficiency',
           },
         },
       },

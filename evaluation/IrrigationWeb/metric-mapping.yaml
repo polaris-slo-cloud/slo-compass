@@ -9,4 +9,4 @@ spec:
     name: irrigation-web
     apiVersion: apps/v1
   metricConfig:
-    targetThreshold: 250
+    targetThreshold: 500

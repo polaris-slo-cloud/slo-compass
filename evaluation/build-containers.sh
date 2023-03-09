@@ -9,6 +9,15 @@ printf "${BLUE_BOLD}Building Cost Efficiency Metric Controller...${NO_COLOR}\n"
 docker build -f ./apps/cost-efficiency/Dockerfile --build-arg POLARIS_APP_TYPE=slo --build-arg POLARIS_APP_NAME=cost-efficiency -t localhost:32000/cost-efficiency:latest .
 docker push localhost:32000/cost-efficiency:latest
 
+printf "${BLUE_BOLD}Building Cost Efficiency SLO Controller...${NO_COLOR}\n"
+docker build -f ./apps/cost-efficiency-slo-controller/Dockerfile --build-arg POLARIS_APP_TYPE=slo --build-arg POLARIS_APP_NAME=cost-efficiency-slo-controller -t localhost:32000/cost-efficiency-slo-controller:latest .
+docker push localhost:32000/cost-efficiency-slo-controller:latest
+
+cd ../simple-load-generator
+printf "${BLUE_BOLD}Building Simple Load Generator...${NO_COLOR}\n"
+docker build . -t localhost:32000/smart-irrigation-simple-load-generator:latest
+docker push localhost:32000/smart-irrigation-simple-load-generator:latest
+
 cd ../ApiGateway
 printf "${BLUE_BOLD}Building Api Gateway...${NO_COLOR}\n"
 dotnet publish --os linux --arch x64 -p:PublishProfile=DefaultContainer -c Release --self-contained true

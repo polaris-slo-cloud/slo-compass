@@ -245,7 +245,7 @@ const data = computed(() => {
     nodes[slo.id] = {
       name: slo.name,
       color: colors.getPaletteColor('blue'),
-      statusColor: getComplianceColor(slo),
+      statusColor: colors.getPaletteColor(getComplianceColor(slo)),
       polarisComponent: slo,
     };
     if (slo.elasticityStrategy) {

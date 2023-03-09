@@ -1,4 +1,4 @@
-const { ipcMain } = require('electron');
+const { ipcMain, BrowserWindow } = require('electron');
 const k8s = require('@kubernetes/client-node');
 const request = require('request');
 const { Watch } = require('@kubernetes/client-node');
@@ -164,14 +164,18 @@ ipcMain.handle(`${apiPrefix}findCustomResourceMetadata`, async (event, apiVersio
   });
   return data.resources.find((x) => x.kind === kind);
 });
-ipcMain.handle(`${apiPrefix}watch`, async (event, path, resourceVersion, watchCallback, errorCallback) => {
+ipcMain.handle(`${apiPrefix}watch`, async (event, path, resourceVersion, watchQueryOptions) => {
   const watch = new Watch(k8sConfig);
-  const options = { allowWatchBookmarks: true };
+  const queryOptions = watchQueryOptions ?? {};
+  const options = { allowWatchBookmarks: true, ...queryOptions };
   if (resourceVersion) {
     options.resourceVersion = resourceVersion;
   }
-  const watchRequest = await watch.watch(path, options, watchCallback, errorCallback);
   const key = uuidv4();
+  const callbackTarget = event.sender;
+  const watchCallback = (...params) => callbackTarget.send(`${apiPrefix}watchCallback-${key}`, ...params);
+  const errorCallback = (...params) => callbackTarget.send(`${apiPrefix}errorCallback-${key}`, ...params);
+  const watchRequest = await watch.watch(path, options, watchCallback, errorCallback);
   watchRequests.set(key, watchRequest);
   return key;
 });

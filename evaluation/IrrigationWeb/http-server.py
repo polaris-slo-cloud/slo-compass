@@ -10,9 +10,10 @@ max_request_duration_ms = 50
 app = Flask(__name__)
 metrics = PrometheusMetrics(app, defaults_prefix=NO_PREFIX)
 
+@app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def get_static_files(path):
-    return send_from_directory('http', path)
+    return send_from_directory('http', 'index.html') if path == '' else send_from_directory('http', path)
 
 metrics.register_default()
 

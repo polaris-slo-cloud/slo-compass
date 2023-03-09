@@ -42,6 +42,10 @@ const configure: IConfigureMetricsProvider = {
         queryData: {
           ...baseTemplate,
           metricName: `${metricNamePrefix(template.type)}${template.metricName}`,
+          labelFilters: {
+            ...baseTemplate.labelFilters,
+            ...template.labelFilters,
+          },
         },
       };
       return;

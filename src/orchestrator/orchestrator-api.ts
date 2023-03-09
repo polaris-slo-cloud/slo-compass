@@ -271,7 +271,7 @@ export function useOrchestratorApi(): IOrchestratorApiConnection {
     deploymentObjectKind: computed(() => api.value.deploymentObjectKind),
     findPolarisDeployments: () => api.value.findPolarisDeployments(),
     findDeployments: (namespace?) => api.value.findDeployments(namespace),
-    getDeploymentStatus: (deployment) => api.value.getDeploymentStatus(deployment),
+    getDeploymentStatus: (deployment) => api.value.getDeploymentStatus(clone(deployment)),
     test: () => api.value.test(),
     deleteSlo: (slo) => api.value.deleteSlo(clone(slo)),
     applySlo: (slo, target, template) => api.value.applySlo(clone(slo), clone(target), clone(template)),

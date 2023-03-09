@@ -42,13 +42,24 @@ const apis = {
       'listClusterRoles',
       'findClusterRole',
     ],
+    featureInvokers: {
+      async watch(path, resourceVersion, watchCallback, errorCallback) {
+        const watchKey = await ipcRenderer.invoke('k8s-watch', path, resourceVersion);
+        ipcRenderer.on(`k8s-watchCallback-${watchKey}`, (event, ...params) => watchCallback(...params));
+        ipcRenderer.on(`k8s-errorCallback-${watchKey}`, (event, ...params) => errorCallback(...params));
+      },
+    },
   },
 };
 
 for (const apiKey of Object.keys(apis)) {
   const api = {};
   for (const feature of apis[apiKey].features) {
-    api[feature] = (...params) => ipcRenderer.invoke(`${apis[apiKey].apiPrefix}-${feature}`, ...params);
+    if (apis[apiKey].featureInvokers && apis[apiKey].featureInvokers[feature]) {
+      api[feature] = apis[apiKey].featureInvokers[feature];
+    } else {
+      api[feature] = (...params) => ipcRenderer.invoke(`${apis[apiKey].apiPrefix}-${feature}`, ...params);
+    }
   }
   contextBridge.exposeInMainWorld(apiKey, api);
 }

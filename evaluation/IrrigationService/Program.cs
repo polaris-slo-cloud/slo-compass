@@ -28,7 +28,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 app.UseMetricServer();
-app.UseHttpMetrics();
+app.UseHttpMetrics(options =>
+{
+    options.RequestDuration.Histogram = Metrics.CreateHistogram("http_request_duration_seconds", "The duration of HTTP requests processed by an ASP.NET Core application.", new HistogramConfiguration
+    {
+        Buckets = Histogram.PowersOfTenDividedBuckets(-2, 1, 4),
+    });
+});
 
 app.MapGet("/api/recommendation",
   async (WeatherMonitoringClient weatherService, WeatherPredictionService predictionService) =>

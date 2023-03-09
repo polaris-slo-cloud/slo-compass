@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-load-generator
+  namespace: smart-irrigation
+  labels:
+    app: simple-load-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simple-load-generator
+  template:
+    metadata:
+      labels:
+        app: simple-load-generator
+    spec:
+      containers:
+        - name: smart-irrigation-simple-load-generator
+          image: localhost:5000/smart-irrigation-simple-load-generator:latest
