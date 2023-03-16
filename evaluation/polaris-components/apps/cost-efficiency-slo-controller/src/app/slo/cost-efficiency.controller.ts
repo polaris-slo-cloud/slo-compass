@@ -75,7 +75,7 @@ export class CostEfficiencySlo
       return 200;
     }
 
-    const compliance = (this.targetCostEfficiency / costEff.value.costEfficiency) * 100;
+    const compliance = (costEff.value.costEfficiency / this.targetCostEfficiency) * 100;
     return Math.ceil(compliance);
   }
 }

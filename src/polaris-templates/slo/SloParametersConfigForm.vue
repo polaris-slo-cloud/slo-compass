@@ -17,7 +17,7 @@
             class="col"
             v-model="v.displayName.$model"
             :error="v.displayName.$error"
-            @blur="v.displayName.$touch"
+            @blur="displayNameChanged(v)"
           >
             <template v-slot:error>
               <span class="text-no-wrap">{{ v.displayName.$errors[0] && v.displayName.$errors[0].$message }}</span>
@@ -54,7 +54,7 @@
             <span v-if="reviewOnly" class="text-weight-bold">All values possible</span>
             <q-btn
               v-else
-              label="select possible values"
+              label="restrict possible values"
               no-caps
               flat
               color="primary"
@@ -142,6 +142,21 @@ const configParameters = computed({
     emit('update:modelValue', v);
   },
 });
+
+const toCamelCase = (value) =>
+  value
+    .split(' ')
+    .map((x, idx) => (idx === 0 ? x.charAt(0).toLowerCase() : x.charAt(0).toUpperCase()) + x.substring(1))
+    .join('');
+
+function displayNameChanged(parameterModel) {
+  parameterModel.displayName.$touch();
+  if (!parameterModel.parameter.$dirty) {
+    parameterModel.parameter.$model = toCamelCase(parameterModel.displayName.$model);
+    // reset the dirty state so that it is only marked dirty by manually changing the value
+    parameterModel.parameter.$reset();
+  }
+}
 
 const parameterTypes = Object.values(ParameterType);
 const hasValueOptions = (configParameter) => Array.isArray(configParameter.valueOptions);

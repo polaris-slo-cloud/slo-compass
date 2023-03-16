@@ -4,8 +4,8 @@ import time
 import random
 import os
 
-min_request_duration_ms = 5
-max_request_duration_ms = 50
+min_request_duration_ms = 1
+max_request_duration_ms = 20
 
 app = Flask(__name__)
 metrics = PrometheusMetrics(app, defaults_prefix=NO_PREFIX)
@@ -17,10 +17,10 @@ def get_rain_prediction():
 
     # 25% possibility that it returns precipation between 1mm and 100mm
     if random.random() > 0.75:
-        return random.randint(1, 100)
+        return str(random.randint(1, 100))
 
     # Else we return no precipation
-    return 0
+    return "0"
 
 metrics.register_default()
 

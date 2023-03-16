@@ -12,6 +12,7 @@
             :done="isDone(1, generalForm?.v$)"
             :error="hasError(1, generalForm?.v$)"
           >
+            <h3 class="q-mt-none">Describe the SLO template</h3>
             <SloTemplateGeneralForm v-model="generalModel" ref="generalForm" />
           </q-step>
           <q-step
@@ -22,6 +23,7 @@
             :header-nav="maxStep >= 2"
             :done="step > 2"
           >
+            <h3 class="q-mt-none">Configure Polaris (optional)</h3>
             <div class="row">
               <EditableField label="Slo Mapping Kind" v-model="polarisConfig.sloMappingKind" class="col-6">
                 {{ sloMappingKind }}
@@ -46,6 +48,7 @@
             :done="isDone(3, parametersConfigForm?.v$)"
             :error="hasError(3, parametersConfigForm?.v$)"
           >
+            <h3 class="q-mt-none">Configure the SLO Parameters</h3>
             <SloParametersConfigForm v-model="sloConfig" ref="parametersConfigForm" addEmpty />
           </q-step>
           <q-step
@@ -56,6 +59,23 @@
             :done="step > 4"
             :header-nav="maxStep === 4"
           >
+            <div class="flex items-baseline">
+              <h3 class="q-mt-none">Define the metrics behind the SLO (optional)</h3>
+              <q-icon name="mdi-information" color="primary" size="1.5rem" class="q-ml-md">
+                <q-tooltip anchor="center right" self="center left" class="bg-transparent text-black">
+                  <q-card>
+                    <q-card-section class="text-body1">
+                      <p>
+                        The metrics defined here are only used for tracking the metric values inside the Polaris UI.
+                      </p>
+                      <p>
+                        The actual metrics used by the SLO can vary based on the implementation of the SLO controller!
+                      </p>
+                    </q-card-section>
+                  </q-card>
+                </q-tooltip>
+              </q-icon>
+            </div>
             <SloTemplateMetricsForm v-model="metrics" />
           </q-step>
           <template #navigation>

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from prometheus_flask_exporter import PrometheusMetrics, NO_PREFIX
 import time
 import random
