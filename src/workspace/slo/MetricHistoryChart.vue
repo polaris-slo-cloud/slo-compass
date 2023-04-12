@@ -64,6 +64,8 @@ function formatMetricValue(value) {
   let formatted = value;
   if (props.data.resultType.type === MetricQueryResultValueType.Decimal) {
     formatted = _.round(value, 2);
+  } else if (props.data.resultType.type === MetricQueryResultValueType.Percentage) {
+    formatted = _.round(value * 100, 2);
   }
 
   return `${formatted} ${props.data.resultType.unit}`;
