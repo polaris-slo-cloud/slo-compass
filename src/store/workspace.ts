@@ -91,8 +91,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   function save(item: WorkspaceComponent) {
     switch (item.type) {
-      case workspaceItemTypes.target.application:
-      case workspaceItemTypes.target.component:
+      case workspaceItemTypes.targets.application:
+      case workspaceItemTypes.targets.component:
         targetStore.saveTarget(item as SloTarget);
         break;
       case workspaceItemTypes.slo:

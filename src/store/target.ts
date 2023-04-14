@@ -55,10 +55,9 @@ export const useTargetStore = defineStore('target', () => {
 
   const findTargetByReference = computed(() => {
     const targetMap = new Map(
-      targets.value.map((x) => [
-        `${x.deployment.connectionMetadata.namespace}/${x.deployment.connectionMetadata.name}`,
-        x,
-      ])
+      targets.value
+        .filter((x) => x.deployment && x.deployment.connectionMetadata)
+        .map((x) => [`${x.deployment.connectionMetadata.namespace}/${x.deployment.connectionMetadata.name}`, x])
     );
     return (objectReference: NamespacedObjectReference) =>
       targetMap.get(`${objectReference.namespace}/${objectReference.name}`);
